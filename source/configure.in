@@ -1,0 +1,840 @@
+AC_REVISION("$Id: configure.in,v 1.33 2004/03/20 20:01:43 anomie Exp $")
+AC_INIT(snes9x.h)
+dnl AC_CANONICAL_SYSTEM
+
+dnl Some compatibility with Autoconf 2.50+. Not complete.
+dnl newer Autoconf calls substr m4_substr
+ifdef([substr], ,[m4_copy([m4_substr],[substr])])
+dnl Autoconf 2.53+ hides their version numbers in m4_PACKAGE_VERSION.
+ifdef([AC_ACVERSION], ,[m4_copy([m4_PACKAGE_VERSION],[AC_ACVERSION])])
+
+AC_PROG_CC
+AC_PROG_CXX
+AC_LANG_CPLUSPLUS
+
+dnl echo $cross_compiling
+
+#FIXME: Warn about glide, opengl and aido mutually exclusivity.
+#FIXME: Make svgalib build part of this and clean up the Makefile
+	
+AC_DEFUN([AC_SYS_COMPILER_FLAG],
+[
+  AC_MSG_CHECKING($1)
+  AC_CACHE_VAL(snes9x_cv_option_$2,
+  [
+    OLD_CXXFLAGS="[$]CXXFLAGS"
+    CXXFLAGS="[$]OLD_CXXFLAGS $1"
+    old_ac_link="[$]ac_link"
+    ac_link="[$]old_ac_link 2>conftezt.out.2"
+    AC_TRY_RUN([
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    ],snes9x_cv_option_$2=yes,
+      snes9x_cv_option_$2=no, [
+      AC_TRY_LINK([], [], snes9x_cv_option_$2=yes, snes9x_cv_option_$2=no)
+    ])
+    CXXFLAGS="[$]OLD_CXXFLAGS"
+    ac_link="[$]old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_$2=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_$2=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_$2=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_$2=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_$2=no
+    else :; fi
+#    rm conftezt.out.2
+  ])
+
+  if test x"[$]snes9x_cv_option_$2" = "xyes" ; then
+    $3="[$]$3 $1"
+    case "$3" in
+      OPTIMIZE)
+        CXXFLAGS="[$]CXXFLAGS $1"
+      ;;
+    esac
+    AC_MSG_RESULT(yes)
+    $5
+  else
+    AC_MSG_RESULT(no)
+    $4
+  fi
+])
+
+AC_DEFUN(AC_MY_CHECK_TYPE,
+[
+AC_MSG_CHECKING([for $1])
+AC_CACHE_VAL(ac_cv_type_$1,
+[
+AC_TRY_COMPILE([
+#include <sys/types.h>
+
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+
+$3
+
+],[
+$1 tmp;
+],ac_cv_type_$1=yes,ac_cv_type_$1=no)
+])
+
+if test $ac_cv_type_$1 = no; then
+  AC_DEFINE($1,$2)
+  AC_MSG_RESULT(no)
+else
+  AC_MSG_RESULT(yes)
+fi
+])
+
+AC_MY_CHECK_TYPE(size_t,unsigned long)
+
+AC_DEFUN([AC_ADD_XFLAGS],[
+	CFLAGS="$CFLAGS $X_INCLUDES"
+	CPPFLAGS="$CPPFLAGS $X_INCLUDES"
+	LDFLAGS="$LDFLAGS $X_LDFLAGS $X_LIBS"
+])
+
+
+dnl 
+dnl SNES9X_FEATURE_CLEAR()
+dnl SNES9X_FEATURE(feature,text)
+dnl
+
+define(SNES9X_FEATURE_CLEAR,[
+  rm snes9x_*.feature 2>/dev/null
+])
+
+define(SNES9X_FEATURE_RAW,[
+  cat >snes9x_[$1].feature <<EOF
+[$2]
+EOF])
+
+define([PAD_FEATURE],[substr([$1][................................],0,20) ])
+
+define(SNES9X_FEATURE_3,[
+  cat >snes9x_[$1].feature <<EOF
+PAD_FEATURE([$2])[$3]
+EOF])
+
+define(SNES9X_FEATURE,[
+  SNES9X_FEATURE_3(translit([[$1]],[. ()],[____]),[$1],[$2])
+])
+
+define(SNES9X_FEATURE_WITHOUT,[
+  SNES9X_FEATURE([$1],[no (forced without)])
+])
+
+define(SNES9X_FEATURE_NODEP,[
+  SNES9X_FEATURE([$1],[no (dependencies failed)])
+])
+
+define(SNES9X_FEATURE_OK,[
+  SNES9X_FEATURE([$1],[yes])
+])
+
+dnl *****************************
+dnl *** Execution begins here ***
+dnl *****************************
+
+
+dnl We want an absolute path to the source-dir.
+
+case "$srcdir" in
+    /*)
+    ;;
+    *)
+	oldsrcdir="$srcdir"
+	srcdir="`cd \"$srcdir\";pwd`"
+	AC_MSG_WARN([
+Converted $oldsrcdir to $srcdir,
+If this does not work, please use an absolute path to the configure script. 
+])
+    ;;
+esac
+
+
+dnl Test what compiler flags we should use
+
+AC_ARG_WITH(debug,    [  --with(out)-debug       Leave debug information in the final binary (default: without)],[],[with_debug=no])
+
+OPTIMIZE="${OPTFLAGS-}"
+RTTIFLAG=""
+
+if test yes = "$with_debug" ; then
+  AC_SYS_COMPILER_FLAG(-g, debuginfo, OPTIMIZE)
+fi
+
+AC_ARG_WITH(mcpu,     [  --with-mcpu             Use the specified value for the -mcpu flag (default: auto)],[],[with_mcpu=auto])
+dnl AC_ARG_WITH(march,    [  --with-march         Use the specified value for the -march flag (default: none, but see --with-mcpu)],[],[with_march=no])
+if test "${with_march+set}" != set; then
+  with_march=no
+fi
+
+if test no = "$with_march" ; then
+  if test auto = "$with_mcpu" ; then
+    AC_SYS_COMPILER_FLAG(-mcpu=ultrasparc, ultrasparc, OPTIMIZE, [
+      AC_SYS_COMPILER_FLAG(-mcpu=supersparc, supersparc, OPTIMIZE)
+    ])
+  elif test no != "$with_mcpu" ; then
+    AC_SYS_COMPILER_FLAG(-mcpu=$with_mcpu, custom_mcpu, OPTIMIZE, [AC_MSG_ERROR([Please specify a working value for --with-mcpu, or use --with-mcpu=auto])])
+    unset snes9x_cv_option_custom_mcpu
+  fi
+else
+  if test auto != "$with_mcpu" ; then
+    AC_MSG_WARN([--with(out)-mcpu ignored because --with-march specified])
+  fi
+  AC_MSG_WARN([You specified --with-march. I hope you know what you're doing, since])
+  AC_MSG_WARN([*** MISUSING THIS OPTION WILL CAUSE SNES9X TO CRASH! ***])
+  AC_SYS_COMPILER_FLAG(-march=$with_march, custom_march, OPTIMIZE, [AC_MSG_ERROR([Please specify a working value for --with-march, or use --without-march])])
+  unset snes9x_cv_option_custom_march
+fi
+
+AC_SYS_COMPILER_FLAG(-O2, o2, OPTIMIZE, [
+  AC_SYS_COMPILER_FLAG(-O1, o1, OPTIMIZE)
+])
+
+AC_SYS_COMPILER_FLAG(-fomit-frame-pointer, omit_frame_pointer, OPTIMIZE)
+AC_SYS_COMPILER_FLAG(-fno-exceptions, no_exceptions, OPTIMIZE)
+AC_SYS_COMPILER_FLAG(-Wall, Wall, OPTIMIZE)
+AC_SYS_COMPILER_FLAG(-W, W, OPTIMIZE)
+AC_SYS_COMPILER_FLAG(-pedantic, pedantic, OPTIMIZE)
+dnl FIXME: Most of these should be fixed, but several are part of the API.
+AC_SYS_COMPILER_FLAG(-Wno-unused-parameter, Wno_unused_parameter, OPTIMIZE)
+AC_SYS_COMPILER_FLAG(-pipe, pipe, OPTIMIZE)
+AC_SYS_COMPILER_FLAG(-fno-rtti, no_rtti, RTTIFLAG)
+
+dnl AC_ARG_WITH(extra_opt,[  --with(out)-extra-opt     Use extra optimization flags (default: none)],[],[with_extra_opt=no])
+if test "${with_extra_opt+set}" != set; then
+  with_extra_opt=no
+fi
+if test no != "$with_extra_opt" ; then
+  AC_MSG_WARN([You specified --with-extra-opt. I hope you know what you're doing, since])
+  AC_MSG_WARN([*** MISUSING THIS OPTION WILL CAUSE SNES9X TO CRASH! ***])
+  AC_SYS_COMPILER_FLAG($with_extra_opt, custom_opt, OPTIMIZE, [AC_MSG_ERROR([Please specify a working value for --with-extra-opt, or use --without-extra-opt])])
+  unset snes9x_cv_option_custom_opt
+fi
+
+
+ZSNESFX='#ZSNESFX=1'
+ZSNESC4='#ZSNESC4=1'
+ASMCPU='#ASMCPU=1'
+ASMKREED='#ASMKREED=1'
+SDD1_DECOMP='#SDD1_DECOMP=1'
+JMA='#JMA=1'
+SPC700ASM='#SPC700ASM=1'
+I386SPC=''
+CPUINC=''
+DREAMCAST='#DREAMCAST=1'
+
+SYSDEFINES=''
+SYSLIBS=''
+NASM='not_found'
+
+
+dnl Display output
+AC_ARG_WITH(glide,    [  --with(out)-glide       Use 3Dfx glide for output (default: without)],[],[with_glide=no])
+AC_ARG_WITH(opengl,   [  --with(out)-opengl      Use OpenGL for output (default: without)],[],[with_opengl=no])
+AC_ARG_WITH(aido,     [  --with(out)-aido        Use a shared memory area for output (default: without)],[],[with_aido=no])
+GLIDE='#GLIDE=1'
+AIDO='#AIDO=1'
+OPENGL='#OPENGL=1'
+snes9x_info_display=X11
+
+if test yes = "$with_glide" ; then
+  GLIDE='GLIDE=1'
+  snes9x_info_display=Glide
+else
+  if test yes = "$with_opengl" ; then
+    OPENGL='OPENGL=1'
+    snes9x_info_display="OpenGL on X11"
+  else
+    if test yes = "$with_aido" ; then
+      AIDO='AIDO=1'
+      snes9x_info_display="X11 and AIDO"
+    fi
+  fi
+fi
+
+
+
+AC_MSG_CHECKING(if the CPU is IA32)
+AC_CACHE_VAL(snes9x_cv_i386_cpu, [
+  AC_TRY_COMPILE([
+#if (defined (__i386__) || defined (__i486__) ||\
+     defined (__i586__) || defined (__WIN32__) || defined (__DJGPP))
+/* */
+#else
+#error Not i386.
+#endif
+  ], [], snes9x_cv_i386_cpu=yes, snes9x_cv_i386_cpu=no)])
+AC_MSG_RESULT($snes9x_cv_i386_cpu)
+
+AC_MSG_CHECKING(if the OS is Linux)
+AC_CACHE_VAL(snes9x_cv_linux_os, [
+  AC_TRY_COMPILE([
+#ifdef __linux
+/* */
+#else
+#error Not Linux.
+#endif
+  ], [], snes9x_cv_linux_os=yes, snes9x_cv_linux_os=no)])
+AC_MSG_RESULT($snes9x_cv_linux_os)
+
+AC_MSG_CHECKING(if the OS is HP-UX)
+AC_CACHE_VAL(snes9x_cv_hpux_os, [
+  AC_TRY_COMPILE([
+#ifdef __hpux
+/* */
+#else
+#error Not Hpux.
+#endif
+  ], [], snes9x_cv_hpux_os=yes, snes9x_cv_hpux_os=no)])
+AC_MSG_RESULT($snes9x_cv_hpux_os)
+
+AC_MSG_CHECKING(if the OS is MS Windows)
+AC_CACHE_VAL(snes9x_cv_win32_os, [
+  AC_TRY_COMPILE([
+#if defined (__WIN32__)
+/* */
+#else
+#error Not win32.
+#endif
+  ], [], snes9x_cv_win32_os=yes, snes9x_cv_win32_os=no)])
+AC_MSG_RESULT($snes9x_cv_win32_os)
+
+
+dnl Enable assembler optimizations if CPU is x86
+AC_ARG_WITH(assembler,[  --with(out)-assembler   Use assembler cores if available (default: with)],[],[with_assembler=yes])
+
+if test yes = "$with_assembler"; then
+  dnl Set assembler to !nasm on Windows
+  if test yes = "$snes9x_cv_win32_os"; then
+    NASM='rntcl'
+    SNES9X_FEATURE([using asm cores],[no (using rntcl)])
+  else
+    AC_PATH_PROG(prog_nasm, nasm, no)
+    if test "x$ac_cv_path_prog_nasm" = "xno"; then
+      if test yes = "$snes9x_cv_i386_cpu"; then
+        AC_MSG_WARN([No nasm found. Will build without assembler optimizations.])
+        SNES9X_FEATURE([using asm cores],[no (nasm not found)])
+      fi
+    else
+      if test yes = "$snes9x_cv_i386_cpu"; then
+        NASM="$ac_cv_path_prog_nasm"
+      fi
+    fi
+  fi
+fi
+
+if test $NASM != "not_found"; then
+  ZSNESFX='ZSNESFX=1'
+  ZSNESC4='ZSNESC4=1'
+  ASMCPU='ASMCPU=1'
+  ASMKREED='ASMKREED=1'
+#  SPC700ASM='SPC700ASM=1'
+  I386SPC='i386/SPC.O'
+  CPUINC='-Ii386'
+  SNES9X_FEATURE([using asm cores],[yes])
+else
+  SYSDEFINES="$SYSDEFINES"' -DNOASM'
+  if test yes != "$with_assembler"; then
+    SNES9X_FEATURE_WITHOUT([using asm cores])
+  else if test yes != "$snes9x_cv_i386_cpu"; then
+    SNES9X_FEATURE([using asm cores],[no (not available for your CPU)])
+  fi; fi
+fi
+
+dnl Enable joystick support on Linux
+AC_ARG_WITH(joystick, [  --with(out)-joystick    Enable joystick support if available (default: with)],[],[with_joystick=yes])
+
+if test yes = "$snes9x_cv_linux_os" -a yes = "$with_joystick"; then
+   JOYDEFINES=' -DJOYSTICK_SUPPORT'
+else
+   with_joystick="no"
+fi
+
+dnl Enable debugger
+AC_ARG_WITH(debugger, [  --with(out)-debugger    Enable debugger (default: without)],[],[with_debugger=no])
+if test yes = "$with_debugger"; then
+   SYSDEFINES="$SYSDEFINES"' -DDEBUGGER'
+fi
+
+dnl Enable Dreamcast build (FIXME: Make this a more normal cross compile.)
+AC_ARG_WITH(dreamcast,[  --with(out)-dreamcast   Build for Dreamcast (default: without)],[],[with_dreamcast=no])
+if test yes = "$with_dreamcast"; then
+   DREAMCAST='DREAMCAST=1'
+   CPUINC='-Ish'
+fi
+
+dnl Enable SDD1 decompression if requested
+AC_ARG_WITH(sdd1-decomp,[  --with(out)-sdd1-decomp Use SDD1 decompression (default: with)],[],[with_sdd1_decomp=yes])
+if test yes = "$with_sdd1_decomp"; then
+   SDD1_DECOMP='SDD1_DECOMP=1'
+fi
+
+dnl Enable debugger
+AC_ARG_WITH(jmadecomp, [  --with(out)-jma    Enable JMA archive decompression (default: without)],[],[with_jmadecomp=no])
+if test yes = "$with_jmadecomp"; then
+   JMA='JMA=1'
+fi
+
+dnl Enable maxcount hack
+AC_ARG_WITH(maxcount, [  --with(out)-maxcount    Enable maxcount debugger (default: without)],[],[with_maxcount=no])
+if test yes = "$with_maxcount"; then
+   SYSDEFINES="$SYSDEFINES"' -DDEBUG_MAXCOUNT'
+fi
+
+dnl Enable maxcount hack
+dnl FIXME: There is a third case (OLD) that is missed with this.
+AC_ARG_WITH(newblend, [  --with(out)-newblend    New colour blender (default: without)],[],[with_newblend=no])
+if test yes = "$with_newblend"; then
+   SYSDEFINES="$SYSDEFINES"' -DNEW_COLOUR_BLENDING'
+else
+   #OLD_COLOUR_BLENDING hasn't been default for a while
+   # SYSDEFINES="$SYSDEFINES"' -DOLD_COLOUR_BLENDING'
+   :
+fi
+
+
+dnl FIXME: Refuse to compile with compromisable zlib? (setuid DGA...)
+dnl FIXME: $snes9x_cv_sys_os needs to be set
+AC_ARG_WITH(zlib,     [  --with(out)-zlib        Support gzip decompression],[],[with_zlib=yes])
+define([AC_CHECK_GZ],
+[
+  done=no
+  AC_MSG_CHECKING(working lib$1)
+  AC_CACHE_VAL(snes9x_cv_working_$1,[
+    OLDLIBS="${LIBS-}"
+    LIBS="${LIBS-} -l$1"
+    AC_TRY_RUN([
+`cat $srcdir/unix/gz_test.c`
+    ],snes9x_cv_working_$1=yes,snes9x_cv_working_$1=no,
+      AC_TRY_LINK([
+`cat $srcdir/unix/gz_test.c`
+#define main notmain
+      ],[],snes9x_cv_working_$1=yes,snes9x_cv_working_$1=no)
+    )
+  ])
+  LIBS="$OLDLIBS"
+
+  if test "x$snes9x_cv_working_$1" = xyes; then
+    SNES9X_FEATURE(Gz,[yes (lib$1)])
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_LIBZ)
+    LIBS="${LIBS-} -l$1"
+    done=yes
+  else
+    AC_MSG_RESULT(no)
+  fi
+
+  if test $done = no; then
+    $2
+    :
+  fi
+])
+
+if test x$with_zlib = xyes ; then
+  SNES9X_FEATURE_NODEP(Gz)
+  AC_CHECK_HEADERS(zlib.h)
+  if test $ac_cv_header_zlib_h = yes ; then
+    AC_MSG_CHECKING([if zlib.h is new enough])
+    AC_TRY_LINK([
+#include <zlib.h>
+    ],[
+int foo = (int)(Z_NO_COMPRESSION | Z_VERSION_ERROR);
+    ],[ AC_MSG_RESULT(yes) ],[ AC_MSG_RESULT(no); ac_cv_header_zlib_h=no ])
+
+    SNES9X_FEATURE(Gz,[no (zlib is too old)])
+    if test $ac_cv_header_zlib_h = yes ; then
+      if test x$snes9x_cv_sys_os = xIRIX ; then
+        # The libz.so supplied with IRIX 6.3 needs these obscure symbols
+        # C++? It also differs which library which contains them.
+        AC_CHECK_LIB(Csup, __vtbl__9type_info)
+	if test "$ac_cv_lib_Csup___vtbl__9type_info" = "yes" ; then :; else
+          AC_CHECK_LIB(C, __vtbl__9type_info)
+	fi
+	AC_CHECK_LIB(Csup, __T_9__nothrow)
+	AC_HAVE_FUNCS(__vtbl__9type_info)
+	AC_HAVE_FUNCS(__T_9__nothrow)
+      fi
+
+dnl FIXME: Fails since $ac_ext gets set to "cc" and that invoces gcc C++ mode
+#      AC_CHECK_GZ(z,[AC_CHECK_GZ(gz,[ ac_cv_lib_z_main=no ] ) ])
+      AC_CHECK_LIB(z, gzread, [
+        SYSDEFINES="$SYSDEFINES"' -DZLIB'
+        SYSLIBS="$SYSLIBS -lz"
+        SNES9X_FEATURE(Gz,[yes])
+      ], [
+        SNES9X_FEATURE(Gz,[no])
+      ])
+
+    fi
+  fi
+fi
+
+
+dnl Enable PNG support for screenshots
+AC_ARG_WITH(png,      [  --with(out)-screenshot  Screenshot support through libpng if available (default: with)],[],[with_screenshot=yes])
+
+if test yes = "$with_screenshot"; then
+  AC_CHECK_LIB(png, png_jmpbuf, [
+    SYSDEFINES="$SYSDEFINES"' -DHAVE_LIBPNG'
+    SYSLIBS="$SYSLIBS -lpng"
+  ], , -lz -lm)
+fi
+
+
+
+dnl Check for functions
+AC_CHECK_FUNC(mkstemp, [
+  SYSDEFINES="$SYSDEFINES"' -DHAVE_MKSTEMP'
+])
+
+
+dnl Locate X include
+
+AC_PATH_X
+if test xyes = x$no_x ; then
+  dnl Maybe AC_MSG_ERROR?
+  AC_MSG_WARN([X is normally required to build on Unix.])
+else
+  X_LDFLAGS="-L$x_libraries"
+  X_LIBS="-lX11 -lXext"
+  LIBS="$LIBS $X_LIBS"
+  SYSLIBS="$SYSLIBS $X_LDFLAGS $X_LIBS"
+fi
+dnl NOTE: PATH_X doesn't set up the include path if it's in the system path
+if test x$x_includes != x ; then
+  X_INCLUDES="-I$x_includes"
+fi
+AC_ADD_XFLAGS
+
+
+dnl See if X has the DGA and vidmode extensions.
+AC_ARG_WITH(extensions,[  --with(out)-extensions  Use DGA- and vidmode-extensions for X11 if avilable (default: with)],[],[with_extensions=yes])
+
+if test yes = $with_extensions ; then
+  AC_CHECK_LIB(Xxf86dga, XF86DGAQueryExtension, [
+    AC_CHECK_LIB(Xxf86vm, XF86VidModeQueryVersion, [
+      SYSDEFINES="$SYSDEFINES"' -DUSE_DGA_EXTENSION -DUSE_VIDMODE_EXTENSION'
+      SYSLIBS="$SYSLIBS"' -lXxf86dga -lXxf86vm'
+      SNES9X_FEATURE([DGA, vidmode],[yes])
+    ],[ SNES9X_FEATURE([DGA, vidmode],[no (No vidmode extension)]) ])
+  ],[ SNES9X_FEATURE([DGA, vidmode],[no (No DGA extension)]) ])
+else
+  SNES9X_FEATURE_WITHOUT([DGA, vidmode])
+fi
+
+
+dnl Search for GNU make
+
+dnl AC_MSG_CHECKING(for GNU make)
+
+dnl snes9x_cv_gnu_make_command=no
+dnl for x in "${MAKE:-make}" make gmake gnumake ; do
+dnl   if [ "`$x --version 2> /dev/null | grep -c GNU`" != "0" ] ; then
+dnl     snes9x_cv_gnu_make_command=$x ;
+dnl     break ;
+dnl   fi
+dnl done
+dnl AC_MSG_RESULT($snes9x_cv_gnu_make_command)
+dnl if test "x$snes9x_cv_gnu_make_command" = xno ; then
+dnl   AC_MSG_WARN([
+dnl Snes9X must have GNU make to compile. Please get on from the nearest 
+dnl GNU mirror.
+dnl ])
+dnl fi
+
+
+dnl Check for headers
+
+AC_CHECK_HEADER(strings.h, [
+  SYSDEFINES="$SYSDEFINES"' -DHAVE_STRINGS_H'
+])
+
+AC_CHECK_HEADER(sys/ioctl.h, [
+  SYSDEFINES="$SYSDEFINES"' -DHAVE_SYS_IOCTL_H'
+])
+
+AC_CHECK_HEADERS(unistd.h sys/socket.h winsock.h winsock2.h WS2tcpip.h)
+
+
+dnl Check accept. Thoughly.
+
+AC_MSG_CHECKING(for the type of the last argument to accept)
+AC_CACHE_VAL(snes9x_cv_accept_size_t, [
+  for t in socklen_t size_t int; do
+    AC_TRY_COMPILE([
+#ifndef _LARGEFILE_SOURCE
+#  define _FILE_OFFSET_BITS 64
+#  define _LARGEFILE_SOURCE
+#  define _LARGEFILE64_SOURCE 1
+#endif
+/* HPUX needs these too... */
+#ifndef __STDC_EXT__
+#  define __STDC_EXT__
+#endif /* !__STDC_EXT__ */
+
+#include <sys/types.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+/* NT */
+#ifdef HAVE_WINSOCK2_H
+#include <WinSock2.h>
+#ifdef HAVE_WS2TCPIP_H
+/* Needed for IPv6 support. */
+#include <WS2tcpip.h>
+#endif
+#elif defined(HAVE_WINSOCK_H)
+#include <winsock.h>
+#endif
+
+/* Here is the actual test: */
+int accept(int, struct sockaddr *, $t *);
+    ], [
+      /* EMPTY */
+    ], [
+      snes9x_cv_accept_size_t=$t
+      break
+    ], [
+      AC_TRY_COMPILE([
+#ifndef _LARGEFILE_SOURCE
+#  define _FILE_OFFSET_BITS 64
+#  define _LARGEFILE_SOURCE
+#  define _LARGEFILE64_SOURCE 1
+#endif
+/* HPUX needs these too... */
+#ifndef __STDC_EXT__
+#  define __STDC_EXT__
+#endif /* !__STDC_EXT__ */
+
+#include <sys/types.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+/* NT */
+#ifdef HAVE_WINSOCK2_H
+#include <WinSock2.h>
+#ifdef HAVE_WS2TCPIP_H
+/* Needed for IPv6 support. */
+#include <WS2tcpip.h>
+#endif
+#elif defined(HAVE_WINSOCK_H)
+#include <winsock.h>
+#endif
+
+/* Here is the actual test: */
+SOCKET accept(SOCKET, struct sockaddr *, $t *);
+      ], [
+        /* EMPTY */
+      ], [
+	snes9x_cv_accept_size_t=$t
+	break
+      ], [])
+    ])
+  done
+  if test "x$snes9x_cv_accept_size_t" = "x"; then
+    # Check if it could be a Psocklen_t
+    # Psocklen_t is a stupid typedef of socklen_t *.
+    AC_TRY_COMPILE([
+#ifndef _LARGEFILE_SOURCE
+#  define _FILE_OFFSET_BITS 64
+#  define _LARGEFILE_SOURCE
+#  define _LARGEFILE64_SOURCE 1
+#endif
+/* HPUX needs these too... */
+#ifndef __STDC_EXT__
+#  define __STDC_EXT__
+#endif /* !__STDC_EXT__ */
+
+#include <sys/types.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+/* NT */
+#ifdef HAVE_WINSOCK2_H
+#include <WinSock2.h>
+#ifdef HAVE_WS2TCPIP_H
+/* Needed for IPv6 support. */
+#include <WS2tcpip.h>
+#endif
+#elif defined(HAVE_WINSOCK_H)
+#include <winsock.h>
+#endif
+
+/* Here is the actual test: */
+int accept(int, struct sockaddr *, Psocklen_t);
+    ], [
+      /* EMPTY */
+    ], [
+      snes9x_cv_accept_size_t=socklen_t
+    ], [
+      # FIXME: Should probably have a warning here.
+      # FIXME: Should we check if socklen_t exists, and use that?
+      snes9x_cv_accept_size_t=int
+    ])
+  fi
+])
+AC_MSG_RESULT($snes9x_cv_accept_size_t *)
+AC_DEFINE_UNQUOTED(ACCEPT_SIZE_T, $snes9x_cv_accept_size_t)
+SYSDEFINES="$SYSDEFINES ""'"-DACCEPT_SIZE_T=$snes9x_cv_accept_size_t"'"
+
+dnl heavy socket testing ends here...
+
+
+dnl HP-UX needs this to get sane declarations of some Unix98 interfaces.
+
+AC_MSG_CHECKING(if _XOPEN_SOURCE_EXTENDED is defined)
+AC_CACHE_VAL(snes9x_cv_xopen_source_extended, [
+AC_TRY_COMPILE([
+#ifdef _XOPEN_SOURCE_EXTENDED
+/* */
+#else
+#error _XOPEN_SOURCE_EXTENDED not defined.
+#endif
+  ], [], snes9x_cv_xopen_source_extended=yes, snes9x_cv_xopen_source_extended=no)])
+AC_MSG_RESULT($snes9x_cv_xopen_source_extended)
+
+if test no = $snes9x_cv_xopen_source_extended -a \
+        yes = $snes9x_cv_hpux_os ; then
+SYSDEFINES="$SYSDEFINES"' -D_XOPEN_SOURCE_EXTENDED'
+AC_MSG_RESULT([Defining _XOPEN_SOURCE_EXTENDED since HP-UX needs it.])
+fi
+
+
+dnl Check for posix threads, will be overridden if no sound is found
+dnl FIXME: This is very very basic. A lot of systems can be coaxed to
+dnl        cough up pthreads.
+THREAD_SOUND='#THREAD_SOUND=1'
+AC_CHECK_HEADER(pthread.h, [ 
+  THREAD_SOUND='THREAD_SOUND=1' 
+])
+
+dnl Check if we have sound code for this platform
+AC_ARG_WITH(sound,    [  --with(out)-sound       Enable sound if available (default: with)],[],[with_sound=yes])
+
+if test yes = "$with_sound" ; then
+  AC_MSG_CHECKING(if sound is supported on this platform)
+  AC_CACHE_VAL(snes9x_cv_sound, [
+  AC_TRY_COMPILE([
+#if defined(__linux) || defined(__sun) || defined(__sgi)
+/* */
+#else
+#error No sound for this platform
+#endif
+  ], [], snes9x_cv_sound=yes, snes9x_cv_sound=no)])
+  AC_MSG_RESULT($snes9x_cv_sound)
+else
+  snes9x_cv_sound=no
+fi
+
+if test no = $snes9x_cv_sound ; then
+  SYSDEFINES="$SYSDEFINES"' -DNOSOUND'
+  THREAD_SOUND='#THREAD_SOUND=1'
+fi
+
+
+dnl Checks for libraries.
+AC_CHECK_LIB(nsl, gethostbyname)
+AC_CHECK_LIB(socket, socket)
+SYSLIBS="$SYSLIBS $LIBS"
+
+	
+BASEDIR=`(cd $srcdir/.. ; pwd)`
+BUILDDIR=`pwd`
+
+touch dependencies
+
+AC_SUBST(OPTIMIZE)
+AC_SUBST(RTTIFLAG)
+AC_SUBST(ZSNESFX)
+AC_SUBST(ZSNESC4)
+AC_SUBST(ASMCPU)
+AC_SUBST(ASMKREED)
+AC_SUBST(SDD1_DECOMP)
+AC_SUBST(SPC700ASM)
+AC_SUBST(I386SPC)
+AC_SUBST(THREAD_SOUND)
+AC_SUBST(SYSLIBS)
+AC_SUBST(CPUINC)
+AC_SUBST(SYSDEFINES)
+AC_SUBST(JOYDEFINES)
+AC_SUBST(X_INCLUDES)
+AC_SUBST(BUILDDIR)
+AC_SUBST(NASM)
+AC_SUBST(GLIDE)
+AC_SUBST(OPENGL)
+AC_SUBST(AIDO)
+AC_SUBST(DREAMCAST)
+AC_SUBST(JMA)
+
+rm config.info 2>/dev/null
+
+cat >config.info <<EOF
+
+build information:
+cc................ $CC
+cxx............... $CXX
+options........... $OPTIMIZE
+libs.............. $SYSLIBS
+defines........... $SYSDEFINES
+
+features:
+PAD_FEATURE([new colour blender])$with_newblend
+PAD_FEATURE([sound support])$snes9x_cv_sound
+PAD_FEATURE([display system])$snes9x_info_display
+PAD_FEATURE([joystick support])$with_joystick
+PAD_FEATURE([SDD1 decompression])$with_sdd1_decomp
+PAD_FEATURE([JMA decompression])$with_jmadecomp
+PAD_FEATURE([debugger])$with_debugger
+`cat snes9x_*.feature`
+
+EOF
+
+
+cat config.info
+
+
+AC_OUTPUT(Makefile)

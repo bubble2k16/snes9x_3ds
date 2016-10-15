@@ -1,0 +1,5118 @@
+#! /bin/sh
+
+# From configure.in Id: configure.in
+# Guess values for system-dependent variables and create Makefiles.
+# Generated automatically using autoconf version 2.13 
+# Copyright (C) 1992, 93, 94, 95, 96 Free Software Foundation, Inc.
+#
+# This configure script is free software; the Free Software Foundation
+# gives unlimited permission to copy, distribute and modify it.
+
+# Defaults:
+ac_help=
+ac_default_prefix=/usr/local
+# Any additions from configure.in:
+ac_help="$ac_help
+  --with(out)-debug       Leave debug information in the final binary (default: without)"
+ac_help="$ac_help
+  --with-mcpu             Use the specified value for the -mcpu flag (default: auto)"
+ac_help="$ac_help
+  --with(out)-glide       Use 3Dfx glide for output (default: without)"
+ac_help="$ac_help
+  --with(out)-opengl      Use OpenGL for output (default: without)"
+ac_help="$ac_help
+  --with(out)-aido        Use a shared memory area for output (default: without)"
+ac_help="$ac_help
+  --with(out)-assembler   Use assembler cores if available (default: with)"
+ac_help="$ac_help
+  --with(out)-joystick    Enable joystick support if available (default: with)"
+ac_help="$ac_help
+  --with(out)-debugger    Enable debugger (default: without)"
+ac_help="$ac_help
+  --with(out)-dreamcast   Build for Dreamcast (default: without)"
+ac_help="$ac_help
+  --with(out)-sdd1-decomp Use SDD1 decompression (default: with)"
+ac_help="$ac_help
+  --with(out)-jma    Enable JMA archive decompression (default: without)"
+ac_help="$ac_help
+  --with(out)-maxcount    Enable maxcount debugger (default: without)"
+ac_help="$ac_help
+  --with(out)-newblend    New colour blender (default: without)"
+ac_help="$ac_help
+  --with(out)-zlib        Support gzip decompression"
+ac_help="$ac_help
+  --with(out)-screenshot  Screenshot support through libpng if available (default: with)"
+ac_help="$ac_help
+  --with-x                use the X Window System"
+ac_help="$ac_help
+  --with(out)-extensions  Use DGA- and vidmode-extensions for X11 if avilable (default: with)"
+ac_help="$ac_help
+  --with(out)-sound       Enable sound if available (default: with)"
+
+# Initialize some variables set by options.
+# The variables have the same names as the options, with
+# dashes changed to underlines.
+build=NONE
+cache_file=./config.cache
+exec_prefix=NONE
+host=NONE
+no_create=
+nonopt=NONE
+no_recursion=
+prefix=NONE
+program_prefix=NONE
+program_suffix=NONE
+program_transform_name=s,x,x,
+silent=
+site=
+srcdir=
+target=NONE
+verbose=
+x_includes=NONE
+x_libraries=NONE
+bindir='${exec_prefix}/bin'
+sbindir='${exec_prefix}/sbin'
+libexecdir='${exec_prefix}/libexec'
+datadir='${prefix}/share'
+sysconfdir='${prefix}/etc'
+sharedstatedir='${prefix}/com'
+localstatedir='${prefix}/var'
+libdir='${exec_prefix}/lib'
+includedir='${prefix}/include'
+oldincludedir='/usr/include'
+infodir='${prefix}/info'
+mandir='${prefix}/man'
+
+# Initialize some other variables.
+subdirs=
+MFLAGS= MAKEFLAGS=
+SHELL=${CONFIG_SHELL-/bin/sh}
+# Maximum number of lines to put in a shell here document.
+ac_max_here_lines=12
+
+ac_prev=
+for ac_option
+do
+
+  # If the previous option needs an argument, assign it.
+  if test -n "$ac_prev"; then
+    eval "$ac_prev=\$ac_option"
+    ac_prev=
+    continue
+  fi
+
+  case "$ac_option" in
+  -*=*) ac_optarg=`echo "$ac_option" | sed 's/[-_a-zA-Z0-9]*=//'` ;;
+  *) ac_optarg= ;;
+  esac
+
+  # Accept the important Cygnus configure options, so we can diagnose typos.
+
+  case "$ac_option" in
+
+  -bindir | --bindir | --bindi | --bind | --bin | --bi)
+    ac_prev=bindir ;;
+  -bindir=* | --bindir=* | --bindi=* | --bind=* | --bin=* | --bi=*)
+    bindir="$ac_optarg" ;;
+
+  -build | --build | --buil | --bui | --bu)
+    ac_prev=build ;;
+  -build=* | --build=* | --buil=* | --bui=* | --bu=*)
+    build="$ac_optarg" ;;
+
+  -cache-file | --cache-file | --cache-fil | --cache-fi \
+  | --cache-f | --cache- | --cache | --cach | --cac | --ca | --c)
+    ac_prev=cache_file ;;
+  -cache-file=* | --cache-file=* | --cache-fil=* | --cache-fi=* \
+  | --cache-f=* | --cache-=* | --cache=* | --cach=* | --cac=* | --ca=* | --c=*)
+    cache_file="$ac_optarg" ;;
+
+  -datadir | --datadir | --datadi | --datad | --data | --dat | --da)
+    ac_prev=datadir ;;
+  -datadir=* | --datadir=* | --datadi=* | --datad=* | --data=* | --dat=* \
+  | --da=*)
+    datadir="$ac_optarg" ;;
+
+  -disable-* | --disable-*)
+    ac_feature=`echo $ac_option|sed -e 's/-*disable-//'`
+    # Reject names that are not valid shell variable names.
+    if test -n "`echo $ac_feature| sed 's/[-a-zA-Z0-9_]//g'`"; then
+      { echo "configure: error: $ac_feature: invalid feature name" 1>&2; exit 1; }
+    fi
+    ac_feature=`echo $ac_feature| sed 's/-/_/g'`
+    eval "enable_${ac_feature}=no" ;;
+
+  -enable-* | --enable-*)
+    ac_feature=`echo $ac_option|sed -e 's/-*enable-//' -e 's/=.*//'`
+    # Reject names that are not valid shell variable names.
+    if test -n "`echo $ac_feature| sed 's/[-_a-zA-Z0-9]//g'`"; then
+      { echo "configure: error: $ac_feature: invalid feature name" 1>&2; exit 1; }
+    fi
+    ac_feature=`echo $ac_feature| sed 's/-/_/g'`
+    case "$ac_option" in
+      *=*) ;;
+      *) ac_optarg=yes ;;
+    esac
+    eval "enable_${ac_feature}='$ac_optarg'" ;;
+
+  -exec-prefix | --exec_prefix | --exec-prefix | --exec-prefi \
+  | --exec-pref | --exec-pre | --exec-pr | --exec-p | --exec- \
+  | --exec | --exe | --ex)
+    ac_prev=exec_prefix ;;
+  -exec-prefix=* | --exec_prefix=* | --exec-prefix=* | --exec-prefi=* \
+  | --exec-pref=* | --exec-pre=* | --exec-pr=* | --exec-p=* | --exec-=* \
+  | --exec=* | --exe=* | --ex=*)
+    exec_prefix="$ac_optarg" ;;
+
+  -gas | --gas | --ga | --g)
+    # Obsolete; use --with-gas.
+    with_gas=yes ;;
+
+  -help | --help | --hel | --he)
+    # Omit some internal or obsolete options to make the list less imposing.
+    # This message is too long to be a string in the A/UX 3.1 sh.
+    cat << EOF
+Usage: configure [options] [host]
+Options: [defaults in brackets after descriptions]
+Configuration:
+  --cache-file=FILE       cache test results in FILE
+  --help                  print this message
+  --no-create             do not create output files
+  --quiet, --silent       do not print \`checking...' messages
+  --version               print the version of autoconf that created configure
+Directory and file names:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [$ac_default_prefix]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [same as prefix]
+  --bindir=DIR            user executables in DIR [EPREFIX/bin]
+  --sbindir=DIR           system admin executables in DIR [EPREFIX/sbin]
+  --libexecdir=DIR        program executables in DIR [EPREFIX/libexec]
+  --datadir=DIR           read-only architecture-independent data in DIR
+                          [PREFIX/share]
+  --sysconfdir=DIR        read-only single-machine data in DIR [PREFIX/etc]
+  --sharedstatedir=DIR    modifiable architecture-independent data in DIR
+                          [PREFIX/com]
+  --localstatedir=DIR     modifiable single-machine data in DIR [PREFIX/var]
+  --libdir=DIR            object code libraries in DIR [EPREFIX/lib]
+  --includedir=DIR        C header files in DIR [PREFIX/include]
+  --oldincludedir=DIR     C header files for non-gcc in DIR [/usr/include]
+  --infodir=DIR           info documentation in DIR [PREFIX/info]
+  --mandir=DIR            man documentation in DIR [PREFIX/man]
+  --srcdir=DIR            find the sources in DIR [configure dir or ..]
+  --program-prefix=PREFIX prepend PREFIX to installed program names
+  --program-suffix=SUFFIX append SUFFIX to installed program names
+  --program-transform-name=PROGRAM
+                          run sed PROGRAM on installed program names
+EOF
+    cat << EOF
+Host type:
+  --build=BUILD           configure for building on BUILD [BUILD=HOST]
+  --host=HOST             configure for HOST [guessed]
+  --target=TARGET         configure for TARGET [TARGET=HOST]
+Features and packages:
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --x-includes=DIR        X include files are in DIR
+  --x-libraries=DIR       X library files are in DIR
+EOF
+    if test -n "$ac_help"; then
+      echo "--enable and --with options recognized:$ac_help"
+    fi
+    exit 0 ;;
+
+  -host | --host | --hos | --ho)
+    ac_prev=host ;;
+  -host=* | --host=* | --hos=* | --ho=*)
+    host="$ac_optarg" ;;
+
+  -includedir | --includedir | --includedi | --included | --include \
+  | --includ | --inclu | --incl | --inc)
+    ac_prev=includedir ;;
+  -includedir=* | --includedir=* | --includedi=* | --included=* | --include=* \
+  | --includ=* | --inclu=* | --incl=* | --inc=*)
+    includedir="$ac_optarg" ;;
+
+  -infodir | --infodir | --infodi | --infod | --info | --inf)
+    ac_prev=infodir ;;
+  -infodir=* | --infodir=* | --infodi=* | --infod=* | --info=* | --inf=*)
+    infodir="$ac_optarg" ;;
+
+  -libdir | --libdir | --libdi | --libd)
+    ac_prev=libdir ;;
+  -libdir=* | --libdir=* | --libdi=* | --libd=*)
+    libdir="$ac_optarg" ;;
+
+  -libexecdir | --libexecdir | --libexecdi | --libexecd | --libexec \
+  | --libexe | --libex | --libe)
+    ac_prev=libexecdir ;;
+  -libexecdir=* | --libexecdir=* | --libexecdi=* | --libexecd=* | --libexec=* \
+  | --libexe=* | --libex=* | --libe=*)
+    libexecdir="$ac_optarg" ;;
+
+  -localstatedir | --localstatedir | --localstatedi | --localstated \
+  | --localstate | --localstat | --localsta | --localst \
+  | --locals | --local | --loca | --loc | --lo)
+    ac_prev=localstatedir ;;
+  -localstatedir=* | --localstatedir=* | --localstatedi=* | --localstated=* \
+  | --localstate=* | --localstat=* | --localsta=* | --localst=* \
+  | --locals=* | --local=* | --loca=* | --loc=* | --lo=*)
+    localstatedir="$ac_optarg" ;;
+
+  -mandir | --mandir | --mandi | --mand | --man | --ma | --m)
+    ac_prev=mandir ;;
+  -mandir=* | --mandir=* | --mandi=* | --mand=* | --man=* | --ma=* | --m=*)
+    mandir="$ac_optarg" ;;
+
+  -nfp | --nfp | --nf)
+    # Obsolete; use --without-fp.
+    with_fp=no ;;
+
+  -no-create | --no-create | --no-creat | --no-crea | --no-cre \
+  | --no-cr | --no-c)
+    no_create=yes ;;
+
+  -no-recursion | --no-recursion | --no-recursio | --no-recursi \
+  | --no-recurs | --no-recur | --no-recu | --no-rec | --no-re | --no-r)
+    no_recursion=yes ;;
+
+  -oldincludedir | --oldincludedir | --oldincludedi | --oldincluded \
+  | --oldinclude | --oldinclud | --oldinclu | --oldincl | --oldinc \
+  | --oldin | --oldi | --old | --ol | --o)
+    ac_prev=oldincludedir ;;
+  -oldincludedir=* | --oldincludedir=* | --oldincludedi=* | --oldincluded=* \
+  | --oldinclude=* | --oldinclud=* | --oldinclu=* | --oldincl=* | --oldinc=* \
+  | --oldin=* | --oldi=* | --old=* | --ol=* | --o=*)
+    oldincludedir="$ac_optarg" ;;
+
+  -prefix | --prefix | --prefi | --pref | --pre | --pr | --p)
+    ac_prev=prefix ;;
+  -prefix=* | --prefix=* | --prefi=* | --pref=* | --pre=* | --pr=* | --p=*)
+    prefix="$ac_optarg" ;;
+
+  -program-prefix | --program-prefix | --program-prefi | --program-pref \
+  | --program-pre | --program-pr | --program-p)
+    ac_prev=program_prefix ;;
+  -program-prefix=* | --program-prefix=* | --program-prefi=* \
+  | --program-pref=* | --program-pre=* | --program-pr=* | --program-p=*)
+    program_prefix="$ac_optarg" ;;
+
+  -program-suffix | --program-suffix | --program-suffi | --program-suff \
+  | --program-suf | --program-su | --program-s)
+    ac_prev=program_suffix ;;
+  -program-suffix=* | --program-suffix=* | --program-suffi=* \
+  | --program-suff=* | --program-suf=* | --program-su=* | --program-s=*)
+    program_suffix="$ac_optarg" ;;
+
+  -program-transform-name | --program-transform-name \
+  | --program-transform-nam | --program-transform-na \
+  | --program-transform-n | --program-transform- \
+  | --program-transform | --program-transfor \
+  | --program-transfo | --program-transf \
+  | --program-trans | --program-tran \
+  | --progr-tra | --program-tr | --program-t)
+    ac_prev=program_transform_name ;;
+  -program-transform-name=* | --program-transform-name=* \
+  | --program-transform-nam=* | --program-transform-na=* \
+  | --program-transform-n=* | --program-transform-=* \
+  | --program-transform=* | --program-transfor=* \
+  | --program-transfo=* | --program-transf=* \
+  | --program-trans=* | --program-tran=* \
+  | --progr-tra=* | --program-tr=* | --program-t=*)
+    program_transform_name="$ac_optarg" ;;
+
+  -q | -quiet | --quiet | --quie | --qui | --qu | --q \
+  | -silent | --silent | --silen | --sile | --sil)
+    silent=yes ;;
+
+  -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
+    ac_prev=sbindir ;;
+  -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
+  | --sbi=* | --sb=*)
+    sbindir="$ac_optarg" ;;
+
+  -sharedstatedir | --sharedstatedir | --sharedstatedi \
+  | --sharedstated | --sharedstate | --sharedstat | --sharedsta \
+  | --sharedst | --shareds | --shared | --share | --shar \
+  | --sha | --sh)
+    ac_prev=sharedstatedir ;;
+  -sharedstatedir=* | --sharedstatedir=* | --sharedstatedi=* \
+  | --sharedstated=* | --sharedstate=* | --sharedstat=* | --sharedsta=* \
+  | --sharedst=* | --shareds=* | --shared=* | --share=* | --shar=* \
+  | --sha=* | --sh=*)
+    sharedstatedir="$ac_optarg" ;;
+
+  -site | --site | --sit)
+    ac_prev=site ;;
+  -site=* | --site=* | --sit=*)
+    site="$ac_optarg" ;;
+
+  -srcdir | --srcdir | --srcdi | --srcd | --src | --sr)
+    ac_prev=srcdir ;;
+  -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=*)
+    srcdir="$ac_optarg" ;;
+
+  -sysconfdir | --sysconfdir | --sysconfdi | --sysconfd | --sysconf \
+  | --syscon | --sysco | --sysc | --sys | --sy)
+    ac_prev=sysconfdir ;;
+  -sysconfdir=* | --sysconfdir=* | --sysconfdi=* | --sysconfd=* | --sysconf=* \
+  | --syscon=* | --sysco=* | --sysc=* | --sys=* | --sy=*)
+    sysconfdir="$ac_optarg" ;;
+
+  -target | --target | --targe | --targ | --tar | --ta | --t)
+    ac_prev=target ;;
+  -target=* | --target=* | --targe=* | --targ=* | --tar=* | --ta=* | --t=*)
+    target="$ac_optarg" ;;
+
+  -v | -verbose | --verbose | --verbos | --verbo | --verb)
+    verbose=yes ;;
+
+  -version | --version | --versio | --versi | --vers)
+    echo "configure generated by autoconf version 2.13"
+    exit 0 ;;
+
+  -with-* | --with-*)
+    ac_package=`echo $ac_option|sed -e 's/-*with-//' -e 's/=.*//'`
+    # Reject names that are not valid shell variable names.
+    if test -n "`echo $ac_package| sed 's/[-_a-zA-Z0-9]//g'`"; then
+      { echo "configure: error: $ac_package: invalid package name" 1>&2; exit 1; }
+    fi
+    ac_package=`echo $ac_package| sed 's/-/_/g'`
+    case "$ac_option" in
+      *=*) ;;
+      *) ac_optarg=yes ;;
+    esac
+    eval "with_${ac_package}='$ac_optarg'" ;;
+
+  -without-* | --without-*)
+    ac_package=`echo $ac_option|sed -e 's/-*without-//'`
+    # Reject names that are not valid shell variable names.
+    if test -n "`echo $ac_package| sed 's/[-a-zA-Z0-9_]//g'`"; then
+      { echo "configure: error: $ac_package: invalid package name" 1>&2; exit 1; }
+    fi
+    ac_package=`echo $ac_package| sed 's/-/_/g'`
+    eval "with_${ac_package}=no" ;;
+
+  --x)
+    # Obsolete; use --with-x.
+    with_x=yes ;;
+
+  -x-includes | --x-includes | --x-include | --x-includ | --x-inclu \
+  | --x-incl | --x-inc | --x-in | --x-i)
+    ac_prev=x_includes ;;
+  -x-includes=* | --x-includes=* | --x-include=* | --x-includ=* | --x-inclu=* \
+  | --x-incl=* | --x-inc=* | --x-in=* | --x-i=*)
+    x_includes="$ac_optarg" ;;
+
+  -x-libraries | --x-libraries | --x-librarie | --x-librari \
+  | --x-librar | --x-libra | --x-libr | --x-lib | --x-li | --x-l)
+    ac_prev=x_libraries ;;
+  -x-libraries=* | --x-libraries=* | --x-librarie=* | --x-librari=* \
+  | --x-librar=* | --x-libra=* | --x-libr=* | --x-lib=* | --x-li=* | --x-l=*)
+    x_libraries="$ac_optarg" ;;
+
+  -*) { echo "configure: error: $ac_option: invalid option; use --help to show usage" 1>&2; exit 1; }
+    ;;
+
+  *)
+    if test -n "`echo $ac_option| sed 's/[-a-z0-9.]//g'`"; then
+      echo "configure: warning: $ac_option: invalid host type" 1>&2
+    fi
+    if test "x$nonopt" != xNONE; then
+      { echo "configure: error: can only configure for one host and one target at a time" 1>&2; exit 1; }
+    fi
+    nonopt="$ac_option"
+    ;;
+
+  esac
+done
+
+if test -n "$ac_prev"; then
+  { echo "configure: error: missing argument to --`echo $ac_prev | sed 's/_/-/g'`" 1>&2; exit 1; }
+fi
+
+trap 'rm -fr conftest* confdefs* core core.* *.core $ac_clean_files; exit 1' 1 2 15
+
+# File descriptor usage:
+# 0 standard input
+# 1 file creation
+# 2 errors and warnings
+# 3 some systems may open it to /dev/tty
+# 4 used on the Kubota Titan
+# 6 checking for... messages and results
+# 5 compiler messages saved in config.log
+if test "$silent" = yes; then
+  exec 6>/dev/null
+else
+  exec 6>&1
+fi
+exec 5>./config.log
+
+echo "\
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+" 1>&5
+
+# Strip out --no-create and --no-recursion so they do not pile up.
+# Also quote any args containing shell metacharacters.
+ac_configure_args=
+for ac_arg
+do
+  case "$ac_arg" in
+  -no-create | --no-create | --no-creat | --no-crea | --no-cre \
+  | --no-cr | --no-c) ;;
+  -no-recursion | --no-recursion | --no-recursio | --no-recursi \
+  | --no-recurs | --no-recur | --no-recu | --no-rec | --no-re | --no-r) ;;
+  *" "*|*"	"*|*[\[\]\~\#\$\^\&\*\(\)\{\}\\\|\;\<\>\?]*)
+  ac_configure_args="$ac_configure_args '$ac_arg'" ;;
+  *) ac_configure_args="$ac_configure_args $ac_arg" ;;
+  esac
+done
+
+# NLS nuisances.
+# Only set these to C if already set.  These must not be set unconditionally
+# because not all systems understand e.g. LANG=C (notably SCO).
+# Fixing LC_MESSAGES prevents Solaris sh from translating var values in `set'!
+# Non-C LC_CTYPE values break the ctype check.
+if test "${LANG+set}"   = set; then LANG=C;   export LANG;   fi
+if test "${LC_ALL+set}" = set; then LC_ALL=C; export LC_ALL; fi
+if test "${LC_MESSAGES+set}" = set; then LC_MESSAGES=C; export LC_MESSAGES; fi
+if test "${LC_CTYPE+set}"    = set; then LC_CTYPE=C;    export LC_CTYPE;    fi
+
+# confdefs.h avoids OS command line length limits that DEFS can exceed.
+rm -rf conftest* confdefs.h
+# AIX cpp loses on an empty file, so make sure it contains at least a newline.
+echo > confdefs.h
+
+# A filename unique to this package, relative to the directory that
+# configure is in, which we can look for to find out if srcdir is correct.
+ac_unique_file=snes9x.h
+
+# Find the source files, if location was not specified.
+if test -z "$srcdir"; then
+  ac_srcdir_defaulted=yes
+  # Try the directory containing this script, then its parent.
+  ac_prog=$0
+  ac_confdir=`echo $ac_prog|sed 's%/[^/][^/]*$%%'`
+  test "x$ac_confdir" = "x$ac_prog" && ac_confdir=.
+  srcdir=$ac_confdir
+  if test ! -r $srcdir/$ac_unique_file; then
+    srcdir=..
+  fi
+else
+  ac_srcdir_defaulted=no
+fi
+if test ! -r $srcdir/$ac_unique_file; then
+  if test "$ac_srcdir_defaulted" = yes; then
+    { echo "configure: error: can not find sources in $ac_confdir or .." 1>&2; exit 1; }
+  else
+    { echo "configure: error: can not find sources in $srcdir" 1>&2; exit 1; }
+  fi
+fi
+srcdir=`echo "${srcdir}" | sed 's%\([^/]\)/*$%\1%'`
+
+# Prefer explicitly selected file to automatically selected ones.
+if test -z "$CONFIG_SITE"; then
+  if test "x$prefix" != xNONE; then
+    CONFIG_SITE="$prefix/share/config.site $prefix/etc/config.site"
+  else
+    CONFIG_SITE="$ac_default_prefix/share/config.site $ac_default_prefix/etc/config.site"
+  fi
+fi
+for ac_site_file in $CONFIG_SITE; do
+  if test -r "$ac_site_file"; then
+    echo "loading site script $ac_site_file"
+    . "$ac_site_file"
+  fi
+done
+
+if test -r "$cache_file"; then
+  echo "loading cache $cache_file"
+  . $cache_file
+else
+  echo "creating cache $cache_file"
+  > $cache_file
+fi
+
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+
+ac_exeext=
+ac_objext=o
+if (echo "testing\c"; echo 1,2,3) | grep c >/dev/null; then
+  # Stardent Vistra SVR4 grep lacks -e, says ghazi@caip.rutgers.edu.
+  if (echo -n testing; echo 1,2,3) | sed s/-n/xn/ | grep xn >/dev/null; then
+    ac_n= ac_c='
+' ac_t='	'
+  else
+    ac_n=-n ac_c= ac_t=
+  fi
+else
+  ac_n= ac_c='\c' ac_t=
+fi
+
+
+
+
+
+
+# Extract the first word of "gcc", so it can be a program name with args.
+set dummy gcc; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:569: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  if test -n "$CC"; then
+  ac_cv_prog_CC="$CC" # Let the user override the test.
+else
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_prog_CC="gcc"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+fi
+fi
+CC="$ac_cv_prog_CC"
+if test -n "$CC"; then
+  echo "$ac_t""$CC" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+if test -z "$CC"; then
+  # Extract the first word of "cc", so it can be a program name with args.
+set dummy cc; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:599: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  if test -n "$CC"; then
+  ac_cv_prog_CC="$CC" # Let the user override the test.
+else
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_prog_rejected=no
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      if test "$ac_dir/$ac_word" = "/usr/ucb/cc"; then
+        ac_prog_rejected=yes
+	continue
+      fi
+      ac_cv_prog_CC="cc"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+if test $ac_prog_rejected = yes; then
+  # We found a bogon in the path, so make sure we never use it.
+  set dummy $ac_cv_prog_CC
+  shift
+  if test $# -gt 0; then
+    # We chose a different compiler from the bogus one.
+    # However, it has the same basename, so the bogon will be chosen
+    # first if we set CC to just the basename; use the full file name.
+    shift
+    set dummy "$ac_dir/$ac_word" "$@"
+    shift
+    ac_cv_prog_CC="$@"
+  fi
+fi
+fi
+fi
+CC="$ac_cv_prog_CC"
+if test -n "$CC"; then
+  echo "$ac_t""$CC" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+  if test -z "$CC"; then
+    case "`uname -s`" in
+    *win32* | *WIN32*)
+      # Extract the first word of "cl", so it can be a program name with args.
+set dummy cl; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:650: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_CC'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  if test -n "$CC"; then
+  ac_cv_prog_CC="$CC" # Let the user override the test.
+else
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_prog_CC="cl"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+fi
+fi
+CC="$ac_cv_prog_CC"
+if test -n "$CC"; then
+  echo "$ac_t""$CC" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+ ;;
+    esac
+  fi
+  test -z "$CC" && { echo "configure: error: no acceptable cc found in \$PATH" 1>&2; exit 1; }
+fi
+
+echo $ac_n "checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works""... $ac_c" 1>&6
+echo "configure:682: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) works" >&5
+
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+
+cat > conftest.$ac_ext << EOF
+
+#line 693 "configure"
+#include "confdefs.h"
+
+main(){return(0);}
+EOF
+if { (eval echo configure:698: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  ac_cv_prog_cc_works=yes
+  # If we can't run a trivial program, we are probably using a cross compiler.
+  if (./conftest; exit) 2>/dev/null; then
+    ac_cv_prog_cc_cross=no
+  else
+    ac_cv_prog_cc_cross=yes
+  fi
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  ac_cv_prog_cc_works=no
+fi
+rm -fr conftest*
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+
+echo "$ac_t""$ac_cv_prog_cc_works" 1>&6
+if test $ac_cv_prog_cc_works = no; then
+  { echo "configure: error: installation or configuration problem: C compiler cannot create executables." 1>&2; exit 1; }
+fi
+echo $ac_n "checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler""... $ac_c" 1>&6
+echo "configure:724: checking whether the C compiler ($CC $CFLAGS $LDFLAGS) is a cross-compiler" >&5
+echo "$ac_t""$ac_cv_prog_cc_cross" 1>&6
+cross_compiling=$ac_cv_prog_cc_cross
+
+echo $ac_n "checking whether we are using GNU C""... $ac_c" 1>&6
+echo "configure:729: checking whether we are using GNU C" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_gcc'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.c <<EOF
+#ifdef __GNUC__
+  yes;
+#endif
+EOF
+if { ac_try='${CC-cc} -E conftest.c'; { (eval echo configure:738: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } | egrep yes >/dev/null 2>&1; then
+  ac_cv_prog_gcc=yes
+else
+  ac_cv_prog_gcc=no
+fi
+fi
+
+echo "$ac_t""$ac_cv_prog_gcc" 1>&6
+
+if test $ac_cv_prog_gcc = yes; then
+  GCC=yes
+else
+  GCC=
+fi
+
+ac_test_CFLAGS="${CFLAGS+set}"
+ac_save_CFLAGS="$CFLAGS"
+CFLAGS=
+echo $ac_n "checking whether ${CC-cc} accepts -g""... $ac_c" 1>&6
+echo "configure:757: checking whether ${CC-cc} accepts -g" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_cc_g'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  echo 'void f(){}' > conftest.c
+if test -z "`${CC-cc} -g -c conftest.c 2>&1`"; then
+  ac_cv_prog_cc_g=yes
+else
+  ac_cv_prog_cc_g=no
+fi
+rm -f conftest*
+
+fi
+
+echo "$ac_t""$ac_cv_prog_cc_g" 1>&6
+if test "$ac_test_CFLAGS" = set; then
+  CFLAGS="$ac_save_CFLAGS"
+elif test $ac_cv_prog_cc_g = yes; then
+  if test "$GCC" = yes; then
+    CFLAGS="-g -O2"
+  else
+    CFLAGS="-g"
+  fi
+else
+  if test "$GCC" = yes; then
+    CFLAGS="-O2"
+  else
+    CFLAGS=
+  fi
+fi
+
+for ac_prog in $CCC c++ g++ gcc CC cxx cc++ cl
+do
+# Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:793: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_CXX'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  if test -n "$CXX"; then
+  ac_cv_prog_CXX="$CXX" # Let the user override the test.
+else
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_prog_CXX="$ac_prog"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+fi
+fi
+CXX="$ac_cv_prog_CXX"
+if test -n "$CXX"; then
+  echo "$ac_t""$CXX" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+test -n "$CXX" && break
+done
+test -n "$CXX" || CXX="gcc"
+
+
+echo $ac_n "checking whether the C++ compiler ($CXX $CXXFLAGS $LDFLAGS) works""... $ac_c" 1>&6
+echo "configure:825: checking whether the C++ compiler ($CXX $CXXFLAGS $LDFLAGS) works" >&5
+
+ac_ext=C
+# CXXFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='${CXX-g++} -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CXX-g++} -o conftest${ac_exeext} $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cxx_cross
+
+cat > conftest.$ac_ext << EOF
+
+#line 836 "configure"
+#include "confdefs.h"
+
+int main(){return(0);}
+EOF
+if { (eval echo configure:841: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  ac_cv_prog_cxx_works=yes
+  # If we can't run a trivial program, we are probably using a cross compiler.
+  if (./conftest; exit) 2>/dev/null; then
+    ac_cv_prog_cxx_cross=no
+  else
+    ac_cv_prog_cxx_cross=yes
+  fi
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  ac_cv_prog_cxx_works=no
+fi
+rm -fr conftest*
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest${ac_exeext} $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+
+echo "$ac_t""$ac_cv_prog_cxx_works" 1>&6
+if test $ac_cv_prog_cxx_works = no; then
+  { echo "configure: error: installation or configuration problem: C++ compiler cannot create executables." 1>&2; exit 1; }
+fi
+echo $ac_n "checking whether the C++ compiler ($CXX $CXXFLAGS $LDFLAGS) is a cross-compiler""... $ac_c" 1>&6
+echo "configure:867: checking whether the C++ compiler ($CXX $CXXFLAGS $LDFLAGS) is a cross-compiler" >&5
+echo "$ac_t""$ac_cv_prog_cxx_cross" 1>&6
+cross_compiling=$ac_cv_prog_cxx_cross
+
+echo $ac_n "checking whether we are using GNU C++""... $ac_c" 1>&6
+echo "configure:872: checking whether we are using GNU C++" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_gxx'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.C <<EOF
+#ifdef __GNUC__
+  yes;
+#endif
+EOF
+if { ac_try='${CXX-g++} -E conftest.C'; { (eval echo configure:881: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }; } | egrep yes >/dev/null 2>&1; then
+  ac_cv_prog_gxx=yes
+else
+  ac_cv_prog_gxx=no
+fi
+fi
+
+echo "$ac_t""$ac_cv_prog_gxx" 1>&6
+
+if test $ac_cv_prog_gxx = yes; then
+  GXX=yes
+else
+  GXX=
+fi
+
+ac_test_CXXFLAGS="${CXXFLAGS+set}"
+ac_save_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS=
+echo $ac_n "checking whether ${CXX-g++} accepts -g""... $ac_c" 1>&6
+echo "configure:900: checking whether ${CXX-g++} accepts -g" >&5
+if eval "test \"`echo '$''{'ac_cv_prog_cxx_g'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  echo 'void f(){}' > conftest.cc
+if test -z "`${CXX-g++} -g -c conftest.cc 2>&1`"; then
+  ac_cv_prog_cxx_g=yes
+else
+  ac_cv_prog_cxx_g=no
+fi
+rm -f conftest*
+
+fi
+
+echo "$ac_t""$ac_cv_prog_cxx_g" 1>&6
+if test "$ac_test_CXXFLAGS" = set; then
+  CXXFLAGS="$ac_save_CXXFLAGS"
+elif test $ac_cv_prog_cxx_g = yes; then
+  if test "$GXX" = yes; then
+    CXXFLAGS="-g -O2"
+  else
+    CXXFLAGS="-g"
+  fi
+else
+  if test "$GXX" = yes; then
+    CXXFLAGS="-O2"
+  else
+    CXXFLAGS=
+  fi
+fi
+
+ac_ext=C
+# CXXFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='${CXX-g++} -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CXX-g++} -o conftest${ac_exeext} $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cxx_cross
+
+
+
+#FIXME: Warn about glide, opengl and aido mutually exclusivity.
+#FIXME: Make svgalib build part of this and clean up the Makefile
+	
+
+
+
+
+
+echo $ac_n "checking for size_t""... $ac_c" 1>&6
+echo "configure:949: checking for size_t" >&5
+if eval "test \"`echo '$''{'ac_cv_type_size_t'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+cat > conftest.$ac_ext <<EOF
+#line 955 "configure"
+#include "confdefs.h"
+
+#include <sys/types.h>
+
+#if STDC_HEADERS
+#include <stdlib.h>
+#include <stddef.h>
+#endif
+
+
+
+
+int main() {
+
+size_t tmp;
+
+; return 0; }
+EOF
+if { (eval echo configure:974: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  ac_cv_type_size_t=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  ac_cv_type_size_t=no
+fi
+rm -f conftest*
+
+fi
+
+
+if test $ac_cv_type_size_t = no; then
+  cat >> confdefs.h <<\EOF
+#define size_t unsigned long
+EOF
+
+  echo "$ac_t""no" 1>&6
+else
+  echo "$ac_t""yes" 1>&6
+fi
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+case "$srcdir" in
+    /*)
+    ;;
+    *)
+	oldsrcdir="$srcdir"
+	srcdir="`cd \"$srcdir\";pwd`"
+	echo "configure: warning: 
+Converted $oldsrcdir to $srcdir,
+If this does not work, please use an absolute path to the configure script. 
+" 1>&2
+    ;;
+esac
+
+
+
+# Check whether --with-debug or --without-debug was given.
+if test "${with_debug+set}" = set; then
+  withval="$with_debug"
+  :
+else
+  with_debug=no
+fi
+
+
+OPTIMIZE="${OPTFLAGS-}"
+RTTIFLAG=""
+
+if test yes = "$with_debug" ; then
+  
+  echo $ac_n "checking -g""... $ac_c" 1>&6
+echo "configure:1052: checking -g" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_debuginfo'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -g"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 1064 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:1071: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_debuginfo=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_debuginfo=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1084 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:1101: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_debuginfo=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_debuginfo=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_debuginfo=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_debuginfo=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_debuginfo=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_debuginfo=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_debuginfo=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_debuginfo" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -g"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -g"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+fi
+
+# Check whether --with-mcpu or --without-mcpu was given.
+if test "${with_mcpu+set}" = set; then
+  withval="$with_mcpu"
+  :
+else
+  with_mcpu=auto
+fi
+
+if test "${with_march+set}" != set; then
+  with_march=no
+fi
+
+if test no = "$with_march" ; then
+  if test auto = "$with_mcpu" ; then
+    
+  echo $ac_n "checking -mcpu=ultrasparc""... $ac_c" 1>&6
+echo "configure:1179: checking -mcpu=ultrasparc" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_ultrasparc'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -mcpu=ultrasparc"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 1191 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:1198: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_ultrasparc=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_ultrasparc=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1211 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:1228: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_ultrasparc=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_ultrasparc=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_ultrasparc=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_ultrasparc=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_ultrasparc=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_ultrasparc=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_ultrasparc=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_ultrasparc" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -mcpu=ultrasparc"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -mcpu=ultrasparc"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+      
+  echo $ac_n "checking -mcpu=supersparc""... $ac_c" 1>&6
+echo "configure:1288: checking -mcpu=supersparc" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_supersparc'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -mcpu=supersparc"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 1300 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:1307: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_supersparc=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_supersparc=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1320 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:1337: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_supersparc=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_supersparc=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_supersparc=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_supersparc=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_supersparc=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_supersparc=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_supersparc=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_supersparc" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -mcpu=supersparc"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -mcpu=supersparc"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+    
+  fi
+
+  elif test no != "$with_mcpu" ; then
+    
+  echo $ac_n "checking -mcpu=$with_mcpu""... $ac_c" 1>&6
+echo "configure:1403: checking -mcpu=$with_mcpu" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_custom_mcpu'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -mcpu=$with_mcpu"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 1415 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:1422: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_custom_mcpu=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_custom_mcpu=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1435 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:1452: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_custom_mcpu=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_custom_mcpu=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_custom_mcpu=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_custom_mcpu=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_custom_mcpu=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_custom_mcpu=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_custom_mcpu=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_custom_mcpu" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -mcpu=$with_mcpu"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -mcpu=$with_mcpu"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    { echo "configure: error: Please specify a working value for --with-mcpu, or use --with-mcpu=auto" 1>&2; exit 1; }
+  fi
+
+    unset snes9x_cv_option_custom_mcpu
+  fi
+else
+  if test auto != "$with_mcpu" ; then
+    echo "configure: warning: --with(out)-mcpu ignored because --with-march specified" 1>&2
+  fi
+  echo "configure: warning: You specified --with-march. I hope you know what you're doing, since" 1>&2
+  echo "configure: warning: *** MISUSING THIS OPTION WILL CAUSE SNES9X TO CRASH! ***" 1>&2
+  
+  echo $ac_n "checking -march=$with_march""... $ac_c" 1>&6
+echo "configure:1522: checking -march=$with_march" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_custom_march'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -march=$with_march"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 1534 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:1541: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_custom_march=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_custom_march=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1554 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:1571: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_custom_march=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_custom_march=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_custom_march=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_custom_march=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_custom_march=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_custom_march=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_custom_march=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_custom_march" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -march=$with_march"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -march=$with_march"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    { echo "configure: error: Please specify a working value for --with-march, or use --without-march" 1>&2; exit 1; }
+  fi
+
+  unset snes9x_cv_option_custom_march
+fi
+
+
+  echo $ac_n "checking -O2""... $ac_c" 1>&6
+echo "configure:1636: checking -O2" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_o2'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -O2"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 1648 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:1655: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_o2=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_o2=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1668 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:1685: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_o2=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_o2=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_o2=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_o2=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_o2=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_o2=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_o2=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_o2" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -O2"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -O2"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  
+  echo $ac_n "checking -O1""... $ac_c" 1>&6
+echo "configure:1745: checking -O1" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_o1'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -O1"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 1757 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:1764: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_o1=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_o1=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1777 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:1794: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_o1=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_o1=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_o1=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_o1=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_o1=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_o1=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_o1=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_o1" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -O1"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -O1"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+
+  fi
+
+
+
+  echo $ac_n "checking -fomit-frame-pointer""... $ac_c" 1>&6
+echo "configure:1860: checking -fomit-frame-pointer" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_omit_frame_pointer'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -fomit-frame-pointer"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 1872 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:1879: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_omit_frame_pointer=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_omit_frame_pointer=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 1892 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:1909: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_omit_frame_pointer=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_omit_frame_pointer=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_omit_frame_pointer=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_omit_frame_pointer=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_omit_frame_pointer=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_omit_frame_pointer=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_omit_frame_pointer=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_omit_frame_pointer" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -fomit-frame-pointer"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -fomit-frame-pointer"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+
+  echo $ac_n "checking -fno-exceptions""... $ac_c" 1>&6
+echo "configure:1971: checking -fno-exceptions" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_no_exceptions'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -fno-exceptions"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 1983 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:1990: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_no_exceptions=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_no_exceptions=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2003 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:2020: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_no_exceptions=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_no_exceptions=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_no_exceptions=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_no_exceptions=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_no_exceptions=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_no_exceptions=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_no_exceptions=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_no_exceptions" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -fno-exceptions"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -fno-exceptions"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+
+  echo $ac_n "checking -Wall""... $ac_c" 1>&6
+echo "configure:2082: checking -Wall" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_Wall'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -Wall"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 2094 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:2101: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_Wall=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_Wall=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2114 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:2131: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_Wall=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_Wall=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_Wall=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_Wall=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_Wall=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_Wall=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_Wall=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_Wall" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -Wall"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -Wall"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+
+  echo $ac_n "checking -W""... $ac_c" 1>&6
+echo "configure:2193: checking -W" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_W'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -W"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 2205 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:2212: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_W=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_W=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2225 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:2242: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_W=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_W=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_W=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_W=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_W=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_W=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_W=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_W" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -W"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -W"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+
+  echo $ac_n "checking -pedantic""... $ac_c" 1>&6
+echo "configure:2304: checking -pedantic" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_pedantic'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -pedantic"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 2316 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:2323: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_pedantic=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_pedantic=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2336 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:2353: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_pedantic=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_pedantic=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_pedantic=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_pedantic=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_pedantic=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_pedantic=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_pedantic=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_pedantic" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -pedantic"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -pedantic"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+
+  echo $ac_n "checking -Wno-unused-parameter""... $ac_c" 1>&6
+echo "configure:2415: checking -Wno-unused-parameter" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_Wno_unused_parameter'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -Wno-unused-parameter"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 2427 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:2434: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_Wno_unused_parameter=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_Wno_unused_parameter=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2447 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:2464: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_Wno_unused_parameter=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_Wno_unused_parameter=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_Wno_unused_parameter=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_Wno_unused_parameter=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_Wno_unused_parameter=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_Wno_unused_parameter=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_Wno_unused_parameter=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_Wno_unused_parameter" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -Wno-unused-parameter"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -Wno-unused-parameter"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+
+  echo $ac_n "checking -pipe""... $ac_c" 1>&6
+echo "configure:2526: checking -pipe" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_pipe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -pipe"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 2538 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:2545: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_pipe=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_pipe=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2558 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:2575: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_pipe=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_pipe=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_pipe=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_pipe=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_pipe=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_pipe=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_pipe=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_pipe" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE -pipe"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -pipe"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+
+  echo $ac_n "checking -fno-rtti""... $ac_c" 1>&6
+echo "configure:2637: checking -fno-rtti" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_no_rtti'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS -fno-rtti"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 2649 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:2656: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_no_rtti=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_no_rtti=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2669 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:2686: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_no_rtti=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_no_rtti=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_no_rtti=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_no_rtti=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_no_rtti=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_no_rtti=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_no_rtti=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_no_rtti" = "xyes" ; then
+    RTTIFLAG="$RTTIFLAG -fno-rtti"
+    case "RTTIFLAG" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS -fno-rtti"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    
+  fi
+
+
+if test "${with_extra_opt+set}" != set; then
+  with_extra_opt=no
+fi
+if test no != "$with_extra_opt" ; then
+  echo "configure: warning: You specified --with-extra-opt. I hope you know what you're doing, since" 1>&2
+  echo "configure: warning: *** MISUSING THIS OPTION WILL CAUSE SNES9X TO CRASH! ***" 1>&2
+  
+  echo $ac_n "checking $with_extra_opt""... $ac_c" 1>&6
+echo "configure:2755: checking $with_extra_opt" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_option_custom_opt'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$OLD_CXXFLAGS $with_extra_opt"
+    old_ac_link="$ac_link"
+    ac_link="$old_ac_link 2>conftezt.out.2"
+    if test "$cross_compiling" = yes; then
+  
+      cat > conftest.$ac_ext <<EOF
+#line 2767 "configure"
+#include "confdefs.h"
+
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:2774: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  snes9x_cv_option_custom_opt=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_option_custom_opt=no
+fi
+rm -f conftest*
+    
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2787 "configure"
+#include "confdefs.h"
+#ifdef __cplusplus
+extern "C" void exit(int);
+#endif
+
+      int foo;
+      int main(int argc, char **argv)
+      {
+        /* The following code triggs gcc:s generation of aline opcodes,
+	 * which some versions of as does not support.
+	 */
+	if (argc > 0) argc = 0;
+	return argc;
+      }
+    
+EOF
+if { (eval echo configure:2804: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+then
+  snes9x_cv_option_custom_opt=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  snes9x_cv_option_custom_opt=no
+fi
+rm -fr conftest*
+fi
+
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_link="$old_ac_link"
+    if grep -i 'unrecognized option' <conftezt.out.2 >/dev/null; then
+      snes9x_cv_option_custom_opt=no
+    elif grep -i 'unknown option' <conftezt.out.2 >/dev/null; then
+      # cc/HPUX says the following regarding -q64:
+      #
+      # cc: warning 422: Unknown option "6" ignored.
+      # cc: warning 422: Unknown option "4" ignored.
+      snes9x_cv_option_custom_opt=no
+    elif grep -i 'optimizer bugs' <conftezt.out.2 >/dev/null; then
+      # gcc/FreeBSD-4.6/alpha says the following regarding -O2:
+      #
+      # cc1: warning: 
+      # ***
+      # ***     The -O2 flag TRIGGERS KNOWN OPTIMIZER BUGS ON THIS PLATFORM
+      # ***
+      snes9x_cv_option_custom_opt=no
+    elif grep -i 'not found' <conftezt.out.2 >/dev/null; then
+      # cc/AIX says the following regarding +O3:
+      #
+      # cc: 1501-228 input file +O3 not found
+      snes9x_cv_option_custom_opt=no
+    elif grep -i 'ignored' <conftezt.out.2 >/dev/null; then
+      # gcc/AIX says the following regarding -fpic:
+      #
+      # cc1: warning: -fpic ignored (all code is position independent)
+      snes9x_cv_option_custom_opt=no
+    else :; fi
+#    rm conftezt.out.2
+  
+fi
+
+
+  if test x"$snes9x_cv_option_custom_opt" = "xyes" ; then
+    OPTIMIZE="$OPTIMIZE $with_extra_opt"
+    case "OPTIMIZE" in
+      OPTIMIZE)
+        CXXFLAGS="$CXXFLAGS $with_extra_opt"
+      ;;
+    esac
+    echo "$ac_t""yes" 1>&6
+    
+  else
+    echo "$ac_t""no" 1>&6
+    { echo "configure: error: Please specify a working value for --with-extra-opt, or use --without-extra-opt" 1>&2; exit 1; }
+  fi
+
+  unset snes9x_cv_option_custom_opt
+fi
+
+
+ZSNESFX='#ZSNESFX=1'
+ZSNESC4='#ZSNESC4=1'
+ASMCPU='#ASMCPU=1'
+ASMKREED='#ASMKREED=1'
+SDD1_DECOMP='#SDD1_DECOMP=1'
+JMA='#JMA=1'
+SPC700ASM='#SPC700ASM=1'
+I386SPC=''
+CPUINC=''
+DREAMCAST='#DREAMCAST=1'
+
+SYSDEFINES=''
+SYSLIBS=''
+NASM='not_found'
+
+
+# Check whether --with-glide or --without-glide was given.
+if test "${with_glide+set}" = set; then
+  withval="$with_glide"
+  :
+else
+  with_glide=no
+fi
+
+# Check whether --with-opengl or --without-opengl was given.
+if test "${with_opengl+set}" = set; then
+  withval="$with_opengl"
+  :
+else
+  with_opengl=no
+fi
+
+# Check whether --with-aido or --without-aido was given.
+if test "${with_aido+set}" = set; then
+  withval="$with_aido"
+  :
+else
+  with_aido=no
+fi
+
+GLIDE='#GLIDE=1'
+AIDO='#AIDO=1'
+OPENGL='#OPENGL=1'
+snes9x_info_display=X11
+
+if test yes = "$with_glide" ; then
+  GLIDE='GLIDE=1'
+  snes9x_info_display=Glide
+else
+  if test yes = "$with_opengl" ; then
+    OPENGL='OPENGL=1'
+    snes9x_info_display="OpenGL on X11"
+  else
+    if test yes = "$with_aido" ; then
+      AIDO='AIDO=1'
+      snes9x_info_display="X11 and AIDO"
+    fi
+  fi
+fi
+
+
+
+echo $ac_n "checking if the CPU is IA32""... $ac_c" 1>&6
+echo "configure:2931: checking if the CPU is IA32" >&5
+if eval "test \"`echo '$''{'snes9x_cv_i386_cpu'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+  cat > conftest.$ac_ext <<EOF
+#line 2937 "configure"
+#include "confdefs.h"
+
+#if (defined (__i386__) || defined (__i486__) ||\
+     defined (__i586__) || defined (__WIN32__) || defined (__DJGPP))
+/* */
+#else
+#error Not i386.
+#endif
+  
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:2951: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  snes9x_cv_i386_cpu=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_i386_cpu=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$snes9x_cv_i386_cpu" 1>&6
+
+echo $ac_n "checking if the OS is Linux""... $ac_c" 1>&6
+echo "configure:2966: checking if the OS is Linux" >&5
+if eval "test \"`echo '$''{'snes9x_cv_linux_os'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+  cat > conftest.$ac_ext <<EOF
+#line 2972 "configure"
+#include "confdefs.h"
+
+#ifdef __linux
+/* */
+#else
+#error Not Linux.
+#endif
+  
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:2985: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  snes9x_cv_linux_os=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_linux_os=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$snes9x_cv_linux_os" 1>&6
+
+echo $ac_n "checking if the OS is HP-UX""... $ac_c" 1>&6
+echo "configure:3000: checking if the OS is HP-UX" >&5
+if eval "test \"`echo '$''{'snes9x_cv_hpux_os'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+  cat > conftest.$ac_ext <<EOF
+#line 3006 "configure"
+#include "confdefs.h"
+
+#ifdef __hpux
+/* */
+#else
+#error Not Hpux.
+#endif
+  
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:3019: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  snes9x_cv_hpux_os=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_hpux_os=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$snes9x_cv_hpux_os" 1>&6
+
+echo $ac_n "checking if the OS is MS Windows""... $ac_c" 1>&6
+echo "configure:3034: checking if the OS is MS Windows" >&5
+if eval "test \"`echo '$''{'snes9x_cv_win32_os'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+  cat > conftest.$ac_ext <<EOF
+#line 3040 "configure"
+#include "confdefs.h"
+
+#if defined (__WIN32__)
+/* */
+#else
+#error Not win32.
+#endif
+  
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:3053: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  snes9x_cv_win32_os=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_win32_os=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$snes9x_cv_win32_os" 1>&6
+
+
+# Check whether --with-assembler or --without-assembler was given.
+if test "${with_assembler+set}" = set; then
+  withval="$with_assembler"
+  :
+else
+  with_assembler=yes
+fi
+
+
+if test yes = "$with_assembler"; then
+    if test yes = "$snes9x_cv_win32_os"; then
+    NASM='rntcl'
+    
+  
+  cat >snes9x_using_asm_cores.feature <<EOF
+using asm cores..... no (using rntcl)
+EOF
+
+  else
+    # Extract the first word of "nasm", so it can be a program name with args.
+set dummy nasm; ac_word=$2
+echo $ac_n "checking for $ac_word""... $ac_c" 1>&6
+echo "configure:3090: checking for $ac_word" >&5
+if eval "test \"`echo '$''{'ac_cv_path_prog_nasm'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  case "$prog_nasm" in
+  /*)
+  ac_cv_path_prog_nasm="$prog_nasm" # Let the user override the test with a path.
+  ;;
+  ?:/*)			 
+  ac_cv_path_prog_nasm="$prog_nasm" # Let the user override the test with a dos path.
+  ;;
+  *)
+  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS=":"
+  ac_dummy="$PATH"
+  for ac_dir in $ac_dummy; do 
+    test -z "$ac_dir" && ac_dir=.
+    if test -f $ac_dir/$ac_word; then
+      ac_cv_path_prog_nasm="$ac_dir/$ac_word"
+      break
+    fi
+  done
+  IFS="$ac_save_ifs"
+  test -z "$ac_cv_path_prog_nasm" && ac_cv_path_prog_nasm="no"
+  ;;
+esac
+fi
+prog_nasm="$ac_cv_path_prog_nasm"
+if test -n "$prog_nasm"; then
+  echo "$ac_t""$prog_nasm" 1>&6
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+    if test "x$ac_cv_path_prog_nasm" = "xno"; then
+      if test yes = "$snes9x_cv_i386_cpu"; then
+        echo "configure: warning: No nasm found. Will build without assembler optimizations." 1>&2
+        
+  
+  cat >snes9x_using_asm_cores.feature <<EOF
+using asm cores..... no (nasm not found)
+EOF
+
+      fi
+    else
+      if test yes = "$snes9x_cv_i386_cpu"; then
+        NASM="$ac_cv_path_prog_nasm"
+      fi
+    fi
+  fi
+fi
+
+if test $NASM != "not_found"; then
+  ZSNESFX='ZSNESFX=1'
+  ZSNESC4='ZSNESC4=1'
+  ASMCPU='ASMCPU=1'
+  ASMKREED='ASMKREED=1'
+#  SPC700ASM='SPC700ASM=1'
+  I386SPC='i386/SPC.O'
+  CPUINC='-Ii386'
+  
+  
+  cat >snes9x_using_asm_cores.feature <<EOF
+using asm cores..... yes
+EOF
+
+else
+  SYSDEFINES="$SYSDEFINES"' -DNOASM'
+  if test yes != "$with_assembler"; then
+    
+  
+  
+  cat >snes9x_using_asm_cores.feature <<EOF
+using asm cores..... no (forced without)
+EOF
+
+
+  else if test yes != "$snes9x_cv_i386_cpu"; then
+    
+  
+  cat >snes9x_using_asm_cores.feature <<EOF
+using asm cores..... no (not available for your CPU)
+EOF
+
+  fi; fi
+fi
+
+# Check whether --with-joystick or --without-joystick was given.
+if test "${with_joystick+set}" = set; then
+  withval="$with_joystick"
+  :
+else
+  with_joystick=yes
+fi
+
+
+if test yes = "$snes9x_cv_linux_os" -a yes = "$with_joystick"; then
+   JOYDEFINES=' -DJOYSTICK_SUPPORT'
+else
+   with_joystick="no"
+fi
+
+# Check whether --with-debugger or --without-debugger was given.
+if test "${with_debugger+set}" = set; then
+  withval="$with_debugger"
+  :
+else
+  with_debugger=no
+fi
+
+if test yes = "$with_debugger"; then
+   SYSDEFINES="$SYSDEFINES"' -DDEBUGGER'
+fi
+
+# Check whether --with-dreamcast or --without-dreamcast was given.
+if test "${with_dreamcast+set}" = set; then
+  withval="$with_dreamcast"
+  :
+else
+  with_dreamcast=no
+fi
+
+if test yes = "$with_dreamcast"; then
+   DREAMCAST='DREAMCAST=1'
+   CPUINC='-Ish'
+fi
+
+# Check whether --with-sdd1-decomp or --without-sdd1-decomp was given.
+if test "${with_sdd1_decomp+set}" = set; then
+  withval="$with_sdd1_decomp"
+  :
+else
+  with_sdd1_decomp=yes
+fi
+
+if test yes = "$with_sdd1_decomp"; then
+   SDD1_DECOMP='SDD1_DECOMP=1'
+fi
+
+# Check whether --with-jmadecomp or --without-jmadecomp was given.
+if test "${with_jmadecomp+set}" = set; then
+  withval="$with_jmadecomp"
+  :
+else
+  with_jmadecomp=no
+fi
+
+if test yes = "$with_jmadecomp"; then
+   JMA='JMA=1'
+fi
+
+# Check whether --with-maxcount or --without-maxcount was given.
+if test "${with_maxcount+set}" = set; then
+  withval="$with_maxcount"
+  :
+else
+  with_maxcount=no
+fi
+
+if test yes = "$with_maxcount"; then
+   SYSDEFINES="$SYSDEFINES"' -DDEBUG_MAXCOUNT'
+fi
+
+# Check whether --with-newblend or --without-newblend was given.
+if test "${with_newblend+set}" = set; then
+  withval="$with_newblend"
+  :
+else
+  with_newblend=no
+fi
+
+if test yes = "$with_newblend"; then
+   SYSDEFINES="$SYSDEFINES"' -DNEW_COLOUR_BLENDING'
+else
+   #OLD_COLOUR_BLENDING hasn't been default for a while
+   # SYSDEFINES="$SYSDEFINES"' -DOLD_COLOUR_BLENDING'
+   :
+fi
+
+
+# Check whether --with-zlib or --without-zlib was given.
+if test "${with_zlib+set}" = set; then
+  withval="$with_zlib"
+  :
+else
+  with_zlib=yes
+fi
+
+
+
+if test x$with_zlib = xyes ; then
+  
+  
+  
+  cat >snes9x_Gz.feature <<EOF
+Gz.................. no (dependencies failed)
+EOF
+
+
+  echo $ac_n "checking how to run the C++ preprocessor""... $ac_c" 1>&6
+echo "configure:3289: checking how to run the C++ preprocessor" >&5
+if test -z "$CXXCPP"; then
+if eval "test \"`echo '$''{'ac_cv_prog_CXXCPP'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_ext=C
+# CXXFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='${CXX-g++} -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CXX-g++} -o conftest${ac_exeext} $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cxx_cross
+  CXXCPP="${CXX-g++} -E"
+  cat > conftest.$ac_ext <<EOF
+#line 3302 "configure"
+#include "confdefs.h"
+#include <stdlib.h>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:3307: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  :
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  CXXCPP=/lib/cpp
+fi
+rm -f conftest*
+  ac_cv_prog_CXXCPP="$CXXCPP"
+ac_ext=C
+# CXXFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='${CXX-g++} -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CXX-g++} -o conftest${ac_exeext} $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cxx_cross
+fi
+fi
+CXXCPP="$ac_cv_prog_CXXCPP"
+echo "$ac_t""$CXXCPP" 1>&6
+
+for ac_hdr in zlib.h
+do
+ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
+echo "configure:3335: checking for $ac_hdr" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 3340 "configure"
+#include "confdefs.h"
+#include <$ac_hdr>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:3345: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_hdr=HAVE_`echo $ac_hdr | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_hdr 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&6
+fi
+done
+
+  if test $ac_cv_header_zlib_h = yes ; then
+    echo $ac_n "checking if zlib.h is new enough""... $ac_c" 1>&6
+echo "configure:3373: checking if zlib.h is new enough" >&5
+    cat > conftest.$ac_ext <<EOF
+#line 3375 "configure"
+#include "confdefs.h"
+
+#include <zlib.h>
+    
+int main() {
+
+int foo = (int)(Z_NO_COMPRESSION | Z_VERSION_ERROR);
+    
+; return 0; }
+EOF
+if { (eval echo configure:3386: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+   echo "$ac_t""yes" 1>&6 
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+   echo "$ac_t""no" 1>&6; ac_cv_header_zlib_h=no 
+fi
+rm -f conftest*
+
+    
+  
+  cat >snes9x_Gz.feature <<EOF
+Gz.................. no (zlib is too old)
+EOF
+
+    if test $ac_cv_header_zlib_h = yes ; then
+      if test x$snes9x_cv_sys_os = xIRIX ; then
+        # The libz.so supplied with IRIX 6.3 needs these obscure symbols
+        # C++? It also differs which library which contains them.
+        echo $ac_n "checking for __vtbl__9type_info in -lCsup""... $ac_c" 1>&6
+echo "configure:3408: checking for __vtbl__9type_info in -lCsup" >&5
+ac_lib_var=`echo Csup'_'__vtbl__9type_info | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lCsup  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 3416 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char __vtbl__9type_info();
+
+int main() {
+__vtbl__9type_info()
+; return 0; }
+EOF
+if { (eval echo configure:3430: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_lib=HAVE_LIB`echo Csup | sed -e 's/[^a-zA-Z0-9_]/_/g' \
+    -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_lib 1
+EOF
+
+  LIBS="-lCsup $LIBS"
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+	if test "$ac_cv_lib_Csup___vtbl__9type_info" = "yes" ; then :; else
+          echo $ac_n "checking for __vtbl__9type_info in -lC""... $ac_c" 1>&6
+echo "configure:3459: checking for __vtbl__9type_info in -lC" >&5
+ac_lib_var=`echo C'_'__vtbl__9type_info | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lC  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 3467 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char __vtbl__9type_info();
+
+int main() {
+__vtbl__9type_info()
+; return 0; }
+EOF
+if { (eval echo configure:3481: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_lib=HAVE_LIB`echo C | sed -e 's/[^a-zA-Z0-9_]/_/g' \
+    -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_lib 1
+EOF
+
+  LIBS="-lC $LIBS"
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+	fi
+	echo $ac_n "checking for __T_9__nothrow in -lCsup""... $ac_c" 1>&6
+echo "configure:3510: checking for __T_9__nothrow in -lCsup" >&5
+ac_lib_var=`echo Csup'_'__T_9__nothrow | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lCsup  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 3518 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char __T_9__nothrow();
+
+int main() {
+__T_9__nothrow()
+; return 0; }
+EOF
+if { (eval echo configure:3532: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_lib=HAVE_LIB`echo Csup | sed -e 's/[^a-zA-Z0-9_]/_/g' \
+    -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_lib 1
+EOF
+
+  LIBS="-lCsup $LIBS"
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+	for ac_func in __vtbl__9type_info
+do
+echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
+echo "configure:3562: checking for $ac_func" >&5
+if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 3567 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char $ac_func();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
+choke me
+#else
+$ac_func();
+#endif
+
+; return 0; }
+EOF
+if { (eval echo configure:3593: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_func_$ac_func=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_func_$ac_func=no"
+fi
+rm -f conftest*
+fi
+
+if eval "test \"`echo '$ac_cv_func_'$ac_func`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_func=HAVE_`echo $ac_func | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_func 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&6
+fi
+done
+
+	for ac_func in __T_9__nothrow
+do
+echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
+echo "configure:3620: checking for $ac_func" >&5
+if eval "test \"`echo '$''{'ac_cv_func_$ac_func'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 3625 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char $ac_func();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_$ac_func) || defined (__stub___$ac_func)
+choke me
+#else
+$ac_func();
+#endif
+
+; return 0; }
+EOF
+if { (eval echo configure:3651: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_func_$ac_func=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_func_$ac_func=no"
+fi
+rm -f conftest*
+fi
+
+if eval "test \"`echo '$ac_cv_func_'$ac_func`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_func=HAVE_`echo $ac_func | tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_func 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&6
+fi
+done
+
+      fi
+
+#      AC_CHECK_GZ(z,[AC_CHECK_GZ(gz,[ ac_cv_lib_z_main=no ] ) ])
+      echo $ac_n "checking for gzread in -lz""... $ac_c" 1>&6
+echo "configure:3679: checking for gzread in -lz" >&5
+ac_lib_var=`echo z'_'gzread | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lz  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 3687 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char gzread();
+
+int main() {
+gzread()
+; return 0; }
+EOF
+if { (eval echo configure:3701: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  
+        SYSDEFINES="$SYSDEFINES"' -DZLIB'
+        SYSLIBS="$SYSLIBS -lz"
+        
+  
+  cat >snes9x_Gz.feature <<EOF
+Gz.................. yes
+EOF
+
+      
+else
+  echo "$ac_t""no" 1>&6
+
+        
+  
+  cat >snes9x_Gz.feature <<EOF
+Gz.................. no
+EOF
+
+      
+fi
+
+
+    fi
+  fi
+fi
+
+
+# Check whether --with-png or --without-png was given.
+if test "${with_png+set}" = set; then
+  withval="$with_png"
+  :
+else
+  with_screenshot=yes
+fi
+
+
+if test yes = "$with_screenshot"; then
+  echo $ac_n "checking for png_jmpbuf in -lpng""... $ac_c" 1>&6
+echo "configure:3755: checking for png_jmpbuf in -lpng" >&5
+ac_lib_var=`echo png'_'png_jmpbuf | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lpng -lz -lm $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 3763 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char png_jmpbuf();
+
+int main() {
+png_jmpbuf()
+; return 0; }
+EOF
+if { (eval echo configure:3777: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  
+    SYSDEFINES="$SYSDEFINES"' -DHAVE_LIBPNG'
+    SYSLIBS="$SYSLIBS -lpng"
+  
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+fi
+
+
+
+echo $ac_n "checking for mkstemp""... $ac_c" 1>&6
+echo "configure:3805: checking for mkstemp" >&5
+if eval "test \"`echo '$''{'ac_cv_func_mkstemp'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 3810 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char mkstemp(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char mkstemp();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_mkstemp) || defined (__stub___mkstemp)
+choke me
+#else
+mkstemp();
+#endif
+
+; return 0; }
+EOF
+if { (eval echo configure:3836: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_func_mkstemp=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_func_mkstemp=no"
+fi
+rm -f conftest*
+fi
+
+if eval "test \"`echo '$ac_cv_func_'mkstemp`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  
+  SYSDEFINES="$SYSDEFINES"' -DHAVE_MKSTEMP'
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+
+
+
+# If we find X, set shell vars x_includes and x_libraries to the
+# paths, otherwise set no_x=yes.
+# Uses ac_ vars as temps to allow command line to override cache and checks.
+# --without-x overrides everything else, but does not touch the cache.
+echo $ac_n "checking for X""... $ac_c" 1>&6
+echo "configure:3865: checking for X" >&5
+
+# Check whether --with-x or --without-x was given.
+if test "${with_x+set}" = set; then
+  withval="$with_x"
+  :
+fi
+
+# $have_x is `yes', `no', `disabled', or empty when we do not yet know.
+if test "x$with_x" = xno; then
+  # The user explicitly disabled X.
+  have_x=disabled
+else
+  if test "x$x_includes" != xNONE && test "x$x_libraries" != xNONE; then
+    # Both variables are already set.
+    have_x=yes
+  else
+if eval "test \"`echo '$''{'ac_cv_have_x'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  # One or both of the vars are not set, and there is no cached value.
+ac_x_includes=NO ac_x_libraries=NO
+rm -fr conftestdir
+if mkdir conftestdir; then
+  cd conftestdir
+  # Make sure to not put "make" in the Imakefile rules, since we grep it out.
+  cat > Imakefile <<'EOF'
+acfindx:
+	@echo 'ac_im_incroot="${INCROOT}"; ac_im_usrlibdir="${USRLIBDIR}"; ac_im_libdir="${LIBDIR}"'
+EOF
+  if (xmkmf) >/dev/null 2>/dev/null && test -f Makefile; then
+    # GNU make sometimes prints "make[1]: Entering...", which would confuse us.
+    eval `${MAKE-make} acfindx 2>/dev/null | grep -v make`
+    # Open Windows xmkmf reportedly sets LIBDIR instead of USRLIBDIR.
+    for ac_extension in a so sl; do
+      if test ! -f $ac_im_usrlibdir/libX11.$ac_extension &&
+        test -f $ac_im_libdir/libX11.$ac_extension; then
+        ac_im_usrlibdir=$ac_im_libdir; break
+      fi
+    done
+    # Screen out bogus values from the imake configuration.  They are
+    # bogus both because they are the default anyway, and because
+    # using them would break gcc on systems where it needs fixed includes.
+    case "$ac_im_incroot" in
+	/usr/include) ;;
+	*) test -f "$ac_im_incroot/X11/Xos.h" && ac_x_includes="$ac_im_incroot" ;;
+    esac
+    case "$ac_im_usrlibdir" in
+	/usr/lib | /lib) ;;
+	*) test -d "$ac_im_usrlibdir" && ac_x_libraries="$ac_im_usrlibdir" ;;
+    esac
+  fi
+  cd ..
+  rm -fr conftestdir
+fi
+
+if test "$ac_x_includes" = NO; then
+  # Guess where to find include files, by looking for this one X11 .h file.
+  test -z "$x_direct_test_include" && x_direct_test_include=X11/Intrinsic.h
+
+  # First, try using that file with no special directory specified.
+cat > conftest.$ac_ext <<EOF
+#line 3927 "configure"
+#include "confdefs.h"
+#include <$x_direct_test_include>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:3932: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  # We can compile using X headers with no special include directory.
+ac_x_includes=
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  # Look for the header file in a standard set of common directories.
+# Check X11 before X11Rn because it is often a symlink to the current release.
+  for ac_dir in               \
+    /usr/X11/include          \
+    /usr/X11R6/include        \
+    /usr/X11R5/include        \
+    /usr/X11R4/include        \
+                              \
+    /usr/include/X11          \
+    /usr/include/X11R6        \
+    /usr/include/X11R5        \
+    /usr/include/X11R4        \
+                              \
+    /usr/local/X11/include    \
+    /usr/local/X11R6/include  \
+    /usr/local/X11R5/include  \
+    /usr/local/X11R4/include  \
+                              \
+    /usr/local/include/X11    \
+    /usr/local/include/X11R6  \
+    /usr/local/include/X11R5  \
+    /usr/local/include/X11R4  \
+                              \
+    /usr/X386/include         \
+    /usr/x386/include         \
+    /usr/XFree86/include/X11  \
+                              \
+    /usr/include              \
+    /usr/local/include        \
+    /usr/unsupported/include  \
+    /usr/athena/include       \
+    /usr/local/x11r5/include  \
+    /usr/lpp/Xamples/include  \
+                              \
+    /usr/openwin/include      \
+    /usr/openwin/share/include \
+    ; \
+  do
+    if test -r "$ac_dir/$x_direct_test_include"; then
+      ac_x_includes=$ac_dir
+      break
+    fi
+  done
+fi
+rm -f conftest*
+fi # $ac_x_includes = NO
+
+if test "$ac_x_libraries" = NO; then
+  # Check for the libraries.
+
+  test -z "$x_direct_test_library" && x_direct_test_library=Xt
+  test -z "$x_direct_test_function" && x_direct_test_function=XtMalloc
+
+  # See if we find them without any special options.
+  # Don't add to $LIBS permanently.
+  ac_save_LIBS="$LIBS"
+  LIBS="-l$x_direct_test_library $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 4001 "configure"
+#include "confdefs.h"
+
+int main() {
+${x_direct_test_function}()
+; return 0; }
+EOF
+if { (eval echo configure:4008: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  LIBS="$ac_save_LIBS"
+# We can link X programs with no special library path.
+ac_x_libraries=
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  LIBS="$ac_save_LIBS"
+# First see if replacing the include by lib works.
+# Check X11 before X11Rn because it is often a symlink to the current release.
+for ac_dir in `echo "$ac_x_includes" | sed s/include/lib/` \
+    /usr/X11/lib          \
+    /usr/X11R6/lib        \
+    /usr/X11R5/lib        \
+    /usr/X11R4/lib        \
+                          \
+    /usr/lib/X11          \
+    /usr/lib/X11R6        \
+    /usr/lib/X11R5        \
+    /usr/lib/X11R4        \
+                          \
+    /usr/local/X11/lib    \
+    /usr/local/X11R6/lib  \
+    /usr/local/X11R5/lib  \
+    /usr/local/X11R4/lib  \
+                          \
+    /usr/local/lib/X11    \
+    /usr/local/lib/X11R6  \
+    /usr/local/lib/X11R5  \
+    /usr/local/lib/X11R4  \
+                          \
+    /usr/X386/lib         \
+    /usr/x386/lib         \
+    /usr/XFree86/lib/X11  \
+                          \
+    /usr/lib              \
+    /usr/local/lib        \
+    /usr/unsupported/lib  \
+    /usr/athena/lib       \
+    /usr/local/x11r5/lib  \
+    /usr/lpp/Xamples/lib  \
+    /lib/usr/lib/X11	  \
+                          \
+    /usr/openwin/lib      \
+    /usr/openwin/share/lib \
+    ; \
+do
+  for ac_extension in a so sl; do
+    if test -r $ac_dir/lib${x_direct_test_library}.$ac_extension; then
+      ac_x_libraries=$ac_dir
+      break 2
+    fi
+  done
+done
+fi
+rm -f conftest*
+fi # $ac_x_libraries = NO
+
+if test "$ac_x_includes" = NO || test "$ac_x_libraries" = NO; then
+  # Didn't find X anywhere.  Cache the known absence of X.
+  ac_cv_have_x="have_x=no"
+else
+  # Record where we found X for the cache.
+  ac_cv_have_x="have_x=yes \
+	        ac_x_includes=$ac_x_includes ac_x_libraries=$ac_x_libraries"
+fi
+fi
+  fi
+  eval "$ac_cv_have_x"
+fi # $with_x != no
+
+if test "$have_x" != yes; then
+  echo "$ac_t""$have_x" 1>&6
+  no_x=yes
+else
+  # If each of the values was on the command line, it overrides each guess.
+  test "x$x_includes" = xNONE && x_includes=$ac_x_includes
+  test "x$x_libraries" = xNONE && x_libraries=$ac_x_libraries
+  # Update the cache value to reflect the command line values.
+  ac_cv_have_x="have_x=yes \
+		ac_x_includes=$x_includes ac_x_libraries=$x_libraries"
+  echo "$ac_t""libraries $x_libraries, headers $x_includes" 1>&6
+fi
+
+if test xyes = x$no_x ; then
+    echo "configure: warning: X is normally required to build on Unix." 1>&2
+else
+  X_LDFLAGS="-L$x_libraries"
+  X_LIBS="-lX11 -lXext"
+  LIBS="$LIBS $X_LIBS"
+  SYSLIBS="$SYSLIBS $X_LDFLAGS $X_LIBS"
+fi
+if test x$x_includes != x ; then
+  X_INCLUDES="-I$x_includes"
+fi
+
+	CFLAGS="$CFLAGS $X_INCLUDES"
+	CPPFLAGS="$CPPFLAGS $X_INCLUDES"
+	LDFLAGS="$LDFLAGS $X_LDFLAGS $X_LIBS"
+
+
+
+# Check whether --with-extensions or --without-extensions was given.
+if test "${with_extensions+set}" = set; then
+  withval="$with_extensions"
+  :
+else
+  with_extensions=yes
+fi
+
+
+if test yes = $with_extensions ; then
+  echo $ac_n "checking for XF86DGAQueryExtension in -lXxf86dga""... $ac_c" 1>&6
+echo "configure:4123: checking for XF86DGAQueryExtension in -lXxf86dga" >&5
+ac_lib_var=`echo Xxf86dga'_'XF86DGAQueryExtension | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lXxf86dga  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 4131 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char XF86DGAQueryExtension();
+
+int main() {
+XF86DGAQueryExtension()
+; return 0; }
+EOF
+if { (eval echo configure:4145: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  
+    echo $ac_n "checking for XF86VidModeQueryVersion in -lXxf86vm""... $ac_c" 1>&6
+echo "configure:4162: checking for XF86VidModeQueryVersion in -lXxf86vm" >&5
+ac_lib_var=`echo Xxf86vm'_'XF86VidModeQueryVersion | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lXxf86vm  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 4170 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char XF86VidModeQueryVersion();
+
+int main() {
+XF86VidModeQueryVersion()
+; return 0; }
+EOF
+if { (eval echo configure:4184: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  
+      SYSDEFINES="$SYSDEFINES"' -DUSE_DGA_EXTENSION -DUSE_VIDMODE_EXTENSION'
+      SYSLIBS="$SYSLIBS"' -lXxf86dga -lXxf86vm'
+      
+  
+  cat >snes9x_DGA,_vidmode.feature <<EOF
+DGA, vidmode........ yes
+EOF
+
+    
+else
+  echo "$ac_t""no" 1>&6
+ 
+  
+  cat >snes9x_DGA,_vidmode.feature <<EOF
+DGA, vidmode........ no (No vidmode extension)
+EOF
+ 
+fi
+
+  
+else
+  echo "$ac_t""no" 1>&6
+ 
+  
+  cat >snes9x_DGA,_vidmode.feature <<EOF
+DGA, vidmode........ no (No DGA extension)
+EOF
+ 
+fi
+
+else
+  
+  
+  
+  cat >snes9x_DGA,_vidmode.feature <<EOF
+DGA, vidmode........ no (forced without)
+EOF
+
+
+fi
+
+
+
+
+
+
+
+ac_safe=`echo "strings.h" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for strings.h""... $ac_c" 1>&6
+echo "configure:4249: checking for strings.h" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 4254 "configure"
+#include "confdefs.h"
+#include <strings.h>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:4259: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  
+  SYSDEFINES="$SYSDEFINES"' -DHAVE_STRINGS_H'
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+
+ac_safe=`echo "sys/ioctl.h" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for sys/ioctl.h""... $ac_c" 1>&6
+echo "configure:4285: checking for sys/ioctl.h" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 4290 "configure"
+#include "confdefs.h"
+#include <sys/ioctl.h>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:4295: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  
+  SYSDEFINES="$SYSDEFINES"' -DHAVE_SYS_IOCTL_H'
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+
+for ac_hdr in unistd.h sys/socket.h winsock.h winsock2.h WS2tcpip.h
+do
+ac_safe=`echo "$ac_hdr" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for $ac_hdr""... $ac_c" 1>&6
+echo "configure:4323: checking for $ac_hdr" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 4328 "configure"
+#include "confdefs.h"
+#include <$ac_hdr>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:4333: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_hdr=HAVE_`echo $ac_hdr | sed 'y%abcdefghijklmnopqrstuvwxyz./-%ABCDEFGHIJKLMNOPQRSTUVWXYZ___%'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_hdr 1
+EOF
+ 
+else
+  echo "$ac_t""no" 1>&6
+fi
+done
+
+
+
+
+echo $ac_n "checking for the type of the last argument to accept""... $ac_c" 1>&6
+echo "configure:4363: checking for the type of the last argument to accept" >&5
+if eval "test \"`echo '$''{'snes9x_cv_accept_size_t'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+  for t in socklen_t size_t int; do
+    cat > conftest.$ac_ext <<EOF
+#line 4370 "configure"
+#include "confdefs.h"
+
+#ifndef _LARGEFILE_SOURCE
+#  define _FILE_OFFSET_BITS 64
+#  define _LARGEFILE_SOURCE
+#  define _LARGEFILE64_SOURCE 1
+#endif
+/* HPUX needs these too... */
+#ifndef __STDC_EXT__
+#  define __STDC_EXT__
+#endif /* !__STDC_EXT__ */
+
+#include <sys/types.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+/* NT */
+#ifdef HAVE_WINSOCK2_H
+#include <WinSock2.h>
+#ifdef HAVE_WS2TCPIP_H
+/* Needed for IPv6 support. */
+#include <WS2tcpip.h>
+#endif
+#elif defined(HAVE_WINSOCK_H)
+#include <winsock.h>
+#endif
+
+/* Here is the actual test: */
+int accept(int, struct sockaddr *, $t *);
+    
+int main() {
+
+      /* EMPTY */
+    
+; return 0; }
+EOF
+if { (eval echo configure:4411: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  
+      snes9x_cv_accept_size_t=$t
+      break
+    
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  
+      cat > conftest.$ac_ext <<EOF
+#line 4423 "configure"
+#include "confdefs.h"
+
+#ifndef _LARGEFILE_SOURCE
+#  define _FILE_OFFSET_BITS 64
+#  define _LARGEFILE_SOURCE
+#  define _LARGEFILE64_SOURCE 1
+#endif
+/* HPUX needs these too... */
+#ifndef __STDC_EXT__
+#  define __STDC_EXT__
+#endif /* !__STDC_EXT__ */
+
+#include <sys/types.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+/* NT */
+#ifdef HAVE_WINSOCK2_H
+#include <WinSock2.h>
+#ifdef HAVE_WS2TCPIP_H
+/* Needed for IPv6 support. */
+#include <WS2tcpip.h>
+#endif
+#elif defined(HAVE_WINSOCK_H)
+#include <winsock.h>
+#endif
+
+/* Here is the actual test: */
+SOCKET accept(SOCKET, struct sockaddr *, $t *);
+      
+int main() {
+
+        /* EMPTY */
+      
+; return 0; }
+EOF
+if { (eval echo configure:4464: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  
+	snes9x_cv_accept_size_t=$t
+	break
+      
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+fi
+rm -f conftest*
+    
+fi
+rm -f conftest*
+  done
+  if test "x$snes9x_cv_accept_size_t" = "x"; then
+    # Check if it could be a Psocklen_t
+    # Psocklen_t is a stupid typedef of socklen_t *.
+    cat > conftest.$ac_ext <<EOF
+#line 4483 "configure"
+#include "confdefs.h"
+
+#ifndef _LARGEFILE_SOURCE
+#  define _FILE_OFFSET_BITS 64
+#  define _LARGEFILE_SOURCE
+#  define _LARGEFILE64_SOURCE 1
+#endif
+/* HPUX needs these too... */
+#ifndef __STDC_EXT__
+#  define __STDC_EXT__
+#endif /* !__STDC_EXT__ */
+
+#include <sys/types.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+
+/* NT */
+#ifdef HAVE_WINSOCK2_H
+#include <WinSock2.h>
+#ifdef HAVE_WS2TCPIP_H
+/* Needed for IPv6 support. */
+#include <WS2tcpip.h>
+#endif
+#elif defined(HAVE_WINSOCK_H)
+#include <winsock.h>
+#endif
+
+/* Here is the actual test: */
+int accept(int, struct sockaddr *, Psocklen_t);
+    
+int main() {
+
+      /* EMPTY */
+    
+; return 0; }
+EOF
+if { (eval echo configure:4524: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  
+      snes9x_cv_accept_size_t=socklen_t
+    
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  
+      # FIXME: Should probably have a warning here.
+      # FIXME: Should we check if socklen_t exists, and use that?
+      snes9x_cv_accept_size_t=int
+    
+fi
+rm -f conftest*
+  fi
+
+fi
+
+echo "$ac_t""$snes9x_cv_accept_size_t *" 1>&6
+cat >> confdefs.h <<EOF
+#define ACCEPT_SIZE_T $snes9x_cv_accept_size_t
+EOF
+
+SYSDEFINES="$SYSDEFINES ""'"-DACCEPT_SIZE_T=$snes9x_cv_accept_size_t"'"
+
+
+
+
+echo $ac_n "checking if _XOPEN_SOURCE_EXTENDED is defined""... $ac_c" 1>&6
+echo "configure:4555: checking if _XOPEN_SOURCE_EXTENDED is defined" >&5
+if eval "test \"`echo '$''{'snes9x_cv_xopen_source_extended'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+cat > conftest.$ac_ext <<EOF
+#line 4561 "configure"
+#include "confdefs.h"
+
+#ifdef _XOPEN_SOURCE_EXTENDED
+/* */
+#else
+#error _XOPEN_SOURCE_EXTENDED not defined.
+#endif
+  
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:4574: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  snes9x_cv_xopen_source_extended=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_xopen_source_extended=no
+fi
+rm -f conftest*
+fi
+
+echo "$ac_t""$snes9x_cv_xopen_source_extended" 1>&6
+
+if test no = $snes9x_cv_xopen_source_extended -a \
+        yes = $snes9x_cv_hpux_os ; then
+SYSDEFINES="$SYSDEFINES"' -D_XOPEN_SOURCE_EXTENDED'
+echo "$ac_t""Defining _XOPEN_SOURCE_EXTENDED since HP-UX needs it." 1>&6
+fi
+
+
+THREAD_SOUND='#THREAD_SOUND=1'
+ac_safe=`echo "pthread.h" | sed 'y%./+-%__p_%'`
+echo $ac_n "checking for pthread.h""... $ac_c" 1>&6
+echo "configure:4598: checking for pthread.h" >&5
+if eval "test \"`echo '$''{'ac_cv_header_$ac_safe'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  cat > conftest.$ac_ext <<EOF
+#line 4603 "configure"
+#include "confdefs.h"
+#include <pthread.h>
+EOF
+ac_try="$ac_cpp conftest.$ac_ext >/dev/null 2>conftest.out"
+{ (eval echo configure:4608: \"$ac_try\") 1>&5; (eval $ac_try) 2>&5; }
+ac_err=`grep -v '^ *+' conftest.out | grep -v "^conftest.${ac_ext}\$"`
+if test -z "$ac_err"; then
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=yes"
+else
+  echo "$ac_err" >&5
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_header_$ac_safe=no"
+fi
+rm -f conftest*
+fi
+if eval "test \"`echo '$ac_cv_header_'$ac_safe`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+   
+  THREAD_SOUND='THREAD_SOUND=1' 
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+
+# Check whether --with-sound or --without-sound was given.
+if test "${with_sound+set}" = set; then
+  withval="$with_sound"
+  :
+else
+  with_sound=yes
+fi
+
+
+if test yes = "$with_sound" ; then
+  echo $ac_n "checking if sound is supported on this platform""... $ac_c" 1>&6
+echo "configure:4643: checking if sound is supported on this platform" >&5
+  if eval "test \"`echo '$''{'snes9x_cv_sound'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  
+  cat > conftest.$ac_ext <<EOF
+#line 4649 "configure"
+#include "confdefs.h"
+
+#if defined(__linux) || defined(__sun) || defined(__sgi)
+/* */
+#else
+#error No sound for this platform
+#endif
+  
+int main() {
+
+; return 0; }
+EOF
+if { (eval echo configure:4662: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+  rm -rf conftest*
+  snes9x_cv_sound=yes
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  snes9x_cv_sound=no
+fi
+rm -f conftest*
+fi
+
+  echo "$ac_t""$snes9x_cv_sound" 1>&6
+else
+  snes9x_cv_sound=no
+fi
+
+if test no = $snes9x_cv_sound ; then
+  SYSDEFINES="$SYSDEFINES"' -DNOSOUND'
+  THREAD_SOUND='#THREAD_SOUND=1'
+fi
+
+
+echo $ac_n "checking for gethostbyname in -lnsl""... $ac_c" 1>&6
+echo "configure:4686: checking for gethostbyname in -lnsl" >&5
+ac_lib_var=`echo nsl'_'gethostbyname | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lnsl  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 4694 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char gethostbyname();
+
+int main() {
+gethostbyname()
+; return 0; }
+EOF
+if { (eval echo configure:4708: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_lib=HAVE_LIB`echo nsl | sed -e 's/[^a-zA-Z0-9_]/_/g' \
+    -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_lib 1
+EOF
+
+  LIBS="-lnsl $LIBS"
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+echo $ac_n "checking for socket in -lsocket""... $ac_c" 1>&6
+echo "configure:4736: checking for socket in -lsocket" >&5
+ac_lib_var=`echo socket'_'socket | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lsocket  $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 4744 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char socket();
+
+int main() {
+socket()
+; return 0; }
+EOF
+if { (eval echo configure:4758: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+    ac_tr_lib=HAVE_LIB`echo socket | sed -e 's/[^a-zA-Z0-9_]/_/g' \
+    -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+  cat >> confdefs.h <<EOF
+#define $ac_tr_lib 1
+EOF
+
+  LIBS="-lsocket $LIBS"
+
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+SYSLIBS="$SYSLIBS $LIBS"
+
+	
+BASEDIR=`(cd $srcdir/.. ; pwd)`
+BUILDDIR=`pwd`
+
+touch dependencies
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+rm config.info 2>/dev/null
+
+cat >config.info <<EOF
+
+build information:
+cc................ $CC
+cxx............... $CXX
+options........... $OPTIMIZE
+libs.............. $SYSLIBS
+defines........... $SYSDEFINES
+
+features:
+new colour blender.. $with_newblend
+sound support....... $snes9x_cv_sound
+display system...... $snes9x_info_display
+joystick support.... $with_joystick
+SDD1 decompression.. $with_sdd1_decomp
+JMA decompression... $with_jmadecomp
+debugger............ $with_debugger
+`cat snes9x_*.feature`
+
+EOF
+
+
+cat config.info
+
+
+trap '' 1 2 15
+cat > confcache <<\EOF
+# This file is a shell script that caches the results of configure
+# tests run on this system so they can be shared between configure
+# scripts and configure runs.  It is not useful on other systems.
+# If it contains results you don't want to keep, you may remove or edit it.
+#
+# By default, configure uses ./config.cache as the cache file,
+# creating it if it does not exist already.  You can give configure
+# the --cache-file=FILE option to use a different cache file; that is
+# what configure does when it calls configure scripts in
+# subdirectories, so they share the cache.
+# Giving --cache-file=/dev/null disables caching, for debugging configure.
+# config.status only pays attention to the cache file if you give it the
+# --recheck option to rerun configure.
+#
+EOF
+# The following way of writing the cache mishandles newlines in values,
+# but we know of no workaround that is simple, portable, and efficient.
+# So, don't put newlines in cache variables' values.
+# Ultrix sh set writes to stderr and can't be redirected directly,
+# and sets the high bit in the cache file unless we assign to the vars.
+(set) 2>&1 |
+  case `(ac_space=' '; set | grep ac_space) 2>&1` in
+  *ac_space=\ *)
+    # `set' does not quote correctly, so add quotes (double-quote substitution
+    # turns \\\\ into \\, and sed turns \\ into \).
+    sed -n \
+      -e "s/'/'\\\\''/g" \
+      -e "s/^\\([a-zA-Z0-9_]*_cv_[a-zA-Z0-9_]*\\)=\\(.*\\)/\\1=\${\\1='\\2'}/p"
+    ;;
+  *)
+    # `set' quotes correctly as required by POSIX, so do not add quotes.
+    sed -n -e 's/^\([a-zA-Z0-9_]*_cv_[a-zA-Z0-9_]*\)=\(.*\)/\1=${\1=\2}/p'
+    ;;
+  esac >> confcache
+if cmp -s $cache_file confcache; then
+  :
+else
+  if test -w $cache_file; then
+    echo "updating cache $cache_file"
+    cat confcache > $cache_file
+  else
+    echo "not updating unwritable cache $cache_file"
+  fi
+fi
+rm -f confcache
+
+trap 'rm -fr conftest* confdefs* core core.* *.core $ac_clean_files; exit 1' 1 2 15
+
+test "x$prefix" = xNONE && prefix=$ac_default_prefix
+# Let make expand exec_prefix.
+test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
+
+# Any assignment to VPATH causes Sun make to only execute
+# the first set of double-colon rules, so remove it if not needed.
+# If there is a colon in the path, we need to keep it.
+if test "x$srcdir" = x.; then
+  ac_vpsub='/^[ 	]*VPATH[ 	]*=[^:]*$/d'
+fi
+
+trap 'rm -f $CONFIG_STATUS conftest*; exit 1' 1 2 15
+
+# Transform confdefs.h into DEFS.
+# Protect against shell expansion while executing Makefile rules.
+# Protect against Makefile macro expansion.
+cat > conftest.defs <<\EOF
+s%#define \([A-Za-z_][A-Za-z0-9_]*\) *\(.*\)%-D\1=\2%g
+s%[ 	`~#$^&*(){}\\|;'"<>?]%\\&%g
+s%\[%\\&%g
+s%\]%\\&%g
+s%\$%$$%g
+EOF
+DEFS=`sed -f conftest.defs confdefs.h | tr '\012' ' '`
+rm -f conftest.defs
+
+
+# Without the "./", some shells look in PATH for config.status.
+: ${CONFIG_STATUS=./config.status}
+
+echo creating $CONFIG_STATUS
+rm -f $CONFIG_STATUS
+cat > $CONFIG_STATUS <<EOF
+#! /bin/sh
+# Generated automatically by configure.
+# Run this file to recreate the current configuration.
+# This directory was configured as follows,
+# on host `(hostname || uname -n) 2>/dev/null | sed 1q`:
+#
+# $0 $ac_configure_args
+#
+# Compiler output produced by configure, useful for debugging
+# configure, is in ./config.log if it exists.
+
+ac_cs_usage="Usage: $CONFIG_STATUS [--recheck] [--version] [--help]"
+for ac_option
+do
+  case "\$ac_option" in
+  -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
+    echo "running \${CONFIG_SHELL-/bin/sh} $0 $ac_configure_args --no-create --no-recursion"
+    exec \${CONFIG_SHELL-/bin/sh} $0 $ac_configure_args --no-create --no-recursion ;;
+  -version | --version | --versio | --versi | --vers | --ver | --ve | --v)
+    echo "$CONFIG_STATUS generated by autoconf version 2.13"
+    exit 0 ;;
+  -help | --help | --hel | --he | --h)
+    echo "\$ac_cs_usage"; exit 0 ;;
+  *) echo "\$ac_cs_usage"; exit 1 ;;
+  esac
+done
+
+ac_given_srcdir=$srcdir
+
+trap 'rm -fr `echo "Makefile" | sed "s/:[^ ]*//g"` conftest*; exit 1' 1 2 15
+EOF
+cat >> $CONFIG_STATUS <<EOF
+
+# Protect against being on the right side of a sed subst in config.status.
+sed 's/%@/@@/; s/@%/@@/; s/%g\$/@g/; /@g\$/s/[\\\\&%]/\\\\&/g;
+ s/@@/%@/; s/@@/@%/; s/@g\$/%g/' > conftest.subs <<\\CEOF
+$ac_vpsub
+$extrasub
+s%@SHELL@%$SHELL%g
+s%@CFLAGS@%$CFLAGS%g
+s%@CPPFLAGS@%$CPPFLAGS%g
+s%@CXXFLAGS@%$CXXFLAGS%g
+s%@FFLAGS@%$FFLAGS%g
+s%@DEFS@%$DEFS%g
+s%@LDFLAGS@%$LDFLAGS%g
+s%@LIBS@%$LIBS%g
+s%@exec_prefix@%$exec_prefix%g
+s%@prefix@%$prefix%g
+s%@program_transform_name@%$program_transform_name%g
+s%@bindir@%$bindir%g
+s%@sbindir@%$sbindir%g
+s%@libexecdir@%$libexecdir%g
+s%@datadir@%$datadir%g
+s%@sysconfdir@%$sysconfdir%g
+s%@sharedstatedir@%$sharedstatedir%g
+s%@localstatedir@%$localstatedir%g
+s%@libdir@%$libdir%g
+s%@includedir@%$includedir%g
+s%@oldincludedir@%$oldincludedir%g
+s%@infodir@%$infodir%g
+s%@mandir@%$mandir%g
+s%@CC@%$CC%g
+s%@CXX@%$CXX%g
+s%@prog_nasm@%$prog_nasm%g
+s%@CXXCPP@%$CXXCPP%g
+s%@OPTIMIZE@%$OPTIMIZE%g
+s%@RTTIFLAG@%$RTTIFLAG%g
+s%@ZSNESFX@%$ZSNESFX%g
+s%@ZSNESC4@%$ZSNESC4%g
+s%@ASMCPU@%$ASMCPU%g
+s%@ASMKREED@%$ASMKREED%g
+s%@SDD1_DECOMP@%$SDD1_DECOMP%g
+s%@SPC700ASM@%$SPC700ASM%g
+s%@I386SPC@%$I386SPC%g
+s%@THREAD_SOUND@%$THREAD_SOUND%g
+s%@SYSLIBS@%$SYSLIBS%g
+s%@CPUINC@%$CPUINC%g
+s%@SYSDEFINES@%$SYSDEFINES%g
+s%@JOYDEFINES@%$JOYDEFINES%g
+s%@X_INCLUDES@%$X_INCLUDES%g
+s%@BUILDDIR@%$BUILDDIR%g
+s%@NASM@%$NASM%g
+s%@GLIDE@%$GLIDE%g
+s%@OPENGL@%$OPENGL%g
+s%@AIDO@%$AIDO%g
+s%@DREAMCAST@%$DREAMCAST%g
+s%@JMA@%$JMA%g
+
+CEOF
+EOF
+
+cat >> $CONFIG_STATUS <<\EOF
+
+# Split the substitutions into bite-sized pieces for seds with
+# small command number limits, like on Digital OSF/1 and HP-UX.
+ac_max_sed_cmds=90 # Maximum number of lines to put in a sed script.
+ac_file=1 # Number of current file.
+ac_beg=1 # First line for current file.
+ac_end=$ac_max_sed_cmds # Line after last line for current file.
+ac_more_lines=:
+ac_sed_cmds=""
+while $ac_more_lines; do
+  if test $ac_beg -gt 1; then
+    sed "1,${ac_beg}d; ${ac_end}q" conftest.subs > conftest.s$ac_file
+  else
+    sed "${ac_end}q" conftest.subs > conftest.s$ac_file
+  fi
+  if test ! -s conftest.s$ac_file; then
+    ac_more_lines=false
+    rm -f conftest.s$ac_file
+  else
+    if test -z "$ac_sed_cmds"; then
+      ac_sed_cmds="sed -f conftest.s$ac_file"
+    else
+      ac_sed_cmds="$ac_sed_cmds | sed -f conftest.s$ac_file"
+    fi
+    ac_file=`expr $ac_file + 1`
+    ac_beg=$ac_end
+    ac_end=`expr $ac_end + $ac_max_sed_cmds`
+  fi
+done
+if test -z "$ac_sed_cmds"; then
+  ac_sed_cmds=cat
+fi
+EOF
+
+cat >> $CONFIG_STATUS <<EOF
+
+CONFIG_FILES=\${CONFIG_FILES-"Makefile"}
+EOF
+cat >> $CONFIG_STATUS <<\EOF
+for ac_file in .. $CONFIG_FILES; do if test "x$ac_file" != x..; then
+  # Support "outfile[:infile[:infile...]]", defaulting infile="outfile.in".
+  case "$ac_file" in
+  *:*) ac_file_in=`echo "$ac_file"|sed 's%[^:]*:%%'`
+       ac_file=`echo "$ac_file"|sed 's%:.*%%'` ;;
+  *) ac_file_in="${ac_file}.in" ;;
+  esac
+
+  # Adjust a relative srcdir, top_srcdir, and INSTALL for subdirectories.
+
+  # Remove last slash and all that follows it.  Not all systems have dirname.
+  ac_dir=`echo $ac_file|sed 's%/[^/][^/]*$%%'`
+  if test "$ac_dir" != "$ac_file" && test "$ac_dir" != .; then
+    # The file is in a subdirectory.
+    test ! -d "$ac_dir" && mkdir "$ac_dir"
+    ac_dir_suffix="/`echo $ac_dir|sed 's%^\./%%'`"
+    # A "../" for each directory in $ac_dir_suffix.
+    ac_dots=`echo $ac_dir_suffix|sed 's%/[^/]*%../%g'`
+  else
+    ac_dir_suffix= ac_dots=
+  fi
+
+  case "$ac_given_srcdir" in
+  .)  srcdir=.
+      if test -z "$ac_dots"; then top_srcdir=.
+      else top_srcdir=`echo $ac_dots|sed 's%/$%%'`; fi ;;
+  /*) srcdir="$ac_given_srcdir$ac_dir_suffix"; top_srcdir="$ac_given_srcdir" ;;
+  *) # Relative path.
+    srcdir="$ac_dots$ac_given_srcdir$ac_dir_suffix"
+    top_srcdir="$ac_dots$ac_given_srcdir" ;;
+  esac
+
+
+  echo creating "$ac_file"
+  rm -f "$ac_file"
+  configure_input="Generated automatically from `echo $ac_file_in|sed 's%.*/%%'` by configure."
+  case "$ac_file" in
+  *Makefile*) ac_comsub="1i\\
+# $configure_input" ;;
+  *) ac_comsub= ;;
+  esac
+
+  ac_file_inputs=`echo $ac_file_in|sed -e "s%^%$ac_given_srcdir/%" -e "s%:% $ac_given_srcdir/%g"`
+  sed -e "$ac_comsub
+s%@configure_input@%$configure_input%g
+s%@srcdir@%$srcdir%g
+s%@top_srcdir@%$top_srcdir%g
+" $ac_file_inputs | (eval "$ac_sed_cmds") > $ac_file
+fi; done
+rm -f conftest.s*
+
+EOF
+cat >> $CONFIG_STATUS <<EOF
+
+EOF
+cat >> $CONFIG_STATUS <<\EOF
+
+exit 0
+EOF
+chmod +x $CONFIG_STATUS
+rm -fr confdefs* $ac_clean_files
+test "$no_create" = yes || ${CONFIG_SHELL-/bin/sh} $CONFIG_STATUS || exit 1
+

@@ -1,0 +1,123 @@
+; Inputs
+.alias 		inpos0 		v0		; x = x 		(00000011 11111111) 
+								;       			0x000 - 0x0ff: -256 to -1 
+								;      	 			0x100 - 0x1ff: 0 to 255 
+								;       			0x200 - 0x2ff: 256 to 511 
+								;     alpha 	(01111100 00000000)
+								;    				0x0000: 0.0
+								;    				0x0400: 0.5
+								;    				0x0800: 1.0
+
+								; y = y 		(00000011 11111111)
+								;       			0x000 - 0x0ff: 0 to 255 
+								;     depth 	(01111100 00000000)
+								;    				0x0000: 0
+								;    				0x0400: 1
+								;    				0x0800: 2
+								;					...
+								;    				0x7c00: 31
+								 
+								; y = y + depth [0x0]
+								; z = flip [0x0000 / 0x8000 + 0x0000 / 0x4000] + texbase 
+.alias 		intex 		v1		; (u, v)  or  (r, g, b, a)
+
+; Outputs
+.out 		outpos 		position
+.out 		outtex 		texcoord0
+.out 		outcol 		color
+
+; Uniforms
+.fvec 		projection[4]		; r0 - r3
+.fvec 		textureScale		; r4
+.fvec		uPadding5			; r5
+.fvec		uPadding6			; r6
+.fvec		uPadding7			; r7
+.fvec		uPadding8			; r8
+.fvec		uPadding9			; r9
+
+
+; Constants
+;.constf RGBA8_TO_FLOAT4	(0.00392156862, 0, 0, 0)
+.constf RGBA8_TO_FLOAT4		(0.004032258064516, 0, 0, 0)	; Bug fix for 5-bit color conversion
+.constf DEPTH 				(16384, -16384, 1, 0)
+.constf V_FLIP				(0, 32768, -1, 8)
+.constf H_FLIP				(16384, -16384, -1, 8)
+.constf ONE_DIV_128			(0.0078125, -128, 0, 8)
+.constf NEGATIVE_ONE		(-1, -1, -1, -1)
+.constf ZERO				(0, 0, 0, 0)
+.constf ALPHA				(1024, -1024, 0, 0)
+
+.proc main
+	mov		r0, inpos0
+	mov		r10, intex
+
+	mov		r1, NEGATIVE_ONE		; r1 = -1
+	cmp		r0.z, eq, eq, r1.z		; is r0.z (flip+texbase) == -1 
+	jmpc	cmp.x, do_not_draw		; if yes, go to do_not_draw
+
+	; computing v-flip
+	;
+	mov		r2, V_FLIP		
+	cmp		r0.z, ge, ge, r2.x		; is r0.z > 0? (or 0x8000 is not set)
+	jmpc	cmp.x, no_vflip			; if yes go to no_vflip, else:
+	mul		r10.y, r10.y, r2.z		; r10.y = -r10.y 
+	add		r10.y, r10.y, r2.w		; r10.y = 8 + r10.y
+	add		r0.z, r0.z, r2.y		; r0.z = r0.z + 32768 (removes the 0x8000 bit)
+no_vflip:
+
+	; computing h-flip
+	;
+	mov		r2, H_FLIP		
+	cmp		r0.z, lt, lt, r2.x		; is r0.z < 16384? (or 0x4000 is not set)
+	jmpc	cmp.x, no_hflip			; if yes go to no_hflip, else:
+	mul		r10.x, r10.x, r2.z		; r10.y = -r10.y 
+	add		r10.x, r10.x, r2.w		; r10.y = 8 + r10.y
+	add		r0.z, r0.z, r2.y		; r0.z = r0.z - 16384 (removes the 0x4000 bit)
+no_hflip:
+
+	; computing texturePos
+	;
+	mov		r8, ONE_DIV_128
+	mul		r9.y, r0.z, r8.x		; r9.y = r0.z / 128
+	flr		r9.y, r9.y				; r9.y = floor (r9)			(r9.x is the base texture x coordinate)
+	mul 	r7.x, r9.y, r8.y		; r7 = - r9.y * 128
+	add		r9.x, r0.z, r7.x		; r9.y = r0.z - r9.y * 128	(r9.y is the base texture y coordinate)
+	
+	mul		r9.xy, r9.xy, r8.w 		; r9 = r9 * 8
+	
+	add		r10.xy, r10.xy, r9.xy
+
+	; depth computation
+	;
+	mov 	r1, DEPTH
+	mov		r0.z, r1.w				; r0.z = 0
+	cmp 	r0.y, lt, lt, r1.x		; is r0.y < 16384?
+	jmpc 	cmp.x, depth_lt_16384	; if yes then do nothing, else:
+	add		r0.y, r0.y, r1.y		; r0.y = r0.y - 16384
+	mov		r0.z, r1.z				; r0.z = 1
+depth_lt_16384:
+
+	mov 	r0.w, r1.z				; set r0.w = 1
+
+	; outpos = projection * in.pos
+	dp4 	outpos.x, projection[0].wzyx, r0
+	dp4 	outpos.y, projection[1].wzyx, r0
+	dp4 	outpos.z, projection[2].wzyx, r0
+	dp4 	outpos.w, projection[3].wzyx, r0
+
+	; outtex = in.texcoord
+	mul 	outtex, textureScale, r10
+
+	; outcol = RGBA8_TO_FLOAT4(in.color)
+	mul 	outcol, RGBA8_TO_FLOAT4.xxxx, intex
+
+	end
+
+do_not_draw:
+	mov		outpos, ZERO
+	mov		outtex, ZERO
+	mov		outcol, ZERO
+	
+	end
+
+.end
