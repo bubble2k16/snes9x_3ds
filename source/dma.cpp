@@ -195,22 +195,23 @@ void S9xDoDMA (uint8 Channel)
     int inc = d->AAddressFixed ? 0 : (!d->AAddressDecrement ? 1 : -1);
 
 	//printf ("DMA: $21%02x len:%d inc:%d\n", d->BAddress, count, inc);
-
-	/*
+/*
+	uint32 finalAddress = (d->ABank << 16) + d->AAddress;
+	uint8 *GetAddress = Memory.Map [(finalAddress >> MEMMAP_SHIFT) & MEMMAP_MASK];
 	if ((uint32) GetAddress == CMemory::MAP_HIROM_SRAM || (uint32) GetAddress == CMemory::MAP_LOROM_SRAM)
     {
-		printf ("DMA[%d]: %s Mode: %d 0x%02X%04X->0x21%02X Bytes: %d (%s) V-Line:%ld",
-			Channel, d->TransferDirection ? "read" : "write",
+		printf ("DMA%d: %s M:%d 0x%02X%04X->0x21%02X Bytes:%d (%s) VLine:%ld",
+			Channel, d->TransferDirection ? "R" : "W",
 			d->TransferMode, d->ABank, d->AAddress,
 			d->BAddress, d->TransferBytes,
-			d->AAddressFixed ? "fixed" :
-			(d->AAddressDecrement ? "dec" : "inc"),
+			d->AAddressFixed ? "0" :
+			(d->AAddressDecrement ? "-1" : "+1"),
 			CPU.V_Counter);
 		if (d->BAddress == 0x18 || d->BAddress == 0x19 || d->BAddress == 0x39 || d->BAddress == 0x3a)
-			printf (" VRAM: %04X (Inc:%d, FGC:%d) %s", 
+			printf (" VRAM:%04X (Inc:%d,FGC:%d) %s", 
 				PPU.VMA.Address,
 				PPU.VMA.Increment, PPU.VMA.FullGraphicCount,
-				PPU.VMA.High ? "word" : "byte");
+				PPU.VMA.High ? "W" : "B");
 
 		else
 			if (d->BAddress == 0x22 || d->BAddress == 0x3b)
@@ -572,6 +573,7 @@ void S9xDoDMA (uint8 Channel)
 		uint8 *base = 0;
 		uint16 p;
 		uint32 memmap = S9xComputeDMABasePointer(d->ABank, d->AAddress, &base, &p);
+		uint16 tAAddress = d->AAddress;
 
 		if (!base)
 			base = Memory.ROM;
@@ -886,19 +888,17 @@ void S9xDoDMA (uint8 Channel)
 			// In the interests of speed, this piece of code
 			// only runs when the source address is in SRAM.
 			//
-			uint16 tAAddress = d->AAddress & 0xf000;
-			uint32 bankCounter;
-			if (inc == 0)
-				bankCounter = 0xfffff;
-			else if (inc == 1)
-				bankCounter = 0x1000 - (d->AAddress & 0xfff);
+			uint32 bankCounter = 0xfffff;
+			if (inc == 1)
+				bankCounter = 0x1000 - (tAAddress & 0xfff);
 			else if (inc == -1)
-				bankCounter = (d->AAddress & 0xfff) + 1;
+				bankCounter = (tAAddress & 0xfff) + 1;
+			tAAddress = tAAddress & 0xf000;
 			
 			#define UPDATEBASEPOINTER() \
 				bankCounter--; \
 				if (bankCounter == 0) { \
-					tAAddress = tAAddress + inc * 0x1000; \
+					tAAddress = (tAAddress + inc * 0x1000) & 0xffff; \
 					S9xComputeDMABasePointer(d->ABank, tAAddress, &base, &p); \
 					bankCounter = 0x1000; \
 				}

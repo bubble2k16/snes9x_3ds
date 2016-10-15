@@ -103,7 +103,12 @@ Castlevania - Dracula X
 ##Change History
 
 v0.63
-- 
+- Fixed bug in DMA when the source address comes from Save RAM. This fixes a number of Super Mario World Hacks so that text is readable on BG layer 3.
+- Fixed menu key lock issue to improve usability when exiting from menu back into the game.
+- Fixed DKC tile corruption issue. This probably also fixes most (if not all) tile corruption issues in other games, if you play a game for too long in a single sitting.
+- Fixed sound problems when auto-saving SRAM. Somehow the hardware or the library doesn't like us stopping and starting the CSND too often. Not too sure what the problem is.
+- Added an auto-save SRAM option to tell the emulator when to save SRAM (1 second, 10 seconds, 60 seconds, or disable auto-save).
+Note that regardless of the setting, the emulator will always save any modified SRAM every time you touch the bottom screen to activate the menu. 
 
 v0.62
 - Improved Mode 7 zoomed-in textures. Games like Seiken Densetsu, ActRaiser 1/2 look better when viewing the Mode 7 textures near to the ground. Thanks for Discostew for the motivation!
