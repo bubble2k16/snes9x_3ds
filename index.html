@@ -36,7 +36,7 @@
 <p>It also runs faster on your new 3DS!</p>
 
 <p>Download the latest from:
-   <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v0.62/snes9x_3ds-v0.62.zip">Snes9x for 3DS v0.62</a></p>
+   <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v0.63/snes9x_3ds_v0.63.zip">Snes9x for 3DS v0.63</a></p>
 
 <p>Give feedback / report bugs here:
    <a href="https://gbatemp.net/threads/snes9x-for-old-3ds.435568/">https://gbatemp.net/threads/snes9x-for-old-3ds.435568/</a></p>
@@ -149,6 +149,17 @@
 <h2>
 <a id="change-history" class="anchor" href="#change-history" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Change History</h2>
 
+<p>v0.63</p>
+
+<ul>
+<li>Fixed bug in DMA when the source address comes from Save RAM. This fixes a number of Super Mario World Hacks so that text is readable on BG layer 3.</li>
+<li>Fixed menu key lock issue to improve usability when exiting from menu back into the game.</li>
+<li>Fixed DKC tile corruption issue. This probably also fixes most (if not all) tile corruption issues in other games, if you play a game for too long in a single sitting.</li>
+<li>Fixed sound problems when auto-saving SRAM. Somehow the hardware or the library doesn't like us stopping and starting the CSND too often. Not too sure what the problem is.</li>
+<li>Added an auto-save SRAM option to tell the emulator when to save SRAM (1 second, 10 seconds, 60 seconds, or disable auto-save).
+Note that regardless of the setting, the emulator will always save any modified SRAM every time you touch the bottom screen to activate the menu. </li>
+</ul>
+          
 <p>v0.62</p>
         
 <ul>
@@ -303,7 +314,7 @@ This fix should work for all cases.</li>
         </section>
 
         <aside id="sidebar">
-          <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v0.62/snes9x_3ds-v0.62.zip" class="button">
+          <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v0.63/snes9x_3ds_v0.63.zip" class="button">
             <small>Download Binaries</small>
             .zip file
           </a>
