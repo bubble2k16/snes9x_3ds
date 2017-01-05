@@ -77,13 +77,13 @@ mode7:
 
 	; Emit the special case for mode 7.
 	;
-	;    x0,y0,tx0,ty0     x1,y0,tx1,ty1
-	;                 +---+
-	;                 |  /|
-	;                 | / |
-	;                 |/  |
-	;                 +---+
-	;    x0,y1,tx0,ty0     x1,y1,tx1,ty1
+	;    x0,y0,z0,tx0,ty0     x1,y0,z0,tx1,ty1
+	;                    +---+
+	;                    |  /|
+	;                    | / |
+	;                    |/  |
+	;                    +---+
+	;    x0,y1,z0,tx0,ty0     x1,y1,z0,tx1,ty1
 	;
 	mov		r1.y, ONE_SCANLINE
 	mov		r0.y, v0.y
@@ -100,6 +100,7 @@ mode7:
 	setemit 1							; top-right
 	mov 	outpos.xz, 	v3.xz
 	mov		outpos.y,   r0.y
+	mov		outpos.z,	v0.z
 	mov 	outtex.x, 	v4.x
 	mov 	outtex.y, 	v4.y
 	mov		outcol,		v2
@@ -116,6 +117,7 @@ mode7:
 	setemit 0, prim	inv					; bottom-right
 	mov 	outpos.xz, 	v3.xz
 	mov		outpos.y,   r3.y
+	mov		outpos.z,	v0.z
 	mov 	outtex.x, 	v4.x
 	mov 	outtex.y, 	v4.y
 	mov		outcol,		v2

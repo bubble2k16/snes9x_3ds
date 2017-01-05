@@ -1655,6 +1655,8 @@ bool snesInitialize()
 //--------------------------------------------------------
 void emulatorInitialize()
 {
+    getcwd(cwd, 1023);
+
     if (!gpu3dsInitialize())
     {
         printf ("Unable to initialized GPU\n");
@@ -2436,7 +2438,7 @@ int main()
     emulatorInitialize();    
     clearTopScreenWithLogo();
    
-    getcwd(cwd, 1023);
+    
     menuSelectFile();
 
     while (true)

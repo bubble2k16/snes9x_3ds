@@ -13,7 +13,7 @@
 #define CONSOLE_WIDTH           40
 #define MENU_HEIGHT             (17)
 
-#define SNES9X_VERSION "v0.63"
+#define SNES9X_VERSION "v0.70"
 
 
 
@@ -249,8 +249,11 @@ int S9xMenuSelectItem()
                 {
                     currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue -- ;
                 }
+                return currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
             }
-            return currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
+
+            // Bug fix: Do not return if this is not a gauge
+            //return currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
         }
         
         if (keysDown & KEY_START || keysDown & KEY_A)

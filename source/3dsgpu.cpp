@@ -26,13 +26,6 @@
 #include "shaderslow3_shbin.h"
 #include "shaderslowm7_shbin.h"
 
-//--------------------------------------------------
-// Important:
-// Uncomment this when compiling for a real
-// 3DS for speed improvements.
-//--------------------------------------------------
-#define     REAL3DS     
- 
 bool somethingWasDrawn = false;
 bool somethingWasFlushed = false;
 
@@ -335,6 +328,23 @@ void gpu3dsSetTextureEnvironmentReplaceTexture0()
 	//gpu3dsClearTextureEnv(3);
 }
 
+void gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha()
+{
+	GPU_SetTexEnv(
+		0,
+		GPU_TEVSOURCES(GPU_TEXTURE0, GPU_TEXTURE0, GPU_TEXTURE0),
+		GPU_TEVSOURCES(GPU_TEXTURE0, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR),
+		GPU_TEVOPERANDS(0, 0, 0),
+		GPU_TEVOPERANDS(0, 0, 0),
+		GPU_REPLACE, GPU_MODULATE,
+		0x80808080
+	);
+
+	gpu3dsClearTextureEnv(1);
+	//gpu3dsClearTextureEnv(2);
+	//gpu3dsClearTextureEnv(3);
+}
+
 void gpu3dsSetTextureEnvironmentReplaceTexture0WithFullAlpha()
 {
 	GPU_SetTexEnv(
@@ -607,6 +617,7 @@ void gpu3dsInitializeMode7Vertexes()
     }
 }
 
+extern char cwd[];
 
 bool gpu3dsInitialize()
 {
@@ -647,11 +658,10 @@ bool gpu3dsInitialize()
     
     printf ("Buffer: %8x\n", (u32) gpuCommandBuffer1);
 
-#ifdef REAL3DS
-    GPU3DS.isReal3DS = true;
-#else
-    GPU3DS.isReal3DS = false;
-#endif
+    if (cwd[0] != '/')
+        GPU3DS.isReal3DS = true;
+    else
+        GPU3DS.isReal3DS = false;
 
     // Initialize the projection matrix for the top / bottom
     // screens
@@ -669,16 +679,16 @@ bool gpu3dsInitialize()
     if (GPU3DS.isReal3DS)
     {
         gpu3dsLoadShader(0, (u32 *)shaderfast_shbin, shaderfast_shbin_size, 6);
-    	gpu3dsLoadShader(1, (u32 *)shaderslow_shbin, shaderslow_shbin_size, 0);     // not used
-    	gpu3dsLoadShader(2, (u32 *)shaderfast2_shbin, shaderfast2_shbin_size, 6);
-        gpu3dsLoadShader(3, (u32 *)shaderfastm7_shbin, shaderfastm7_shbin_size, 3);
+    	gpu3dsLoadShader(1, (u32 *)shaderslow_shbin, shaderslow_shbin_size, 0);     // copy to screen
+    	gpu3dsLoadShader(2, (u32 *)shaderfast2_shbin, shaderfast2_shbin_size, 6);   // draw tiles
+        gpu3dsLoadShader(3, (u32 *)shaderfastm7_shbin, shaderfastm7_shbin_size, 3); // mode 7 shader
     }
     else
     {
     	gpu3dsLoadShader(0, (u32 *)shaderslow_shbin, shaderslow_shbin_size, 0);
-    	gpu3dsLoadShader(1, (u32 *)shaderslow_shbin, shaderslow_shbin_size, 0);     // not used
-        gpu3dsLoadShader(2, (u32 *)shaderslow2_shbin, shaderslow2_shbin_size, 0);
-        gpu3dsLoadShader(3, (u32 *)shaderslowm7_shbin, shaderslowm7_shbin_size, 0);
+    	gpu3dsLoadShader(1, (u32 *)shaderslow_shbin, shaderslow_shbin_size, 0);     // copy to screen 
+        gpu3dsLoadShader(2, (u32 *)shaderslow2_shbin, shaderslow2_shbin_size, 0);   // draw tiles
+        gpu3dsLoadShader(3, (u32 *)shaderslowm7_shbin, shaderslowm7_shbin_size, 0); // mode 7 shader
     }
 	
     // Create all the necessary textures
@@ -1382,7 +1392,7 @@ void gpu3dsEnableAdditiveBlending()
 	GPU_SetAlphaBlending(
 		GPU_BLEND_ADD,
 		GPU_BLEND_ADD,
-		GPU_ONE, GPU_ONE,
+		GPU_DST_ALPHA, GPU_ONE,
 		GPU_ONE, GPU_ZERO
 	);
 }
@@ -1392,29 +1402,29 @@ void gpu3dsEnableSubtractiveBlending()
 	GPU_SetAlphaBlending(
 		GPU_BLEND_REVERSE_SUBTRACT,
 		GPU_BLEND_ADD,
-		GPU_ONE, GPU_ONE,
+		GPU_DST_ALPHA, GPU_ONE,
 		GPU_ONE, GPU_ZERO
 	);
 }
 
 void gpu3dsEnableAdditiveDiv2Blending()
 {
-    GPU_SetBlendingColor(0, 0, 0, 0x80);
+    GPU_SetBlendingColor(0, 0, 0, 0xff);
 	GPU_SetAlphaBlending(
 		GPU_BLEND_ADD,
 		GPU_BLEND_ADD,
-		GPU_CONSTANT_ALPHA, GPU_CONSTANT_ALPHA,
+		GPU_DST_ALPHA, GPU_ONE_MINUS_DST_ALPHA, 
 		GPU_ONE, GPU_ZERO
 	);
 }
 
 void gpu3dsEnableSubtractiveDiv2Blending()
 {
-    GPU_SetBlendingColor(0, 0, 0, 0x80);
+    GPU_SetBlendingColor(0, 0, 0, 0xff);
 	GPU_SetAlphaBlending(
 		GPU_BLEND_REVERSE_SUBTRACT,
 		GPU_BLEND_ADD,
-		GPU_CONSTANT_ALPHA, GPU_CONSTANT_ALPHA,
+		GPU_DST_ALPHA, GPU_ONE_MINUS_DST_ALPHA, 
 		GPU_ONE, GPU_ZERO
 	);
 }

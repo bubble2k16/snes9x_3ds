@@ -208,6 +208,7 @@ struct SBG
     
     uint16 BufferTile16Bit[1][1];
     
+    /*
     // Memory Usage = 0.5 MB for background parameters
     //
     uint16 DrawTileParameters[4][8192][8];
@@ -218,7 +219,7 @@ struct SBG
     uint16 DrawOBJTileLaterParametersCount;
     uint16 DrawOBJTileLaterIndex[4][65536];
     uint16 DrawOBJTileLaterIndexCount[4];
-    
+    */
 };
 
 
