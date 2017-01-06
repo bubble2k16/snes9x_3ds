@@ -152,6 +152,11 @@ extern uint8  Mode7Depths [2];
 #define ADD_OR_SUB_ON_ANYTHING \
 (GFX.r2131 & 0x3f)
 
+#define ALPHA_DEFAULT		 		0x0000
+#define ALPHA_ZERO 					0x6000 
+#define ALPHA_0_5 					0x2000 
+#define ALPHA_1_0 					0x4000 
+
 
 //-------------------------------------------------------------------
 // Render the backdrop
@@ -242,7 +247,7 @@ void S9xDrawBackdropHardware(bool sub, int depth)
 		int32 backColor = *((int32 *)(&LineData[GFX.StartY].FixedColour[0]));
 		int32 starty = GFX.StartY;
 
-		//gpu3dsDisableAlphaTest();
+		gpu3dsDisableAlphaTest();
 
 		// Small performance improvement:
 		// Use vertical sections to render the subscreen backdrop
@@ -257,7 +262,11 @@ void S9xDrawBackdropHardware(bool sub, int depth)
 			// This fixes Chrono Trigger's Leene' Square dark floor and
 			// Secret of Mana's dark grass.
 			//
-			if (backColor == 0xff) backColor = 0;
+			if (backColor == 0xff) 
+			{
+				backColor = 0;
+				depth = depth & 0xfff;		// removes the alpha component
+			}
 			
 			gpu3dsAddRectangleVertexes(
 				0, IPPU.FixedColorSections.Section[i].StartY + depth, 
@@ -3369,10 +3378,6 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
     bool8 BG3;
     bool8 OB;
 
-	#define ALPHA_ZERO 	0x6000 
-	#define ALPHA_0_5 	0x2000 
-	#define ALPHA_1_0 	0x4000 
-
 	int BGAlpha0 = ALPHA_ZERO; 
 	int BGAlpha1 = ALPHA_ZERO;
 	int BGAlpha2 = ALPHA_ZERO;
@@ -3428,7 +3433,7 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 		BG3 = ON_SUB (3);
 		OB  = ON_SUB (4);
 
-		BGAlpha0 = ALPHA_1_0;   // (translates to 1.0 alpha on sub screen)
+		BGAlpha0 = ALPHA_1_0;   // Don't change alpha, whatever the value is!
 		BGAlpha1 = ALPHA_1_0;
 		BGAlpha2 = ALPHA_1_0;
 		BGAlpha3 = ALPHA_1_0;
