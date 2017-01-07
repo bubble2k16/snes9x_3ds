@@ -834,7 +834,7 @@ void settingsReadWriteString(FILE *fp, char *format, char *value)
         if (value != NULL)
         {
             fscanf(fp, format, value);
-            //printf ("Scanned %d\n", *value);
+            //printf ("Scanned %s\n", value);
         }
         else
         {
@@ -983,7 +983,7 @@ bool settingsLoad(bool includeGameSettings = true)
     else
         return false;
     
-    if (true)
+    if (includeGameSettings)
     {
         fp = fopen(S9xGetFilename(".cfg"), "r");
         //printf ("fp = %x\n", (uint32)fp);
@@ -1698,10 +1698,8 @@ bool snesInitialize()
 //--------------------------------------------------------
 void emulatorInitialize()
 {
-    settingsLoad(false);
-    if (cwd[0] == 0)
-        getcwd(cwd, 1023);
-
+    getcwd(cwd, 1023);
+    
     if (!gpu3dsInitialize())
     {
         printf ("Unable to initialized GPU\n");
@@ -1731,6 +1729,10 @@ void emulatorInitialize()
         
     ptmSysmInit ();
     osSetSpeedupEnable(1);    // Performance: use the higher clock speed for new 3DS.
+
+    settingsLoad(false);
+    if (cwd[0] == 0)
+        getcwd(cwd, 1023);
 }
 
 
@@ -2304,7 +2306,7 @@ void testGPU()
             gpu3dsSetRenderTargetToMainScreenTexture();
 
             gpu3dsSetTextureEnvironmentReplaceTexture0();
-            gpu3dsBindTextureOBJLayer(GPU_TEXUNIT0);
+            //gpu3dsBindTextureOBJLayer(GPU_TEXUNIT0);
             gpu3dsDisableDepthTest();
             gpu3dsEnableAlphaTestEquals((objPart % 4) * 64);
             objPart = (objPart + 1) % 4;

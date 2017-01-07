@@ -194,7 +194,7 @@ void S9xDrawBackdropHardware(bool sub, int depth)
 			}
 			else
 			{
-				//printf ("Backdrop %04x, Y:%d-%d, 2130:%02x\n", backColor, IPPU.BackdropColorSections.Section[i].StartY, IPPU.BackdropColorSections.Section[i].EndY, GFX.r2130);
+				//printf ("Backdrop %04x, Y:%d-%d, 2130:%02x, d=%4x\n", backColor, IPPU.BackdropColorSections.Section[i].StartY, IPPU.BackdropColorSections.Section[i].EndY, GFX.r2130, depth);
 				gpu3dsAddRectangleVertexes(
 					0, IPPU.BackdropColorSections.Section[i].StartY + depth, 
 					256, IPPU.BackdropColorSections.Section[i].EndY + 1 + depth, 0, backColor);
@@ -3439,7 +3439,7 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 		BackAlpha = SUB_OR_ADD (5) ? alpha : ALPHA_ZERO;
 
 		// debugging
-		/*printf ("Main Y:%3d BGE:%d%d%d%d%d SUB:%d%d%d%d%d%d\n", GFX.StartY, 
+		/*printf ("Main Y:%d-%d BGE:%d%d%d%d%d MATH:%d%d%d%d%d%d A:%4x\n", GFX.StartY, GFX.EndY,
 			ON_MAIN (0) ? 1 : 0, 
 			ON_MAIN (1) ? 1 : 0, 
 			ON_MAIN (2) ? 1 : 0, 
@@ -3450,7 +3450,7 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 			SUB_OR_ADD (2) ? 1 : 0,
 			SUB_OR_ADD (3) ? 1 : 0,
 			SUB_OR_ADD (4) ? 1 : 0,
-			SUB_OR_ADD (5) ? 1 : 0);*/
+			SUB_OR_ADD (5) ? 1 : 0, alpha);*/
     }
     else
     {
@@ -3820,9 +3820,9 @@ inline void S9xRenderColorMath()
 			if (fixedColour != 0xff)
 			{
 				// debugging only
-				/*if (GFX.r2131 & 0x80) printf ("  -"); else printf("  +");
-				if (GFX.r2131 & 0x40) printf ("/2"); else printf("/1");
-				printf (" cmath Y:%d-%d, 2131:%02x, %04x\n", IPPU.FixedColorSections.Section[i].StartY, IPPU.FixedColorSections.Section[i].EndY, GFX.r2131, fixedColour);*/
+				//if (GFX.r2131 & 0x80) printf ("  -"); else printf("  +");
+				//if (GFX.r2131 & 0x40) printf ("/2"); else printf("/1");
+				//printf (" cmath Y:%d-%d, 2131:%02x, %04x\n", IPPU.FixedColorSections.Section[i].StartY, IPPU.FixedColorSections.Section[i].EndY, GFX.r2131, fixedColour);
 
 				gpu3dsAddRectangleVertexes(
 					0, IPPU.FixedColorSections.Section[i].StartY, 
@@ -3847,12 +3847,13 @@ inline void S9xRenderClipToBlackAndColorMath()
 		{
 			//printf ("clear to black: Y %d-%d 2130:%02x\n", GFX.StartY, GFX.EndY, GFX.r2130);
 			
-			// we only want to clip colors to black, so don't modify the depth
-			gpu3dsDisableDepthTestAndWriteColorAlphaOnly();
+			gpu3dsDisableAlphaBlendingKeepDestAlpha();
+			gpu3dsDisableDepthTest();
+			
 			gpu3dsSetTextureEnvironmentReplaceColor();
 			gpu3dsSetRenderTargetToMainScreenTexture();
 			gpu3dsDisableAlphaTest();
-			
+
 			gpu3dsAddRectangleVertexes(
 				0, GFX.StartY, 256, GFX.EndY + 1, 0, 0xff);
 			gpu3dsDrawVertexes();

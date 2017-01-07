@@ -273,6 +273,7 @@ void gpu3dsEnableDepthTestAndWriteColorAlphaOnly();
 void gpu3dsEnableDepthTestAndWriteRedOnly();
 void gpu3dsEnableDepthTest();
 void gpu3dsDisableDepthTestAndWriteColorAlphaOnly();
+void gpu3dsDisableDepthTestAndWriteColorOnly();
 void gpu3dsDisableDepthTestAndWriteRedOnly();
 void gpu3dsDisableDepthTest();
 
@@ -281,6 +282,7 @@ void gpu3dsDisableStencilTest();
 
 void gpu3dsClearTextureEnv(u8 num);
 void gpu3dsSetTextureEnvironmentReplaceColor();
+void gpu3dsSetTextureEnvironmentReplaceColorButKeepAlpha();
 void gpu3dsSetTextureEnvironmentReplaceTexture0();
 void gpu3dsSetTextureEnvironmentReplaceTexture0WithFullAlpha();
 void gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
@@ -296,7 +298,7 @@ void gpu3dsBindTextureSnesMode7FullRepeat(GPU_TEXUNIT unit);
 void gpu3dsBindTextureSnesMode7Full(GPU_TEXUNIT unit);
 void gpu3dsBindTextureSubScreen(GPU_TEXUNIT unit);
 void gpu3dsBindTextureMainScreen(GPU_TEXUNIT unit);
-void gpu3dsBindTextureOBJLayer(GPU_TEXUNIT unit);
+//void gpu3dsBindTextureOBJLayer(GPU_TEXUNIT unit);
 
 void gpu3dsScissorTest(GPU_SCISSORMODE mode, uint32 x, uint32 y, uint32 w, uint32 h);
 
@@ -306,6 +308,7 @@ void gpu3dsEnableSubtractiveBlending();
 void gpu3dsEnableAdditiveDiv2Blending();
 void gpu3dsEnableSubtractiveDiv2Blending();
 void gpu3dsDisableAlphaBlending();
+void gpu3dsDisableAlphaBlendingKeepDestAlpha();
 
 inline void __attribute__((always_inline)) gpu3dsAddQuadVertexes(
     int x0, int y0, int x1, int y1,

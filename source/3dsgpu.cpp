@@ -260,6 +260,11 @@ void gpu3dsDisableDepthTestAndWriteColorAlphaOnly()
 	GPU_SetDepthTestAndWriteMask(false, GPU_ALWAYS, (GPU_WRITEMASK)(GPU_WRITE_COLOR | GPU_WRITE_ALPHA));
 }
 
+void gpu3dsDisableDepthTestAndWriteColorOnly()
+{
+	GPU_SetDepthTestAndWriteMask(false, GPU_ALWAYS, (GPU_WRITEMASK)(GPU_WRITE_COLOR));
+}
+
 void gpu3dsDisableDepthTestAndWriteRedOnly()
 {
 	GPU_SetDepthTestAndWriteMask(false, GPU_ALWAYS, (GPU_WRITEMASK)(GPU_WRITE_RED));
@@ -300,6 +305,23 @@ void gpu3dsSetTextureEnvironmentReplaceColor()
 		0,
 		GPU_TEVSOURCES(GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR),
 		GPU_TEVSOURCES(GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR),
+		GPU_TEVOPERANDS(0, 0, 0),
+		GPU_TEVOPERANDS(0, 0, 0),
+		GPU_REPLACE, GPU_REPLACE,
+		0x80808080
+	);
+    
+	gpu3dsClearTextureEnv(1);
+	//gpu3dsClearTextureEnv(2);
+	//gpu3dsClearTextureEnv(3);
+}
+
+void gpu3dsSetTextureEnvironmentReplaceColorButKeepAlpha()
+{
+	GPU_SetTexEnv(
+		0,
+		GPU_TEVSOURCES(GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR, GPU_PRIMARY_COLOR),
+		GPU_TEVSOURCES(GPU_PREVIOUS, GPU_PREVIOUS, GPU_PREVIOUS),
 		GPU_TEVOPERANDS(0, 0, 0),
 		GPU_TEVOPERANDS(0, 0, 0),
 		GPU_REPLACE, GPU_REPLACE,
@@ -658,10 +680,14 @@ bool gpu3dsInitialize()
     
     printf ("Buffer: %8x\n", (u32) gpuCommandBuffer1);
 
+#ifdef RELEASE
+    GPU3DS.isReal3DS = true;
+#else
     if (cwd[0] != '/')
         GPU3DS.isReal3DS = true;
     else
         GPU3DS.isReal3DS = false;
+#endif
 
     // Initialize the projection matrix for the top / bottom
     // screens
@@ -1385,6 +1411,16 @@ void gpu3dsDisableAlphaBlending()
 		GPU_ONE, GPU_ZERO,
 		GPU_ONE, GPU_ZERO
 	);
+}
+
+void gpu3dsDisableAlphaBlendingKeepDestAlpha()
+{
+    GPU_SetAlphaBlending(
+        GPU_BLEND_ADD,
+        GPU_BLEND_ADD,
+        GPU_ONE, GPU_ZERO,
+        GPU_ZERO, GPU_ONE
+    );    
 }
 
 void gpu3dsEnableAdditiveBlending()
