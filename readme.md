@@ -96,11 +96,15 @@ Castlevania - Dracula X
 2. All the other add-on chips. 
 3. Mosaics.
 4. In-frame palette changes - This is because this emulator uses the 3DS GPU for all graphic rendering. Without in-frame palette changes implemented, a small number of games experience colour issues.
-5. Sprite layering issues.
 
 -------------------------------------------------------------------------------------------------------
 
 ##Change History
+
+v0.70
+- Fixed sprites priority issues. This fixes sprites problems of Shadowrun, Chrono Trigger, Super Mario All Stars' (and possibly other games too) 
+- The newly implemented rendering engine also provides some modest speed improvements in some games.
+- Added feature to save the directory of the previously loaded ROM. 
 
 v0.63
 - Fixed bug in DMA when the source address comes from Save RAM. This fixes a number of Super Mario World Hacks so that text is readable on BG layer 3.
