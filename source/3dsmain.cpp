@@ -811,6 +811,40 @@ void settingsReadWrite(FILE *fp, char *format, int *value, int minValue, int max
     }
 }
 
+void settingsReadWriteString(FILE *fp, char *format, char *value)
+{
+    //if (strlen(format) == 0)
+    //    return;
+
+    if (settingsWriteMode)
+    {
+        if (value != NULL)
+        {
+            //printf ("Writing %s %d\n", format, *value);
+        	fprintf(fp, format, value);
+        }
+        else
+        {
+            //printf ("Writing %s\n", format);
+        	fprintf(fp, format);
+        }
+    }
+    else
+    {
+        if (value != NULL)
+        {
+            fscanf(fp, format, value);
+            //printf ("Scanned %d\n", *value);
+        }
+        else
+        {
+            fscanf(fp, format);
+            //printf ("skipped line\n");
+        }
+    }
+}
+
+
 //----------------------------------------------------------------------
 // Read/write all possible game specific settings.
 //----------------------------------------------------------------------
@@ -852,6 +886,7 @@ void settingsReadWriteFullListGlobal(FILE *fp)
 
     settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 2);
     settingsReadWrite(fp, "HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
+    settingsReadWriteString(fp, "Dir=%s\n", cwd);
 
     // All new options should come here!
 }
@@ -891,27 +926,30 @@ void settingsUpdateMenuCheckboxes()
 //----------------------------------------------------------------------
 // Save settings by game.
 //----------------------------------------------------------------------
-bool settingsSave()
+bool settingsSave(bool includeGameSettings = true)
 {
     consoleClear();
     ui3dsSetColor(0x3f7fff, 0);
     ui3dsDrawString(100, 140, 220, true, "Saving settings to SD card...");
     
-    FILE *fp = fopen(S9xGetFilename(".cfg"), "w+");
-    //printf ("write fp = %x\n", (uint32)fp);
-    if (fp != NULL)
+    if (includeGameSettings)
     {
-        settingsWriteMode = true;
-        settingsReadWriteFullListByGame(fp);
-        fclose(fp);
-    }
-    else
-    {
-        ui3dsDrawString(100, 140, 220, true, "");
-        return false;
+        FILE *fp = fopen(S9xGetFilename(".cfg"), "w+");
+        //printf ("write fp = %x\n", (uint32)fp);
+        if (fp != NULL)
+        {
+            settingsWriteMode = true;
+            settingsReadWriteFullListByGame(fp);
+            fclose(fp);
+        }
+        else
+        {
+            ui3dsDrawString(100, 140, 220, true, "");
+            return false;
+        }
     }
 
-    fp = fopen("./snes9x_3ds.cfg", "w+");
+    FILE *fp = fopen("./snes9x_3ds.cfg", "w+");
     //printf ("write fp = %x\n", (uint32)fp);
     if (fp != NULL)
     {
@@ -925,13 +963,14 @@ bool settingsSave()
         return false;
     }
     ui3dsDrawString(100, 140, 220, true, "");
+
     return true;
 }
 
 //----------------------------------------------------------------------
 // Load settings by game. 
 //----------------------------------------------------------------------
-bool settingsLoad()
+bool settingsLoad(bool includeGameSettings = true)
 {
     FILE *fp = fopen("./snes9x_3ds.cfg", "r");
     //printf ("fp = %x\n", (uint32)fp);
@@ -944,53 +983,56 @@ bool settingsLoad()
     else
         return false;
     
-    fp = fopen(S9xGetFilename(".cfg"), "r");
-    //printf ("fp = %x\n", (uint32)fp);
-    if (fp != NULL)
+    if (true)
     {
-        settingsWriteMode = false;
-        settingsReadWriteFullListByGame(fp);
+        fp = fopen(S9xGetFilename(".cfg"), "r");
+        //printf ("fp = %x\n", (uint32)fp);
+        if (fp != NULL)
+        {
+            settingsWriteMode = false;
+            settingsReadWriteFullListByGame(fp);
 
-        if (settingsUpdateAllSettings())
-            settingsSave();
-        settingsUpdateMenuCheckboxes();
+            if (settingsUpdateAllSettings())
+                settingsSave();
+            settingsUpdateMenuCheckboxes();
 
-        // Bug fix: Oops... forgot to close this file!
-        //
-        fclose(fp);
-        return true;
-    }
-    else
-    {
-        // If we can't find the saved settings, always
-        // set the frame rate to be based on the ROM's region.
-        // For the rest of the settings, we use whatever has been
-        // set in the previous game.
-        //
-        settings3DS.ForceFrameRate = 0;
-        settings3DS.Volume = 4;
+            // Bug fix: Oops... forgot to close this file!
+            //
+            fclose(fp);
+            return true;
+        }
+        else
+        {
+            // If we can't find the saved settings, always
+            // set the frame rate to be based on the ROM's region.
+            // For the rest of the settings, we use whatever has been
+            // set in the previous game.
+            //
+            settings3DS.ForceFrameRate = 0;
+            settings3DS.Volume = 4;
 
-        for (int i = 0; i < 6; i++)     // and clear all turbo buttons.
-            settings3DS.Turbo[i] = 0; 
+            for (int i = 0; i < 6; i++)     // and clear all turbo buttons.
+                settings3DS.Turbo[i] = 0; 
 
-        if (SNESGameFixes.PaletteCommitLine == -2)
-            settings3DS.PaletteFix = 1;
-        else if (SNESGameFixes.PaletteCommitLine == 1)
-            settings3DS.PaletteFix = 2;
-        else if (SNESGameFixes.PaletteCommitLine == -1)
-            settings3DS.PaletteFix = 3;
+            if (SNESGameFixes.PaletteCommitLine == -2)
+                settings3DS.PaletteFix = 1;
+            else if (SNESGameFixes.PaletteCommitLine == 1)
+                settings3DS.PaletteFix = 2;
+            else if (SNESGameFixes.PaletteCommitLine == -1)
+                settings3DS.PaletteFix = 3;
 
-        if (Settings.AutoSaveDelay == 60)
-            settings3DS.SRAMSaveInterval = 1;
-        else if (Settings.AutoSaveDelay == 600)
-            settings3DS.SRAMSaveInterval = 2;
-        else if (Settings.AutoSaveDelay == 3600)
-            settings3DS.SRAMSaveInterval = 3;
+            if (Settings.AutoSaveDelay == 60)
+                settings3DS.SRAMSaveInterval = 1;
+            else if (Settings.AutoSaveDelay == 600)
+                settings3DS.SRAMSaveInterval = 2;
+            else if (Settings.AutoSaveDelay == 3600)
+                settings3DS.SRAMSaveInterval = 3;
 
-        settingsUpdateAllSettings();
-        settingsUpdateMenuCheckboxes();
+            settingsUpdateAllSettings();
+            settingsUpdateMenuCheckboxes();
 
-        return settingsSave();
+            return settingsSave();
+        }
     }
 }
 
@@ -1007,6 +1049,7 @@ void menuSetupCheats();  // forward declaration
 void snesLoadRom()
 {
     consoleClear();
+    settingsSave(false);
     snprintf(romFileNameFullPath, _MAX_PATH, "%s%s", cwd, romFileName);
 
     bool loaded = Memory.LoadROM(romFileNameFullPath);
@@ -1655,7 +1698,9 @@ bool snesInitialize()
 //--------------------------------------------------------
 void emulatorInitialize()
 {
-    getcwd(cwd, 1023);
+    settingsLoad(false);
+    if (cwd[0] == 0)
+        getcwd(cwd, 1023);
 
     if (!gpu3dsInitialize())
     {
@@ -2233,7 +2278,7 @@ void testGPU()
         }
         else if (testMode == 12)
         {
-            gpu3dsSetRenderTargetToOBJLayer();
+            //gpu3dsSetRenderTargetToOBJLayer();
             gpu3dsSetTextureEnvironmentReplaceColor();
             gpu3dsDisableDepthTest();
             gpu3dsDisableAlphaTest();

@@ -668,6 +668,7 @@ int curBG = 0;
 //-------------------------------------------------------------------
 // Draw a clipped BG tile using 3D hardware.
 //-------------------------------------------------------------------
+/*
 inline void __attribute__((always_inline)) S9xDrawBGClippedTileHardwareInline (
     int tileSize, int tileShift, int paletteShift, int paletteMask, int startPalette, bool directColourMode,
 	int prio, int depth0, int depth1,
@@ -719,15 +720,7 @@ inline void __attribute__((always_inline)) S9xDrawBGClippedTileHardwareInline (
     if (BG.Buffered [TileNumber] == BLANK_TILE)
 	    return;
 
-	/*if ((snesTile & 0x3ff) == 0 && curBG == 2)
-	{
-		for (int i = 0; i < 64; i++)
-		{
-			printf ("%2x", pCache[i]);
-			if (i % 8 == 7)
-				printf ("\n");
-		}
-	}*/
+
 
     uint32 l;
     uint8 pal;
@@ -805,6 +798,7 @@ inline void __attribute__((always_inline)) S9xDrawBGClippedTileHardwareInline (
 		tx1, ty1, (snesTile & (H_FLIP | V_FLIP)) + texturePos);
 		
 }
+*/
 
 
 //-------------------------------------------------------------------
@@ -1258,28 +1252,28 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 			}
 		}
 		
-		int clipcount = GFX.pCurrentClip->Count [bg];
-		if (!clipcount)
-			clipcount = 1;
+		//int clipcount = GFX.pCurrentClip->Count [bg];
+		//if (!clipcount)
+		//	clipcount = 1;
 		
-		for (int clip = 0; clip < clipcount; clip++)
+		//for (int clip = 0; clip < clipcount; clip++)
 		{
 			uint32 Left;
 			uint32 Right;
 			
-			if (!GFX.pCurrentClip->Count [bg])
-			{
+			//if (!GFX.pCurrentClip->Count [bg])
+			//{
 				Left = 0;
 				Right = 256;
-			}
-			else
-			{
-				Left = GFX.pCurrentClip->Left [clip][bg];
-				Right = GFX.pCurrentClip->Right [clip][bg];
-				
-				if (Right <= Left)
-					continue;
-			}
+			//}
+			//else
+			//{
+			//	Left = GFX.pCurrentClip->Left [clip][bg];
+			//	Right = GFX.pCurrentClip->Right [clip][bg];
+			//	
+			//	if (Right <= Left)
+			//		continue;
+			//}
 			
 			uint32 VOffset;
 			uint32 HOffset;
@@ -1300,6 +1294,7 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 			uint32 MaxCount = 8;
 			
 			uint32 s = Left * GFX.PixSize + Y * 256;
+			int sX = Left;
 			bool8 left_hand_edge = (Left == 0);
 			Width = Right - Left;
 			
@@ -1430,6 +1425,7 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 					Count = MaxCount;
 				
 				s -= Offset * GFX.PixSize;
+				sX -= Offset;
 				Tile = READ_2BYTES(t);
 
 				int tpriority = (Tile & 0x2000) >> 13;
@@ -1437,10 +1433,18 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 				if (tileSize == 8)
 				{
 					//if (tpriority == 0)
-						S9xDrawBGClippedTileHardwareInline (
+					//printf ("OFS: %3d,%3d V:%d T:%04x\n", sX, Y, VirtAlign, Tile);
+
+						S9xDrawBGFullTileHardwareInline (
 							tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
 							tpriority, depth0, depth1,
-							Tile, s, Offset, Count, VirtAlign, Lines);
+							Tile, sX, Y, 
+							VirtAlign, Lines);
+
+						//S9xDrawBGClippedTileHardwareInline (
+						//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+						//	tpriority, depth0, depth1,
+						//	Tile, s, Offset, Count, VirtAlign, Lines);
 					//else
 					//	DrawClippedTileLater (Tile, s, Offset, Count, VirtAlign, Lines);
 				}
@@ -1449,10 +1453,16 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 					if (!(Tile & (V_FLIP | H_FLIP)))
 					{
 						//if (tpriority == 0)
-							S9xDrawBGClippedTileHardwareInline (
-								tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-								tpriority, depth0, depth1,
-								Tile + t1 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
+						S9xDrawBGFullTileHardwareInline (
+							tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+							tpriority, depth0, depth1,
+							Tile + t1 + (Quot & 1), sX, Y, 
+							VirtAlign, Lines);
+						
+							//S9xDrawBGClippedTileHardwareInline (
+							//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+							//	tpriority, depth0, depth1,
+							//	Tile + t1 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 						//else
 						//	DrawClippedTileLater (Tile + t1 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 					}
@@ -1461,32 +1471,50 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 						{
 							if (Tile & V_FLIP)
 							{
+								S9xDrawBGFullTileHardwareInline (
+									tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+									tpriority, depth0, depth1,
+									Tile + t2 + 1 - (Quot & 1), sX, Y, 
+									VirtAlign, Lines);
+								
 								//if (tpriority == 0)
-									S9xDrawBGClippedTileHardwareInline (
-										tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-										tpriority, depth0, depth1,
-										Tile + t2 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
+									//S9xDrawBGClippedTileHardwareInline (
+									//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+									//	tpriority, depth0, depth1,
+									//	Tile + t2 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 								//else
 								//	DrawClippedTileLater (Tile + t2 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 							}
 							else
 							{
+								S9xDrawBGFullTileHardwareInline (
+									tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+									tpriority, depth0, depth1,
+									Tile + t1 + 1 - (Quot & 1), sX, Y, 
+									VirtAlign, Lines);
+								
 								//if (tpriority == 0)
-									S9xDrawBGClippedTileHardwareInline (
-										tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-										tpriority, depth0, depth1,
-										Tile + t1 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
+									//S9xDrawBGClippedTileHardwareInline (
+									//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+									//	tpriority, depth0, depth1,
+									//	Tile + t1 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 								//else
 								//	DrawClippedTileLater (Tile + t1 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 							}
 						}
 						else
 						{
+							S9xDrawBGFullTileHardwareInline (
+								tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+								tpriority, depth0, depth1,
+								Tile + t2 + (Quot & 1), sX, Y, 
+								VirtAlign, Lines);
+							
 							//if (tpriority == 0)
-								S9xDrawBGClippedTileHardwareInline (
-									tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-										tpriority, depth0, depth1,
-									Tile + t2 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
+								//S9xDrawBGClippedTileHardwareInline (
+								//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+								//		tpriority, depth0, depth1,
+								//	Tile + t2 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 							//else
 							//	DrawClippedTileLater (Tile + t2 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 						}
@@ -1495,6 +1523,7 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 				Left += Count;
 				TotalCount += Count;
 				s += (Offset + Count) * GFX.PixSize;
+				sX += (Offset + Count);
 				MaxCount = 8;
 			}
 		}

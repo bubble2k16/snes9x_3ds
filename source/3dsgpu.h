@@ -254,7 +254,7 @@ void gpu3dsSetRenderTargetToSubScreenTexture();
 void gpu3dsSetRenderTargetToDepthTexture();
 void gpu3dsSetRenderTargetToMode7FullTexture(int pixelOffset, int width, int height);
 void gpu3dsSetRenderTargetToMode7Tile0Texture();
-void gpu3dsSetRenderTargetToOBJLayer();
+//void gpu3dsSetRenderTargetToOBJLayer();
 
 void gpu3dsFlush();
 void gpu3dsWaitForPreviousFlush();

@@ -167,8 +167,8 @@ sf2d_texture *snesTileCacheTexture;
 
 SGPUTexture *snesMainScreenTarget;
 SGPUTexture *snesSubScreenTarget;
-SGPUTexture *snesOBJLayerTarget;
-SGPUTexture *snesOBJDepth;
+//SGPUTexture *snesOBJLayerTarget;
+//SGPUTexture *snesOBJDepth;
 
 SGPUTexture *snesTileCacheTexture;
 SGPUTexture *snesMode7FullTexture;
@@ -703,8 +703,8 @@ bool gpu3dsInitialize()
     // Main screen requires 8-bit alpha, otherwise alpha blending will not work well
     snesMainScreenTarget = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);      // 0.250 MB
     snesSubScreenTarget = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);       // 0.250 MB
-    snesOBJLayerTarget = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);        // 0.250 MB
-    snesOBJDepth = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);              // 0.250 MB
+    //snesOBJLayerTarget = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);        // 0.250 MB
+    //snesOBJDepth = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);              // 0.250 MB
 
     // Depth texture for the sub / main screens.
     // Performance: Create depth buffers in VRAM improves GPU performance!
@@ -716,7 +716,7 @@ bool gpu3dsInitialize()
     if (snesTileCacheTexture == NULL || snesMode7FullTexture == NULL || 
         snesMode7TileCacheTexture == NULL || snesMode7Tile0Texture == NULL ||
         snesMainScreenTarget == NULL || snesSubScreenTarget == NULL || 
-        snesOBJLayerTarget == NULL || snesOBJDepth == NULL || 
+        //snesOBJLayerTarget == NULL || snesOBJDepth == NULL || 
         snesDepthForScreens == NULL || snesDepthForOtherTextures == NULL)
     {
         printf ("Unable to allocate textures\n");
@@ -814,8 +814,8 @@ void gpu3dsFinalize()
     gpu3dsDestroyTextureFromVRAM(snesDepthForOtherTextures);
     gpu3dsDestroyTextureFromVRAM(snesDepthForScreens);      
 
-    gpu3dsDestroyTextureFromVRAM(snesOBJLayerTarget);      
-    gpu3dsDestroyTextureFromVRAM(snesOBJDepth);
+    //gpu3dsDestroyTextureFromVRAM(snesOBJLayerTarget);      
+    //gpu3dsDestroyTextureFromVRAM(snesOBJDepth);
 
     LINEARFREE_SAFE(gpuCommandBuffer1);
     LINEARFREE_SAFE(gpuCommandBuffer2);
@@ -1556,10 +1556,10 @@ void gpu3dsSetRenderTargetToSubScreenTexture()
     gpu3dsSetRenderTargetToTexture(snesSubScreenTarget, snesDepthForScreens);
 }
 
-void gpu3dsSetRenderTargetToOBJLayer()
-{
-    gpu3dsSetRenderTargetToTexture(snesOBJLayerTarget, snesOBJDepth);
-}
+//void gpu3dsSetRenderTargetToOBJLayer()
+//{
+    //gpu3dsSetRenderTargetToTexture(snesOBJLayerTarget, snesOBJDepth);
+//}
 
 void gpu3dsSetRenderTargetToDepthTexture()
 {
@@ -1685,7 +1685,7 @@ Translate from the following GSPGPU_FramebufferFormats to their respective GX_TR
   GSP_RGB565_OES =2, 
   GSP_RGB5_A1_OES =3, 
   GSP_RGBA4_OES =4 
-*/
+*/ 
 const uint32 GX_TRANSFER_SCREEN_FORMAT_VALUES[5]= { 
     GX_TRANSFER_FMT_RGBA8, GX_TRANSFER_FMT_RGB8, GX_TRANSFER_FMT_RGB565, GX_TRANSFER_FMT_RGB5A1, GX_TRANSFER_FMT_RGBA4 };
 
@@ -1874,10 +1874,11 @@ void gpu3dsBindTextureSubScreen(GPU_TEXUNIT unit)
     gpu3dsBindTexture(snesSubScreenTarget, unit);
 }
 
-void gpu3dsBindTextureOBJLayer(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTexture(snesOBJLayerTarget, unit);
-}
+
+//void gpu3dsBindTextureOBJLayer(GPU_TEXUNIT unit)
+//{
+//    //gpu3dsBindTexture(snesOBJLayerTarget, unit);
+//}
 
 
 void gpu3dsScissorTest(GPU_SCISSORMODE mode, uint32 x, uint32 y, uint32 w, uint32 h)
