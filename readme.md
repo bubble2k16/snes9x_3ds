@@ -12,7 +12,7 @@ To use:
 
 ###Homebrew Launcher:
 
-1. Copy Snes9x_3ds.3dsx and snes9x_3ds_top.png into the /3ds/snes9x_3ds on your SD card. 
+1. Copy Snes9x_3ds.3dsx, Snes9x_3ds.smdh and snes9x_3ds_top.png into the /3ds/snes9x_3ds on your SD card. 
 2. Place your SNES ROMs inside any folder.
 3. Go to your Homebrew Launcher (either via Cubic Ninja, Soundhax or other entry points) and launch the snes9x_3ds emulator.
 
@@ -27,6 +27,7 @@ To use:
 
 1. Tap the bottom screen for the menu.
 2. Use Up/Down to choose option, and A to confirm. 
+   (Hold down X while pressing Up/Down to Page Up/Page Down)
 3. Use Left/Right to change between ROM selection and emulator options.
 4. You can quit the emulator to your homebrew launcher / your CFW's home screen.
 
