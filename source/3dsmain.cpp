@@ -811,7 +811,7 @@ void settingsReadWrite(FILE *fp, char *format, int *value, int minValue, int max
     }
 }
 
-void settingsReadWriteString(FILE *fp, char *format, char *value)
+void settingsReadWriteString(FILE *fp, char *writeFormat, char *readFormat, char *value)
 {
     //if (strlen(format) == 0)
     //    return;
@@ -821,24 +821,24 @@ void settingsReadWriteString(FILE *fp, char *format, char *value)
         if (value != NULL)
         {
             //printf ("Writing %s %d\n", format, *value);
-        	fprintf(fp, format, value);
+        	fprintf(fp, writeFormat, value);
         }
         else
         {
             //printf ("Writing %s\n", format);
-        	fprintf(fp, format);
+        	fprintf(fp, writeFormat);
         }
     }
     else
     {
         if (value != NULL)
         {
-            fscanf(fp, format, value);
+            fscanf(fp, readFormat, value);
             //printf ("Scanned %s\n", value);
         }
         else
         {
-            fscanf(fp, format);
+            fscanf(fp, readFormat);
             //printf ("skipped line\n");
         }
     }
@@ -886,7 +886,9 @@ void settingsReadWriteFullListGlobal(FILE *fp)
 
     settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 2);
     settingsReadWrite(fp, "HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
-    settingsReadWriteString(fp, "Dir=%s\n", cwd);
+
+    // Fixes the bug where we have spaces in the directory name
+    settingsReadWriteString(fp, "Dir=%s\n", "Dir=%500[^\n]s\n", cwd);
 
     // All new options should come here!
 }

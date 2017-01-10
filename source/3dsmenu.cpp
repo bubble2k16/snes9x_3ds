@@ -13,7 +13,7 @@
 #define CONSOLE_WIDTH           40
 #define MENU_HEIGHT             (17)
 
-#define SNES9X_VERSION "v0.70"
+#define SNES9X_VERSION "v0.71"
 
 
 
@@ -105,7 +105,7 @@ void S9xMenuShowItems()
     }
 
     ui3dsSetColor(0xffffff, 0x1565C0);
-    ui3dsDrawString(0, 226, 320, false, "  A - Select   B - Cancel                                          SNES9x for 3DS " SNES9X_VERSION);
+    ui3dsDrawString(0, 226, 320, false, "  A:Select  B:Cancel  X+Up/Down:Page Up/Down         SNES9x for 3DS " SNES9X_VERSION);
     
     int line = 0;
     int maxItems = MENU_HEIGHT;
@@ -278,10 +278,19 @@ int S9xMenuSelectItem()
             
             do 
             { 
-                currentTab->SelectedItemIndex--;
-                if (currentTab->SelectedItemIndex < 0)
+                if (thisKeysHeld & KEY_X)
                 {
-                    currentTab->SelectedItemIndex = currentTab->ItemCount - 1;
+                    currentTab->SelectedItemIndex -= 15;
+                    if (currentTab->SelectedItemIndex < 0)
+                        currentTab->SelectedItemIndex = 0;
+                }
+                else
+                {
+                    currentTab->SelectedItemIndex--;
+                    if (currentTab->SelectedItemIndex < 0)
+                    {
+                        currentTab->SelectedItemIndex = currentTab->ItemCount - 1;
+                    }
                 }
                 moveCursorTimes++;
             }
@@ -301,11 +310,20 @@ int S9xMenuSelectItem()
             int moveCursorTimes = 0;
             do 
             { 
-                currentTab->SelectedItemIndex++;
-                if (currentTab->SelectedItemIndex >= currentTab->ItemCount)
+                if (thisKeysHeld & KEY_X)
                 {
-                    currentTab->SelectedItemIndex = 0;
-                    currentTab->FirstItemIndex = 0;                    
+                    currentTab->SelectedItemIndex += 15;
+                    if (currentTab->SelectedItemIndex >= currentTab->ItemCount)
+                        currentTab->SelectedItemIndex = currentTab->ItemCount - 1;
+                }
+                else
+                {
+                    currentTab->SelectedItemIndex++;
+                    if (currentTab->SelectedItemIndex >= currentTab->ItemCount)
+                    {
+                        currentTab->SelectedItemIndex = 0;
+                        currentTab->FirstItemIndex = 0;                    
+                    }
                 }
                 moveCursorTimes++;
             }

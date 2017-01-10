@@ -93,6 +93,7 @@
 #include "port.h"
 #include "snes9x.h"
 
+
 struct SGFX{
     // Initialize these variables
     uint8  *Screen;
@@ -168,6 +169,7 @@ struct SGFX{
     //
     uint32 VRAMPaletteFrame[65536][16];
     bool   Use3DSHardware = true;
+
 };
 
 struct SLineData {
@@ -220,6 +222,7 @@ struct SBG
     uint16 DrawOBJTileLaterIndex[4][65536];
     uint16 DrawOBJTileLaterIndexCount[4];
     */
+
 };
 
 
