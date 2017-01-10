@@ -2,9 +2,6 @@
 
 Snes9x for 3DS is a high-compatibility SNES emulator for your old 3DS / 2DS. It runs many games at full speed (60 fps). It supports games that use CX4 chip (Megaman X2/X3), and the SDD-1 chip (Star Ocean, Super Street Fighter 2 Alpha). It can also play games that use the SuperFX chip (Yoshi's Island, etc) but they run with plenty of frame skips. It has generally much high compatibility than existing SNES emulators on the old 3DS because it uses Snes9x 1.43 as a base, and is a good alternative if your existing emulators cannot play all the games.
 
-Official Website:
-   https://bubble2k16.github.io/snes9x_3ds/
-
 Download the latest from:
    https://github.com/bubble2k16/snes9x_3ds/releases
 
@@ -17,7 +14,7 @@ To use:
 
 1. Copy Snes9x_3ds.3dsx and snes9x_3ds_top.png into the /3ds/snes9x_3ds on your SD card. 
 2. Place your SNES ROMs inside any folder.
-3. Go to your Homebrew Launcher (through Cubic Ninja) and launch the snes9x_3ds emulator.
+3. Go to your Homebrew Launcher (either via Cubic Ninja, Soundhax or other entry points) and launch the snes9x_3ds emulator.
 
 ###CIA Version:
 
@@ -100,6 +97,11 @@ Castlevania - Dracula X
 -------------------------------------------------------------------------------------------------------
 
 ##Change History
+
+v0.71
+- Fixed nasty bug that breaks loading of the second ROM, if the first ROM was loaded from a directory path that has spaces in it.
+- Added feature to allow users to page up/down the options in the menu while holding down X.
+- Minor optimizations
 
 v0.70
 - Fixed sprites priority issues. This fixes sprites problems of Shadowrun, Chrono Trigger, Super Mario All Stars' (and possibly other games too) 

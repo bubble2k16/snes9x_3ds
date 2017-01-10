@@ -2706,7 +2706,6 @@ inline void __attribute__((always_inline)) S9xDrawOBJTileHardware2 (
 
 	{
         pal = (snesTile >> 10) & 7;
-        GFX.ScreenColors = &IPPU.ScreenColors [(pal << 4) + 128];
 		texturePos = cacheGetTexturePositionFast(TileAddr, pal + 8);
 		//printf ("%d\n", texturePos);
         if (GFX.VRAMPaletteFrame[TileAddr][pal + 8] != GFX.PaletteFrame[pal + 8])
@@ -2715,7 +2714,8 @@ inline void __attribute__((always_inline)) S9xDrawOBJTileHardware2 (
             GFX.VRAMPaletteFrame[TileAddr][pal + 8] = GFX.PaletteFrame[pal + 8];
 
 			//printf ("cache %d\n", texturePos);
-			gpu3dsCacheToTexturePosition(pCache, GFX.ScreenColors, texturePos);
+	        uint16 *screenColors = &IPPU.ScreenColors [(pal << 4) + 128];
+			gpu3dsCacheToTexturePosition(pCache, screenColors, texturePos);
         }
     }
 
