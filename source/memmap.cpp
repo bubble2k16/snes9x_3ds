@@ -115,7 +115,7 @@
 #include "spc7110.h"
 #include "seta.h"
 
-//#include "unzip.h"
+#include "unzip.h"
 
 #ifdef __W32_HEAP
 #include <malloc.h>
@@ -2230,6 +2230,18 @@ void CMemory::HiROMMap ()
 		int mask[4];
 	for (j=0; j<4; j++)
 		mask[j]=0x00ff;
+
+	// Bug in Snes9x 1.43
+	// This isn't really a bug, but a problem with the SNES ROM's size and header
+	// of Wonder Project (EN translation).
+	//
+	// Doing this solves Wonder Project (En), but does this work for all ROMs? 
+	//
+	if (strcmp(ROMId, "APJJ") == 0)
+	{
+		if (((CalculatedSize / 0x10000) * 0x10000) != CalculatedSize)
+			CalculatedSize = ((CalculatedSize / 0x10000) * 0x10000) + 0x10000;
+	}
 
 	mask[0]=(CalculatedSize/0x10000)-1;
 

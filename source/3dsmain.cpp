@@ -542,7 +542,7 @@ uint32 readJoypadButtons()
         printf ("Debug mode = %d\n", GPU3DS.enableDebug);
     }
 
-    if (keysDown & (KEY_L))
+    /*if (keysDown & (KEY_L))
     {
         csndTicksPerSecond -= 1000;
         printf ("CSND TPS: %d\n", csndTicksPerSecond);
@@ -551,7 +551,7 @@ uint32 readJoypadButtons()
     {
         csndTicksPerSecond += 1000;
         printf ("CSND TPS: %d\n", csndTicksPerSecond);
-    }
+    }*/
     // -----------------------------------------------
 #endif    
 

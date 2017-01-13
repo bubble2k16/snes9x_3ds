@@ -2662,7 +2662,7 @@ void S9xDrawHiresBackgroundHardwarePriority0Inline_16Color
 inline void __attribute__((always_inline)) S9xDrawOBJTileHardware2 (
 	bool sub, int depth, 
 	uint32 snesTile,
-	int screenX, int screenY, uint32 textureYOffset)
+	int screenX, int screenY, uint32 textureYOffset, int height)
 {
 
 	// Prepare tile for rendering
@@ -2727,12 +2727,12 @@ inline void __attribute__((always_inline)) S9xDrawOBJTileHardware2 (
 	int y0 = screenY + depth;
 		
 	int x1 = x0 + 8;
-	int y1 = y0 + 1;
+	int y1 = y0 + height;
 
 	int tx0 = 0;
 	int ty0 = textureYOffset;
 	int tx1 = tx0 + 8;
-	int ty1 = ty0 + 1;
+	int ty1 = ty0 + height;
 
 	//printf ("Draw: %d %d %d, %d %d %d %d - %d %d %d %d (%d)\n", screenOffset, startX, startY, x0, y0, x1, y1, txBase + tx0, tyBase + ty0, txBase + tx1, tyBase + ty1, texturePos);
 	gpu3dsAddTileVertexes(
@@ -2742,6 +2742,14 @@ inline void __attribute__((always_inline)) S9xDrawOBJTileHardware2 (
 }
 
 
+typedef struct 
+{
+	int		Height;
+	int		Y;
+	int		StartLine;
+} SOBJList;
+
+SOBJList OBJList[128];
 
 
 //-------------------------------------------------------------------
@@ -2780,6 +2788,96 @@ if(Settings.BGLayering) {
 #endif
 
 	S9xComputeAndEnableStencilFunction(4, sub);
+
+	if (PPU.PriorityNormalCase && 
+		GFX.EndY - GFX.StartY >= 16)	// Wonder what is the best value for this to get the optimal performance? 
+	{
+		memset(OBJList, 0, sizeof(OBJList));
+		for(uint32 Y=GFX.StartY; Y<=GFX.EndY; Y++)
+		{
+			for (int I = GFX.OBJLines[Y].OBJCount - 1; I >= 0; I --)
+			{
+				int S = GFX.OBJLines[Y].OBJ[I].Sprite;
+				if (S < 0) continue;
+
+				if (OBJList[S].Height == 0)
+				{
+					OBJList[S].Y = Y;
+					OBJList[S].StartLine = GFX.OBJLines[Y].OBJ[I].Line;
+				}
+				OBJList[S].Height ++;
+			}
+		}
+
+		int FirstSprite = PPU.FirstSprite;
+		int S = FirstSprite;
+		do {
+			if (OBJList[S].Height)
+			{
+				int Height = OBJList[S].Height;
+				int Y = OBJList[S].Y;
+				int StartLine = OBJList[S].StartLine;
+
+				while (Height > 0)
+				{
+					int BaseTile = (((StartLine<<1) + (PPU.OBJ[S].Name&0xf0))&0xf0) | (PPU.OBJ[S].Name&0x100) | (PPU.OBJ[S].Palette << 10);
+					int TileX = PPU.OBJ[S].Name&0x0f;
+					int TileLine = (StartLine&7);
+					int TileInc = 1;
+					int TileHeight = 0;
+					if (PPU.OBJ[S].VFlip)
+					{
+						TileHeight = TileLine + 1;
+						TileLine = 7 - TileLine;
+						BaseTile |= V_FLIP;
+					}
+					else
+					{
+						TileHeight = 8 - TileLine;
+					}
+					if (TileHeight > Height)
+						TileHeight = Height;
+
+					if (PPU.OBJ[S].HFlip)
+					{
+						TileX = (TileX + (GFX.OBJWidths[S] >> 3) - 1) & 0x0f;
+						BaseTile |= H_FLIP;
+						TileInc = -1;
+					}
+
+					int X=PPU.OBJ[S].HPos; if(X==-256) X=256;
+
+					//if (!clipcount)
+					{
+						// No clipping at all.
+						//
+						for (; X<=256 && X<PPU.OBJ[S].HPos+GFX.OBJWidths[S]; TileX=(TileX+TileInc)&0x0f, X+=8)
+						{
+							//DrawOBJTileLater (PPU.OBJ[S].Priority, BaseTile|TileX, X, Y, TileLine);
+							S9xDrawOBJTileHardware2 (sub, (PPU.OBJ[S].Priority + 1) * 3 * 256 + depth, 
+								BaseTile|TileX, X, Y, TileLine, TileHeight);
+
+						} // end for
+					}
+					Height -= TileHeight;
+					Y += TileHeight;
+
+					if (PPU.OBJ[S].VFlip)
+					{
+						StartLine -= TileHeight;
+						if (StartLine < 0)
+							StartLine += GFX.OBJWidths[S];
+					}
+					else
+						StartLine += TileHeight;
+				}
+			}
+
+			S = (S-1) & 0x7F;
+		} while (S != FirstSprite);
+	}
+	else
+	{
 
 	for(uint32 Y=GFX.StartY, Offset=Y*GFX.PPL; Y<=GFX.EndY; Y++, Offset+=GFX.PPL)
 	{
@@ -2820,7 +2918,7 @@ if(Settings.BGLayering) {
 				{
 					//DrawOBJTileLater (PPU.OBJ[S].Priority, BaseTile|TileX, X, Y, TileLine);
 					S9xDrawOBJTileHardware2 (sub, (PPU.OBJ[S].Priority + 1) * 3 * 256 + depth, 
-						BaseTile|TileX, X, Y, TileLine);
+						BaseTile|TileX, X, Y, TileLine, 1);
 
 				} // end for
 			}
@@ -2833,6 +2931,8 @@ if(Settings.BGLayering) {
 #ifdef MK_DEBUG_RTO
 	if(Settings.BGLayering) fprintf(stderr, "Exiting DrawOBJS() for %d-%d\n", GFX.StartY, GFX.EndY);
 #endif
+
+	}
 
 	//gpu3dsSetTextureEnvironmentReplaceTexture0();
 	gpu3dsBindTextureSnesTileCache(GPU_TEXUNIT0);

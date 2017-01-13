@@ -293,6 +293,10 @@ struct SPPU {
     uint8 BGnxOFSbyte;
     uint8 OpenBus1;
     uint8 OpenBus2;
+
+    // Added for OBJ drawing optimization
+    //
+    bool PriorityNormalCase = false;
 };
 
 #define CLIP_OR 0

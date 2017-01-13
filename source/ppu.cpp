@@ -1686,8 +1686,13 @@ void S9xSetCPU (uint8 byte, uint16 Address)
 			if ((byte & 0x80) && 
 				!(Memory.FillRAM [0x4200] & 0x80) &&
 				CPU.V_Counter >= PPU.ScreenHeight + FIRST_VISIBLE_LINE &&
-				CPU.V_Counter <= PPU.ScreenHeight + 
-				(SNESGameFixes.alienVSpredetorFix ? 25 : 15) &&   //jyam 15->25 alien vs predetor
+				
+				// Bug in SNES9x v1.43 (which was fixed in v1.51)
+				// NMI can trigger during VBlank as long as NMI_read ($4210) wasn't cleared.
+				// This fixes Cu-On-Pa SFC.
+				//
+				/*CPU.V_Counter <= PPU.ScreenHeight + 
+				(SNESGameFixes.alienVSpredetorFix ? 25 : 15) && */  //jyam 15->25 alien vs predetor
 // Panic Bomberman clears the NMI pending flag @ scanline 230 before enabling
 // NMIs again. The NMI routine crashes the CPU if it is called without the NMI
 // pending flag being set...

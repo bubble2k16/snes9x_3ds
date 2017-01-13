@@ -1333,6 +1333,8 @@ void S9xSetupOBJ ()
 #ifdef MK_DEBUG_RTO
 		if(Settings.BGLayering) fprintf(stderr, "normal FirstSprite = %02x\n", PPU.FirstSprite);
 #endif
+		PPU.PriorityNormalCase = true;
+
 		/* normal case */
 		memset(LineOBJ, 0, sizeof(LineOBJ));
 		for(int i=0; i<SNES_HEIGHT_EXTENDED; i++){
@@ -1392,6 +1394,7 @@ void S9xSetupOBJ ()
 #ifdef MK_DEBUG_RTO
 		if(Settings.BGLayering) fprintf(stderr, "FirstSprite+Y\n");
 #endif
+		PPU.PriorityNormalCase = false;
 
 		/* First, find out which sprites are on which lines */
 		memset(OBJOnLine, 0, sizeof(OBJOnLine));

@@ -238,7 +238,7 @@ void S9xDoHBlankProcessingWithRegisters()
 */
 
 	#define DEBUG_OUTPUT \
-		if (GPU3DS.enableDebug) \
+		if (GPU3DS.enableDebug && !Settings.Paused) \
 		{ \
 			CpuSaveFastRegisters(); \
 			printf ("\n"); \
@@ -467,7 +467,7 @@ void S9xDoHBlankProcessing ()
 			if (CPU.V_Counter == PPU.ScreenHeight + FIRST_VISIBLE_LINE)
 			{
 #ifdef DEBUG_CPU
-				printf ("debug frame counter: %d\n", debugFrameCounter);
+				//printf ("debug frame counter: %d\n", debugFrameCounter);
 				debugFrameCounter++;
 #endif				
 				// Start of V-blank
