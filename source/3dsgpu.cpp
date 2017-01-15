@@ -457,12 +457,13 @@ void gpu3dsSwapVertexListForNextFrame(SVertexList *list)
 }
 
 
-inline void gpu3dsDrawVertexList(SVertexList *list, GPU_Primitive_t type, bool repeatLastDraw)
+inline void gpu3dsDrawVertexList(SVertexList *list, GPU_Primitive_t type, bool repeatLastDraw, int storeVertexListIndex, int storeIndex)
 {
     if (!repeatLastDraw)
     {
         if (list->Count > 0)
         {
+            //printf ("  DVL         : %8x count=%d\n", list->List, list->Count);
             gpu3dsSetAttributeBuffers(
                 list->TotalAttributes,          // number of attributes
                 (u32*)list->List,
@@ -470,6 +471,16 @@ inline void gpu3dsDrawVertexList(SVertexList *list, GPU_Primitive_t type, bool r
             );    
 
             GPU_DrawArray(type, 0, list->Count);
+
+            // Save the parameters passed to the gpu3dsSetAttributeBuffers and GPU_DrawArray
+            //
+            if (storeVertexListIndex >= 0 && storeIndex >= 0)
+            {
+                GPU3DS.vertexesStored[storeVertexListIndex][storeIndex].TotalAttributes = list->TotalAttributes;
+                GPU3DS.vertexesStored[storeVertexListIndex][storeIndex].List = list->List;
+                GPU3DS.vertexesStored[storeVertexListIndex][storeIndex].AttributeFormats = list->AttributeFormats;
+                GPU3DS.vertexesStored[storeVertexListIndex][storeIndex].Count = list->Count;
+            }
 
             // Saves this just in case it can be re-used for windowing
             // or HDMA effects.
@@ -487,12 +498,30 @@ inline void gpu3dsDrawVertexList(SVertexList *list, GPU_Primitive_t type, bool r
 
             somethingWasDrawn = true;
         }
+        else
+        {
+            // Save the parameters passed to the gpu3dsSetAttributeBuffers and GPU_DrawArray
+            //
+            if (storeVertexListIndex >= 0 && storeIndex >= 0)
+            {
+                GPU3DS.vertexesStored[storeVertexListIndex][storeIndex].Count = list->Count;
+            }
+
+        }
     }
     else
     {
-        if (list->PrevCount > 0)
+        SStoredVertexList *list = &GPU3DS.vertexesStored[storeVertexListIndex][storeIndex];
+        if (list->Count > 0)
         {
-            GPU_DrawArray(type, list->PrevFirstIndex, list->PrevCount);
+            //printf ("  DVL (repeat): %8x count=%d\n", list->List, list->Count);
+            gpu3dsSetAttributeBuffers(
+                list->TotalAttributes,          // number of attributes
+                (u32*)list->List,
+                list->AttributeFormats
+            );    
+
+            GPU_DrawArray(type, 0, list->Count);
 
             somethingWasDrawn = true;
         }   
@@ -1981,7 +2010,7 @@ void gpu3dsDrawRectangle(int x0, int y0, int x1, int y1, int depth, u32 color)
     */
 
     gpu3dsAddRectangleVertexes (x0, y0, x1, y1, depth, color);
-    gpu3dsDrawVertexList(&GPU3DS.rectangleVertexes, GPU_GEOMETRY_PRIM, false);    
+    gpu3dsDrawVertexList(&GPU3DS.rectangleVertexes, GPU_GEOMETRY_PRIM, false, -1, -1);    
 }
 
 
@@ -2024,11 +2053,11 @@ void gpu3dsAddRectangleVertexes(int x0, int y0, int x1, int y1, int depth, u32 c
 }
 
 
-void gpu3dsDrawVertexes(bool repeatLastDraw)
+void gpu3dsDrawVertexes(bool repeatLastDraw, int storeIndex)
 {
-    gpu3dsDrawVertexList(&GPU3DS.quadVertexes, GPU_TRIANGLES, repeatLastDraw);
-    gpu3dsDrawVertexList(&GPU3DS.tileVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw);
-    gpu3dsDrawVertexList(&GPU3DS.rectangleVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw);
+    gpu3dsDrawVertexList(&GPU3DS.quadVertexes, GPU_TRIANGLES, repeatLastDraw, 0, storeIndex);
+    gpu3dsDrawVertexList(&GPU3DS.tileVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw, 1, storeIndex);
+    gpu3dsDrawVertexList(&GPU3DS.rectangleVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw, 2, storeIndex);
 }
 
 
@@ -2041,10 +2070,10 @@ void gpu3dsDrawMode7Vertexes(int fromIndex, int tileCount)
     
 }
 
-void gpu3dsDrawMode7LineVertexes(bool repeatLastDraw)
+void gpu3dsDrawMode7LineVertexes(bool repeatLastDraw, int storeIndex)
 {
     if (GPU3DS.isReal3DS)
-        gpu3dsDrawVertexList(&GPU3DS.mode7LineVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw);
+        gpu3dsDrawVertexList(&GPU3DS.mode7LineVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw, 3, storeIndex);
     else
-        gpu3dsDrawVertexList(&GPU3DS.mode7LineVertexes, GPU_TRIANGLES, repeatLastDraw);
+        gpu3dsDrawVertexList(&GPU3DS.mode7LineVertexes, GPU_TRIANGLES, repeatLastDraw, 3, storeIndex);
 }

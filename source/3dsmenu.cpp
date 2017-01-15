@@ -13,7 +13,7 @@
 #define CONSOLE_WIDTH           40
 #define MENU_HEIGHT             (17)
 
-#define SNES9X_VERSION "v0.71"
+#define SNES9X_VERSION "v0.80"
 
 
 

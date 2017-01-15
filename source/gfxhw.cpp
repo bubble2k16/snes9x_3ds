@@ -157,6 +157,8 @@ extern uint8  Mode7Depths [2];
 #define ALPHA_0_5 					0x2000 
 #define ALPHA_1_0 					0x4000 
 
+bool layerDrawn[10];
+
 
 //-------------------------------------------------------------------
 // Render the backdrop
@@ -1130,10 +1132,25 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
     uint16 *BPS1;
     uint16 *BPS2;
     uint16 *BPS3;
-    uint32 Width;
+    //uint32 Width;
     int VOffsetOffset = BGMode == 4 ? 0 : 32;
 
 	S9xComputeAndEnableStencilFunction(bg, sub);
+
+	// Note: We draw subscreens first, then the main screen.
+	// So if the subscreen has already been drawn, and we are drawing the main screen,
+	// we simply just redraw the same vertices that we have saved.
+	//
+	if (layerDrawn[bg])
+	{
+		gpu3dsBindTextureSnesTileCache(GPU_TEXUNIT0);
+		gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
+		gpu3dsEnableAlphaTestNotEqualsZero();
+		gpu3dsEnableDepthTest();
+		//printf ("Redraw: %d (%s)\n", bg + 1, sub ? "sub" : "main");
+		gpu3dsDrawVertexes(true, bg);	// redraw saved vertices
+		return;
+	}
 
     GFX.PixSize = 1;
 
@@ -1198,7 +1215,7 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 		SC3-=0x08000;
 
 
-    static const int Lines = 1;
+    
     int OffsetMask;
     int OffsetShift;
     int OffsetEnableMask = 1 << (bg + 13);
@@ -1213,320 +1230,270 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 		OffsetMask = 0x1ff;
 		OffsetShift = 3;
     }
-	
-    for (uint32 Y = GFX.StartY; Y <= GFX.EndY; Y++)
-    {
-		uint32 VOff = LineData [Y].BG[2].VOffset - 1;
-//		uint32 VOff = LineData [Y].BG[2].VOffset;
-		uint32 HOff = LineData [Y].BG[2].HOffset;
 
-		int VirtAlign;
-		int ScreenLine = VOff >> 3;
-		int t1;
-		int t2;
-		uint16 *s0;
-		uint16 *s1;
-		uint16 *s2;
-		
-		if (ScreenLine & 0x20)
-			s1 = BPS2, s2 = BPS3;
-		else
-			s1 = BPS0, s2 = BPS1;
-		
-		
-		s1 += (ScreenLine & 0x1f) << 5;
-		s2 += (ScreenLine & 0x1f) << 5;
-		
-		if(BGMode != 4)
+	// Optimized version of the offset per tile renderer
+	//
+    for (uint32 OY = GFX.StartY; OY <= GFX.EndY; )
+    {
+		// Do a check to find out how many scanlines
+		// that the BGnVOFS, BGnHOFS, BG2VOFS, BG2HOS
+		// remains constant
+		//
+		int TotalLines = 1;
+		for (; TotalLines < PPU.ScreenHeight - 1; TotalLines++)
 		{
-			if((ScreenLine & 0x1f) == 0x1f)
-			{
-				if(ScreenLine & 0x20)
-					VOffsetOffset = BPS0 - BPS2 - 0x1f*32;
-				else
-					VOffsetOffset = BPS2 - BPS0 - 0x1f*32;
-			}
-			else
-			{
-				VOffsetOffset = 32;
-			}
+			int y = OY + TotalLines - 1;
+			if (!(LineData [y].BG[bg].VOffset == LineData [y + 1].BG[bg].VOffset &&
+				LineData [y].BG[bg].HOffset == LineData [y + 1].BG[bg].HOffset &&
+				LineData [y].BG[2].VOffset == LineData [y + 1].BG[2].VOffset && 
+				LineData [y].BG[2].HOffset == LineData [y + 1].BG[2].HOffset))
+				break;
 		}
 		
-		//int clipcount = GFX.pCurrentClip->Count [bg];
-		//if (!clipcount)
-		//	clipcount = 1;
-		
-		//for (int clip = 0; clip < clipcount; clip++)
+		// For those lines, draw the tiles column by column 
+		// (from the left to the right of the screen)
+		//
+		for (int Left = 0; Left < 256; Left += 8)
 		{
-			uint32 Left;
-			uint32 Right;
-			
-			//if (!GFX.pCurrentClip->Count [bg])
-			//{
-				Left = 0;
-				Right = 256;
-			//}
-			//else
-			//{
-			//	Left = GFX.pCurrentClip->Left [clip][bg];
-			//	Right = GFX.pCurrentClip->Right [clip][bg];
-			//	
-			//	if (Right <= Left)
-			//		continue;
-			//}
-			
-			uint32 VOffset;
-			uint32 HOffset;
-			//added:
-			uint32 LineHOffset=LineData [Y].BG[bg].HOffset;
-			
-			uint32 Offset;
-			uint32 HPos;
-			uint32 Quot;
-			uint32 Count;
-			uint16 *t;
-			uint32 Quot2;
-			uint32 VCellOffset;
-			uint32 HCellOffset;
-			uint16 *b1;
-			uint16 *b2;
-			uint32 TotalCount = 0;
-			uint32 MaxCount = 8;
-			
-			uint32 s = Left * GFX.PixSize + Y * 256;
-			int sX = Left;
-			bool8 left_hand_edge = (Left == 0);
-			Width = Right - Left;
-			
-			if (Left & 7)
-				MaxCount = 8 - (Left & 7);
-			
-			while (Left < Right) 
+			for (int Y = OY; Y < OY + TotalLines; )
 			{
-				if (left_hand_edge)
-				{
-					// The SNES offset-per-tile background mode has a
-					// hardware limitation that the offsets cannot be set
-					// for the tile at the left-hand edge of the screen.
-					VOffset = LineData [Y].BG[bg].VOffset;
+				uint32 VOff = LineData [Y].BG[2].VOffset - 1;
+		//		uint32 VOff = LineData [Y].BG[2].VOffset;
+				uint32 HOff = LineData [Y].BG[2].HOffset;
 
-					//MKendora; use temp var to reduce memory accesses
-					//HOffset = LineData [Y].BG[bg].HOffset;
-
-					HOffset = LineHOffset;
-					//End MK
-
-					left_hand_edge = FALSE;
-				}
-				else
-				{
-					// All subsequent offset tile data is shifted left by one,
-					// hence the - 1 below.
-
-					Quot2 = ((HOff + Left - 1) & OffsetMask) >> 3;
-					
-					if (Quot2 > 31)
-						s0 = s2 + (Quot2 & 0x1f);
-					else
-						s0 = s1 + Quot2;
-					
-					HCellOffset = READ_2BYTES (s0);
-					
-					if (BGMode == 4)
-					{
-						VOffset = LineData [Y].BG[bg].VOffset;
-						
-						//MKendora another mem access hack
-						//HOffset = LineData [Y].BG[bg].HOffset;
-						HOffset=LineHOffset;
-						//end MK
-
-						if ((HCellOffset & OffsetEnableMask))
-						{
-							if (HCellOffset & 0x8000)
-								VOffset = HCellOffset + 1;
-							else
-								HOffset = HCellOffset;
-						}
-					}
-					else
-					{
-						VCellOffset = READ_2BYTES (s0 + VOffsetOffset);
-						if ((VCellOffset & OffsetEnableMask))
-							VOffset = VCellOffset + 1;
-						else
-							VOffset = LineData [Y].BG[bg].VOffset;
-
-						//MKendora Strike Gunner fix
-						if ((HCellOffset & OffsetEnableMask))
-						{
-							//HOffset= HCellOffset;
-							
-							HOffset = (HCellOffset & ~7)|(LineHOffset&7);
-							//HOffset |= LineData [Y].BG[bg].HOffset&7;
-						}
-						else
-							HOffset=LineHOffset;
-							//HOffset = LineData [Y].BG[bg].HOffset - 
-							//Settings.StrikeGunnerOffsetHack;
-						//HOffset &= (~7);
-						//end MK
-					}
-				}
-				VirtAlign = ((Y + VOffset) & 7) << 3;
-				ScreenLine = (VOffset + Y) >> OffsetShift;
-				
-				if (((VOffset + Y) & 15) > 7)
-				{
-					t1 = 16;
-					t2 = 0;
-				}
-				else
-				{
-					t1 = 0;
-					t2 = 16;
-				}
+				int VirtAlign;
+				int ScreenLine = VOff >> 3;
+				int t1;
+				int t2;
+				uint16 *s0;
+				uint16 *s1;
+				uint16 *s2;
 				
 				if (ScreenLine & 0x20)
-					b1 = SC2, b2 = SC3;
+					s1 = BPS2, s2 = BPS3;
 				else
-					b1 = SC0, b2 = SC1;
+					s1 = BPS0, s2 = BPS1;
 				
-				b1 += (ScreenLine & 0x1f) << 5;
-				b2 += (ScreenLine & 0x1f) << 5;
 				
-				HPos = (HOffset + Left) & OffsetMask;
+				s1 += (ScreenLine & 0x1f) << 5;
+				s2 += (ScreenLine & 0x1f) << 5;
 				
-				Quot = HPos >> 3;
-				
-				if (tileSize == 8)
+				if(BGMode != 4)
 				{
-					if (Quot > 31)
-						t = b2 + (Quot & 0x1f);
+					if((ScreenLine & 0x1f) == 0x1f)
+					{
+						if(ScreenLine & 0x20)
+							VOffsetOffset = BPS0 - BPS2 - 0x1f*32;
+						else
+							VOffsetOffset = BPS2 - BPS0 - 0x1f*32;
+					}
 					else
-						t = b1 + Quot;
-				}
-				else
-				{
-					if (Quot > 63)
-						t = b2 + ((Quot >> 1) & 0x1f);
-					else
-						t = b1 + (Quot >> 1);
+					{
+						VOffsetOffset = 32;
+					}
 				}
 				
-				if (MaxCount + TotalCount > Width)
-					MaxCount = Width - TotalCount;
+				//for (int clip = 0; clip < clipcount; clip++)
+			
+				uint32 VOffset;
+				uint32 HOffset;
+				//added:
+				uint32 LineHOffset=LineData [Y].BG[bg].HOffset;
 				
-				Offset = HPos & 7;
+				uint32 Offset;
+				uint32 HPos;
+				uint32 Quot;
+				uint16 *t;
+				uint32 Quot2;
+				uint32 VCellOffset;
+				uint32 HCellOffset;
+				uint16 *b1;
+				uint16 *b2;
+				uint32 Lines;
 				
-				//Count =1;
-				Count = 8 - Offset;
-				if (Count > MaxCount)
-					Count = MaxCount;
+				//int sX = Left;
+				bool8 left_hand_edge = (Left == 0);
+				//Width = Right - Left;
 				
-				s -= Offset * GFX.PixSize;
-				sX -= Offset;
-				Tile = READ_2BYTES(t);
-
-				int tpriority = (Tile & 0x2000) >> 13;
-				
-				if (tileSize == 8)
+				//while (Left < Right) 
 				{
-					//if (tpriority == 0)
-					//printf ("OFS: %3d,%3d V:%d T:%04x\n", sX, Y, VirtAlign, Tile);
+					if (left_hand_edge)
+					{
+						// The SNES offset-per-tile background mode has a
+						// hardware limitation that the offsets cannot be set
+						// for the tile at the left-hand edge of the screen.
+						VOffset = LineData [Y].BG[bg].VOffset;
 
+						//MKendora; use temp var to reduce memory accesses
+						//HOffset = LineData [Y].BG[bg].HOffset;
+
+						HOffset = LineHOffset;
+						//End MK
+
+						left_hand_edge = FALSE;
+					}
+					else
+					{
+						// All subsequent offset tile data is shifted left by one,
+						// hence the - 1 below.
+
+						Quot2 = ((HOff + Left - 1) & OffsetMask) >> 3;
+						
+						if (Quot2 > 31)
+							s0 = s2 + (Quot2 & 0x1f);
+						else
+							s0 = s1 + Quot2;
+						
+						HCellOffset = READ_2BYTES (s0);
+						
+						if (BGMode == 4)
+						{
+							VOffset = LineData [Y].BG[bg].VOffset;
+							
+							//MKendora another mem access hack
+							//HOffset = LineData [Y].BG[bg].HOffset;
+							HOffset=LineHOffset;
+							//end MK
+
+							if ((HCellOffset & OffsetEnableMask))
+							{
+								if (HCellOffset & 0x8000)
+									VOffset = HCellOffset + 1;
+								else
+									HOffset = HCellOffset;
+							}
+						}
+						else
+						{
+							VCellOffset = READ_2BYTES (s0 + VOffsetOffset);
+							if ((VCellOffset & OffsetEnableMask))
+								VOffset = VCellOffset + 1;
+							else
+								VOffset = LineData [Y].BG[bg].VOffset;
+
+							//MKendora Strike Gunner fix
+							if ((HCellOffset & OffsetEnableMask))
+							{
+								//HOffset= HCellOffset;
+								
+								HOffset = (HCellOffset & ~7)|(LineHOffset&7);
+								//HOffset |= LineData [Y].BG[bg].HOffset&7;
+							}
+							else
+								HOffset=LineHOffset;
+								//HOffset = LineData [Y].BG[bg].HOffset - 
+								//Settings.StrikeGunnerOffsetHack;
+							//HOffset &= (~7);
+							//end MK
+						}
+					}
+					VirtAlign = ((Y + VOffset) & 7) << 3;
+					Lines = 8 - (VirtAlign >> 3);
+					//printf ("    L=%d\n", Lines);
+					if (Y + Lines >= OY + TotalLines)
+						Lines = OY + TotalLines - Y;
+					ScreenLine = (VOffset + Y) >> OffsetShift;
+					
+					if (((VOffset + Y) & 15) > 7)
+					{
+						t1 = 16;
+						t2 = 0;
+					}
+					else
+					{
+						t1 = 0;
+						t2 = 16;
+					}
+					
+					if (ScreenLine & 0x20)
+						b1 = SC2, b2 = SC3;
+					else
+						b1 = SC0, b2 = SC1;
+					
+					b1 += (ScreenLine & 0x1f) << 5;
+					b2 += (ScreenLine & 0x1f) << 5;
+					
+					HPos = (HOffset + Left) & OffsetMask;
+					
+					Quot = HPos >> 3;
+					
+					if (tileSize == 8)
+					{
+						if (Quot > 31)
+							t = b2 + (Quot & 0x1f);
+						else
+							t = b1 + Quot;
+					}
+					else
+					{
+						if (Quot > 63)
+							t = b2 + ((Quot >> 1) & 0x1f);
+						else
+							t = b1 + (Quot >> 1);
+					}
+					
+					Offset = HPos & 7;
+					
+					int sX = Left - Offset;
+					Tile = READ_2BYTES(t);
+
+					int tpriority = (Tile & 0x2000) >> 13;
+					
+					if (tileSize == 8)
+					{
 						S9xDrawBGFullTileHardwareInline (
 							tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
 							tpriority, depth0, depth1,
 							Tile, sX, Y, 
 							VirtAlign, Lines);
-
-						//S9xDrawBGClippedTileHardwareInline (
-						//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-						//	tpriority, depth0, depth1,
-						//	Tile, s, Offset, Count, VirtAlign, Lines);
-					//else
-					//	DrawClippedTileLater (Tile, s, Offset, Count, VirtAlign, Lines);
-				}
-				else
-				{
-					if (!(Tile & (V_FLIP | H_FLIP)))
-					{
-						//if (tpriority == 0)
-						S9xDrawBGFullTileHardwareInline (
-							tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-							tpriority, depth0, depth1,
-							Tile + t1 + (Quot & 1), sX, Y, 
-							VirtAlign, Lines);
-						
-							//S9xDrawBGClippedTileHardwareInline (
-							//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-							//	tpriority, depth0, depth1,
-							//	Tile + t1 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
-						//else
-						//	DrawClippedTileLater (Tile + t1 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 					}
 					else
-						if (Tile & H_FLIP)
+					{
+						if (!(Tile & (V_FLIP | H_FLIP)))
 						{
-							if (Tile & V_FLIP)
+							S9xDrawBGFullTileHardwareInline (
+								tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+								tpriority, depth0, depth1,
+								Tile + t1 + (Quot & 1), sX, Y, 
+								VirtAlign, Lines);
+						}
+						else
+							if (Tile & H_FLIP)
 							{
-								S9xDrawBGFullTileHardwareInline (
-									tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-									tpriority, depth0, depth1,
-									Tile + t2 + 1 - (Quot & 1), sX, Y, 
-									VirtAlign, Lines);
-								
-								//if (tpriority == 0)
-									//S9xDrawBGClippedTileHardwareInline (
-									//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-									//	tpriority, depth0, depth1,
-									//	Tile + t2 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
-								//else
-								//	DrawClippedTileLater (Tile + t2 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
+								if (Tile & V_FLIP)
+								{
+									S9xDrawBGFullTileHardwareInline (
+										tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+										tpriority, depth0, depth1,
+										Tile + t2 + 1 - (Quot & 1), sX, Y, 
+										VirtAlign, Lines);
+								}
+								else
+								{
+									S9xDrawBGFullTileHardwareInline (
+										tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
+										tpriority, depth0, depth1,
+										Tile + t1 + 1 - (Quot & 1), sX, Y, 
+										VirtAlign, Lines);
+								}
 							}
 							else
 							{
 								S9xDrawBGFullTileHardwareInline (
 									tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
 									tpriority, depth0, depth1,
-									Tile + t1 + 1 - (Quot & 1), sX, Y, 
+									Tile + t2 + (Quot & 1), sX, Y, 
 									VirtAlign, Lines);
-								
-								//if (tpriority == 0)
-									//S9xDrawBGClippedTileHardwareInline (
-									//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-									//	tpriority, depth0, depth1,
-									//	Tile + t1 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
-								//else
-								//	DrawClippedTileLater (Tile + t1 + 1 - (Quot & 1), s, Offset, Count, VirtAlign, Lines);
 							}
-						}
-						else
-						{
-							S9xDrawBGFullTileHardwareInline (
-								tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-								tpriority, depth0, depth1,
-								Tile + t2 + (Quot & 1), sX, Y, 
-								VirtAlign, Lines);
-							
-							//if (tpriority == 0)
-								//S9xDrawBGClippedTileHardwareInline (
-								//	tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-								//		tpriority, depth0, depth1,
-								//	Tile + t2 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
-							//else
-							//	DrawClippedTileLater (Tile + t2 + (Quot & 1), s, Offset, Count, VirtAlign, Lines);
-						}
+					}
 				}
-				
-				Left += Count;
-				TotalCount += Count;
-				s += (Offset + Count) * GFX.PixSize;
-				sX += (Offset + Count);
-				MaxCount = 8;
+
+				// Proceed to the tile below, in the same column.
+				//
+				Y += Lines;
 			}
 		}
+		OY += TotalLines;
     }
 
 	//gpu3dsSetTextureEnvironmentReplaceTexture0();
@@ -1534,7 +1501,8 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 	gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
 	gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsEnableDepthTest();
-	gpu3dsDrawVertexes();
+	gpu3dsDrawVertexes(false, bg);
+	layerDrawn[bg] = true;
 }
 
 
@@ -1730,6 +1698,21 @@ inline void __attribute__((always_inline)) S9xDrawBackgroundHardwarePriority0Inl
 	S9xComputeAndEnableStencilFunction(bg, sub);
 
 	//printf ("BG%d Y=%d-%d W1:%d-%d W2:%d-%d\n", bg, GFX.StartY, GFX.EndY, PPU.Window1Left, PPU.Window1Right, PPU.Window2Left, PPU.Window2Right);
+
+	// Note: We draw subscreens first, then the main screen.
+	// So if the subscreen has already been drawn, and we are drawing the main screen,
+	// we simply just redraw the same vertices that we have saved.
+	//
+	if (layerDrawn[bg])
+	{
+		gpu3dsBindTextureSnesTileCache(GPU_TEXUNIT0);
+		gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
+		gpu3dsEnableAlphaTestNotEqualsZero();
+		gpu3dsEnableDepthTest();
+		//printf ("Redraw: %d (%s)\n", bg, sub ? "sub" : "main");
+		gpu3dsDrawVertexes(true, bg);	// redraw saved vertices
+		return;
+	}
 
     BG.TileSize = tileSize;
     BG.BitShift = bitShift;
@@ -2002,7 +1985,9 @@ inline void __attribute__((always_inline)) S9xDrawBackgroundHardwarePriority0Inl
 	gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
 	gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsEnableDepthTest();
-	gpu3dsDrawVertexes();
+	//printf ("Draw  : %d (%s)\n", bg, sub ? "sub" : "main");
+	gpu3dsDrawVertexes(false, bg);
+	layerDrawn[bg] = true;
 }
 
 
@@ -2235,6 +2220,20 @@ inline void __attribute__((always_inline)) S9xDrawHiresBackgroundHardwarePriorit
     GFX.PixSize = 1;
 
 	S9xComputeAndEnableStencilFunction(bg, sub);
+
+ 	// Note: We draw subscreens first, then the main screen.
+	// So if the subscreen has already been drawn, and we are drawing the main screen,
+	// we simply just redraw the same vertices that we have saved.
+	//
+	if (layerDrawn[bg])
+	{
+		gpu3dsBindTextureSnesTileCache(GPU_TEXUNIT0);
+		gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
+		gpu3dsEnableAlphaTestNotEqualsZero();
+		gpu3dsDisableDepthTest();
+		gpu3dsDrawVertexes(true, bg);
+		return;		
+	}
 
 	//printf ("BG%d Y=%d-%d W1:%d-%d W2:%d-%d\n", bg, GFX.StartY, GFX.EndY, PPU.Window1Left, PPU.Window1Right, PPU.Window2Left, PPU.Window2Right);
 
@@ -2518,7 +2517,8 @@ inline void __attribute__((always_inline)) S9xDrawHiresBackgroundHardwarePriorit
 	gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
 	gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsEnableDepthTest();
-	gpu3dsDrawVertexes();
+	gpu3dsDrawVertexes(false, bg);
+	layerDrawn[bg] = true;
 }
 
 
@@ -2757,6 +2757,23 @@ SOBJList OBJList[128];
 //-------------------------------------------------------------------
 void S9xDrawOBJSHardware (bool8 sub, int depth = 0, int priority = 0)
 {
+	S9xComputeAndEnableStencilFunction(4, sub);
+
+	
+	// Note: We draw subscreens first, then the main screen.
+	// So if the subscreen has already been drawn, and we are drawing the main screen,
+	// we simply just redraw the same vertices that we have saved.
+	//
+	if (layerDrawn[5])
+	{
+		gpu3dsBindTextureSnesTileCache(GPU_TEXUNIT0);
+		gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
+		gpu3dsEnableAlphaTestNotEqualsZero();
+		gpu3dsDisableDepthTest();
+		gpu3dsDrawVertexes(true, 5);
+		return;		
+	}
+	
 #ifdef MK_DEBUG_RTO
 	if(Settings.BGLayering) fprintf(stderr, "Entering DrawOBJS() for %d-%d\n", GFX.StartY, GFX.EndY);
 #endif
@@ -2787,12 +2804,22 @@ if(Settings.BGLayering) {
 }
 #endif
 
-	S9xComputeAndEnableStencilFunction(4, sub);
-
-	if (PPU.PriorityNormalCase && 
+	if (PPU.PriorityDrawFromSprite >= 0 && 
 		GFX.EndY - GFX.StartY >= 16)	// Wonder what is the best value for this to get the optimal performance? 
 	{
-		memset(OBJList, 0, sizeof(OBJList));
+		//printf ("Fast OBJ draw %d\n", PPU.PriorityDrawFromSprite);
+		// Clear all heights
+		for (int i = 0; i < 128;)
+		{
+			OBJList[i++].Height = 0;
+			OBJList[i++].Height = 0;
+			OBJList[i++].Height = 0;
+			OBJList[i++].Height = 0;
+			OBJList[i++].Height = 0;
+			OBJList[i++].Height = 0;
+			OBJList[i++].Height = 0;
+			OBJList[i++].Height = 0;
+		}
 		for(uint32 Y=GFX.StartY; Y<=GFX.EndY; Y++)
 		{
 			for (int I = GFX.OBJLines[Y].OBJCount - 1; I >= 0; I --)
@@ -2809,8 +2836,9 @@ if(Settings.BGLayering) {
 			}
 		}
 
-		int FirstSprite = PPU.FirstSprite;
-		int S = FirstSprite;
+		int FirstSprite = PPU.PriorityDrawFromSprite;
+		int StartDrawingSprite = (FirstSprite - 1) & 0x7F;
+		int S = StartDrawingSprite;
 		do {
 			if (OBJList[S].Height)
 			{
@@ -2853,6 +2881,8 @@ if(Settings.BGLayering) {
 						//
 						for (; X<=256 && X<PPU.OBJ[S].HPos+GFX.OBJWidths[S]; TileX=(TileX+TileInc)&0x0f, X+=8)
 						{
+							//if (X < 255) printf ("Draw S=%d @ %d,%d (Line=%d, H=%d, P=%d)\n", S, X, Y, TileLine, TileHeight, PPU.OBJ[S].Priority);
+							
 							//DrawOBJTileLater (PPU.OBJ[S].Priority, BaseTile|TileX, X, Y, TileLine);
 							S9xDrawOBJTileHardware2 (sub, (PPU.OBJ[S].Priority + 1) * 3 * 256 + depth, 
 								BaseTile|TileX, X, Y, TileLine, TileHeight);
@@ -2874,7 +2904,7 @@ if(Settings.BGLayering) {
 			}
 
 			S = (S-1) & 0x7F;
-		} while (S != FirstSprite);
+		} while (S != StartDrawingSprite);
 	}
 	else
 	{
@@ -2939,7 +2969,8 @@ if(Settings.BGLayering) {
 	gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
 	gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsDisableDepthTest();
-	gpu3dsDrawVertexes();
+	gpu3dsDrawVertexes(false, 5);
+	layerDrawn[5] = true;
 }
 
 
@@ -3372,7 +3403,7 @@ void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth)
 
 	//gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsDrawMode7LineVertexes();
-	gpu3dsDrawVertexes();
+	gpu3dsDrawVertexes(false, 5);
 	t3dsEndTiming(27);
 }
 
@@ -3485,7 +3516,7 @@ void S9xDrawBackgroundMode7HardwareRepeatTile0(int bg, bool8 sub, int depth)
 
 	//gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsDrawMode7LineVertexes();
-	gpu3dsDrawVertexes();
+	gpu3dsDrawVertexes(false, 5);
 	t3dsEndTiming(27);
 }
 
@@ -3562,13 +3593,32 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 		BG3 = ON_SUB (3);
 		OB  = ON_SUB (4);
 
-		BGAlpha0 = ALPHA_1_0;   // Don't change alpha, whatever the value is!
-		BGAlpha1 = ALPHA_1_0;
-		BGAlpha2 = ALPHA_1_0;
-		BGAlpha3 = ALPHA_1_0;
+		// We are going to use the same alphas as we do
+		// for the main screen. This is because we are
+		// going to create the same set of vertex data for
+		// the given background in the sub screen as the
+		// set we use for the main screen. This improves
+		// performance of games that render the same BG to
+		// main and sub screens.
+		// 
+		// Anyway the sub screen's alpha do not factor into
+		// color math. So this is fine.
+		//
+		int alpha = ALPHA_1_0;	 	// for Add or Sub   (translates to 1.0 alpha on main screen)
+		if (GFX.r2131 & 0x40)	
+			alpha = ALPHA_0_5;		// for Add / 2 or Sub / 2 (translates to 0.5 alpha on main screen)
 
-		OBAlpha = ALPHA_1_0;
+		BGAlpha0 = SUB_OR_ADD (0) ? alpha : ALPHA_ZERO;
+		BGAlpha1 = SUB_OR_ADD (1) ? alpha : ALPHA_ZERO;
+		BGAlpha2 = SUB_OR_ADD (2) ? alpha : ALPHA_ZERO;
+		BGAlpha3 = SUB_OR_ADD (3) ? alpha : ALPHA_ZERO;
+
+		OBAlpha = SUB_OR_ADD (4) ? alpha : ALPHA_ZERO;
+
+		// For Background, we will set alpha to 1.0
+		//
 		BackAlpha = ALPHA_1_0;
+		
 
 		// debugging
 		/*printf ("Sub  Y:%3d BGE:%d%d%d%d%d\n", GFX.StartY, 
@@ -3751,8 +3801,6 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 
 			DRAW_OBJS(0);
 			DRAW_16COLOR_OFFSET_BG_INLINE(0, 0, 5, 11);
-
-			gpu3dsDrawVertexes();
 
 			break;
 		case 7:
@@ -4162,6 +4210,15 @@ void S9xUpdateScreenHardware ()
 	// This is because the backdrop color will be
 	// used for the color math.
 	//
+	layerDrawn[0] = false;
+	layerDrawn[1] = false;
+	layerDrawn[2] = false;
+	layerDrawn[3] = false;
+	layerDrawn[4] = false;
+	layerDrawn[5] = false;
+	layerDrawn[6] = false;
+	//printf ("Render Y:%d-%d M%d\n", GFX.StartY, GFX.EndY, PPU.BGMode);
+
 	if (ANYTHING_ON_SUB || (GFX.r2130 & 2))
 	{
 		// debugging only

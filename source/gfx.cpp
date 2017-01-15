@@ -1333,7 +1333,7 @@ void S9xSetupOBJ ()
 #ifdef MK_DEBUG_RTO
 		if(Settings.BGLayering) fprintf(stderr, "normal FirstSprite = %02x\n", PPU.FirstSprite);
 #endif
-		PPU.PriorityNormalCase = true;
+		PPU.PriorityDrawFromSprite = PPU.FirstSprite;
 
 		/* normal case */
 		memset(LineOBJ, 0, sizeof(LineOBJ));
@@ -1394,7 +1394,7 @@ void S9xSetupOBJ ()
 #ifdef MK_DEBUG_RTO
 		if(Settings.BGLayering) fprintf(stderr, "FirstSprite+Y\n");
 #endif
-		PPU.PriorityNormalCase = false;
+		PPU.PriorityDrawFromSprite = -1;
 
 		/* First, find out which sprites are on which lines */
 		memset(OBJOnLine, 0, sizeof(OBJOnLine));

@@ -1901,6 +1901,12 @@ void snesEmulatorLoop()
         ui3dsSetColor(0x7f7f7f, 0);
         ui3dsDrawString(100, 100, 220, true, "Touch screen for menu");
     }
+    if (Settings.SA1)
+    {
+        ui3dsSetColor(0xff2f2f, 0);
+        ui3dsDrawString(50, 170, 270, true, "This ROM uses the SA-1 chip");
+        ui3dsDrawString(50, 182, 270, true, "which is not supported in this emulator.");
+    }
     
     snd3dsStartPlaying();
 

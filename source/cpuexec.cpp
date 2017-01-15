@@ -223,7 +223,6 @@ void S9xDoHBlankProcessingWithRegisters()
 
 	char debugLine[500];
 
-/*
 	#define DEBUG_OUTPUT \
 		if (GPU3DS.enableDebug) \
 		{ \
@@ -235,8 +234,8 @@ void S9xDoHBlankProcessingWithRegisters()
 			fclose (fp); \
 			goto S9xMainLoop_EndFrame; \ 
 		} \
-*/
 
+/*
 	#define DEBUG_OUTPUT \
 		if (GPU3DS.enableDebug && !Settings.Paused) \
 		{ \
@@ -247,7 +246,7 @@ void S9xDoHBlankProcessingWithRegisters()
 			printf ("%s", debugLine); \
 			goto S9xMainLoop_EndFrame; \ 
 		} \
-
+*/
 #endif
 
 #ifdef OPCODE_REGISTERS

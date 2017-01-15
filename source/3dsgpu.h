@@ -113,6 +113,15 @@ typedef struct
 } SVertexList; 
 
 
+typedef struct
+{
+    u8              TotalAttributes = 0;
+    u64             AttributeFormats = 0;
+    void            *List;
+    int             Count = 0;
+    GPU_Primitive_t Type;
+} SStoredVertexList;
+
 
 typedef struct 
 {
@@ -130,6 +139,8 @@ typedef struct
     SVertexList         mode7TileVertexes;
     SVertexList         mode7LineVertexes;
     SVertexList         rectangleVertexes;
+
+    SStoredVertexList   vertexesStored[4][10];
 
     SGPUTexture         *currentTexture;
     SGPUTexture         *currentRenderTarget;
@@ -596,9 +607,9 @@ inline void __attribute__((always_inline)) gpu3dsAddMode7ScanlineVertexes(
 
 
 void gpu3dsAddRectangleVertexes(int x0, int y0, int x1, int y1, int depth, u32 color);
-void gpu3dsDrawVertexes(bool repeatLastDraw = false);
+void gpu3dsDrawVertexes(bool repeatLastDraw = false, int storeIndex = -1);
 void gpu3dsDrawMode7Vertexes(int fromIndex, int tileCount);
-void gpu3dsDrawMode7LineVertexes(bool repeatLastDraw = false);
+void gpu3dsDrawMode7LineVertexes(bool repeatLastDraw = false, int storeIndex = -1);
 
 void gpu3dsDrawRectangle(int x0, int y0, int x1, int y1, int depth, u32 color);
 

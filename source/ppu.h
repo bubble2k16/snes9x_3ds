@@ -296,7 +296,7 @@ struct SPPU {
 
     // Added for OBJ drawing optimization
     //
-    bool PriorityNormalCase = false;
+    int PriorityDrawFromSprite = -1;
 };
 
 #define CLIP_OR 0
