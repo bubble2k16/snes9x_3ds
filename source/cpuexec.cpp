@@ -251,17 +251,30 @@ void S9xDoHBlankProcessingWithRegisters()
 
 #ifdef OPCODE_REGISTERS
 
-#define EXECUTE_ONE_OPCODE \
+#define EXECUTE_ONE_OPCODE(SupportSA1) \
 	if (CPU_Cycles >= CPU.NextEvent) S9xDoHBlankProcessingWithRegisters(); \
 	CPU_Cycles += CPU.MemSpeed; \
-	(*fastOpcodes [*CPU_PC++].S9xOpcode) (); \
-	if (CPU.Flags) goto S9xMainLoop_HandleFlags; \
-	\
+	if (!SupportSA1) \
+	{ \
+		(*fastOpcodes [*CPU_PC++].S9xOpcode) (); \
+		if (CPU.Flags) goto S9xMainLoop_HandleFlags; \
+	} \
+	else \
+	{ \
+		(*ICPU.S9xOpcodes [*CPU_PC++].S9xOpcode) (); \
+		if (SA1.Executing) \
+		{ \
+			CpuSaveFastRegisters(); \
+	    	S9xSA1MainLoop (); \
+			CpuLoadFastRegisters(); \
+		} \
+		if (CPU.Flags) goto S9xMainLoop_HandleFlags; \
+	} \
 	DEBUG_OUTPUT
 
 #else
 
-#define EXECUTE_ONE_OPCODE \
+#define EXECUTE_ONE_OPCODE(SupportSA1) \
 	if (CPU_Cycles >= CPU.NextEvent) S9xDoHBlankProcessingWithRegisters(); \
 	CPU_Cycles += CPU.MemSpeed; \
 	(*ICPU.S9xOpcodes [*CPU_PC++].S9xOpcode) (); \
@@ -269,18 +282,19 @@ void S9xDoHBlankProcessingWithRegisters()
 
 #endif
 
-#define EXECUTE_TEN_OPCODES \
-		EXECUTE_ONE_OPCODE \
-		EXECUTE_ONE_OPCODE \
-		EXECUTE_ONE_OPCODE \
-		EXECUTE_ONE_OPCODE \
-		EXECUTE_ONE_OPCODE \
-		EXECUTE_ONE_OPCODE \
-		EXECUTE_ONE_OPCODE \
-		EXECUTE_ONE_OPCODE \
-		EXECUTE_ONE_OPCODE \
-		EXECUTE_ONE_OPCODE \
-
+#define EXECUTE_TEN_OPCODES(SupportSA1) \
+	{ \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+		EXECUTE_ONE_OPCODE (SupportSA1) \
+	}
 
 // New Loop
 // The unrolled loop runs faster.
@@ -305,26 +319,14 @@ void S9xMainLoop (void)
     {
 S9xMainLoop_Execute:
 		//EXECUTE_ONE_OPCODE
-		EXECUTE_TEN_OPCODES
-		EXECUTE_TEN_OPCODES
+		EXECUTE_TEN_OPCODES (false)
+		EXECUTE_TEN_OPCODES (false)
 	} 
 
 S9xMainLoop_HandleFlags:
 	// Bug fix: Removed save/load fast registers.
 	S9xHandleFlags(); 
-
 	DEBUG_OUTPUT
-	/*
-	if (CPU_PC - CPU.PCBase == 0xB82A) GPU3DS.enableDebug = true; \
-	if (GPU3DS.enableDebug) 
-	{ 
-		printf ("PC :%x OP:%02x%02x%02x%02x HV:%d (%d),%d\n   A%04x X%04x Y%04x %x E%dM%dX%d\n", \
-			CPU_PC - CPU.PCBase, *CPU_PC, *(CPU_PC + 1), *(CPU_PC + 2), *(CPU_PC + 3), (int)CPU.Cycles, (int) CPU.NextEvent, (int)CPU.V_Counter, \
-			Registers.A.W, Registers.X.W, Registers.Y.W, CPU.Flags, \
-			CheckEmulation() ? 1 : 0, CheckMemory() ? 1 : 0, CheckIndex() ? 1 : 0 );  \
-		goto S9xMainLoop_EndFrame; 
-	} 
-	*/
 
 	if (!(CPU.Flags & SCAN_KEYS_FLAG)) 
 		goto S9xMainLoop_Execute;
@@ -332,7 +334,65 @@ S9xMainLoop_HandleFlags:
 
     
 S9xMainLoop_EndFrame:
-	//GPU3DS.enableDebug = false;
+	// End of current frame, prepare to return to caller
+	//
+    Registers.PC = CPU_PC - CPU.PCBase;
+    S9xPackStatus ();
+    APURegisters.PC = IAPU.PC - IAPU.RAM;
+    S9xAPUPackStatus ();
+    if (CPU.Flags & SCAN_KEYS_FLAG)
+    {
+	    S9xSyncSpeed ();
+		CPU.Flags &= ~SCAN_KEYS_FLAG;
+    }
+	
+	CpuSaveFastRegisters();
+
+	// For some reason, there seems to be a bug in GCC when
+	// reserving global registers + pushing of those registers
+	// on the stack (could it be due to some stack buffer overrrun?)
+	// prevent registers from getting overwritten.
+	// 
+	asm ("add sp, sp, #32");
+
+	asm ("ldmfd	sp!, {r8, r9, r10, r11}");
+}
+
+
+
+// Special loop for SA1 support.
+//
+void S9xMainLoopWithSA1 (void)
+{
+	asm ("stmfd	sp!, {r8, r9, r10, r11}");
+
+	// For some reason, there seems to be a bug in GCC when
+	// reserving global registers + pushing of those registers
+	// on the stack (could it be due to some stack buffer overrrun?)
+	// prevent registers from getting overwritten.
+	// 
+	asm ("sub sp, sp, #32");				
+
+	CpuLoadFastRegisters();
+
+    for (;;)
+    {
+S9xMainLoop_Execute:
+		EXECUTE_TEN_OPCODES (true)
+		EXECUTE_TEN_OPCODES (true)
+	} 
+
+S9xMainLoop_HandleFlags:
+	// Bug fix: Removed save/load fast registers.
+	S9xHandleFlags(); 
+
+	DEBUG_OUTPUT
+	if (!(CPU.Flags & SCAN_KEYS_FLAG)) 
+		goto S9xMainLoop_Execute;
+	goto S9xMainLoop_EndFrame;
+
+    
+S9xMainLoop_EndFrame:
 	// End of current frame, prepare to return to caller
 	//
     Registers.PC = CPU_PC - CPU.PCBase;

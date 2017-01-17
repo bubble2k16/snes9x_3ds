@@ -87,139 +87,140 @@
   Nintendo Co., Limited and its subsidiary companies.
 *******************************************************************************/
 
-#ifndef _sa1_h_
-#define _sa1_h_
-
+#ifndef _CPUEXEC_H_
+#define _CPUEXEC_H_
+#include "ppu.h"
 #include "memmap.h"
+#include "65c816.h"
 
-struct SSA1Registers {
-    uint8   PB;
-    uint8   DB;
-    pair    P;
-    pair    A;
-    pair    D;
-    pair    S;
-    pair    X;
-    pair    Y;
-    uint16  PC;
+#define DO_HBLANK_CHECK() \
+    if (CPU.Cycles >= CPU.NextEvent) \
+	S9xDoHBlankProcessing ();
+
+struct SOpcodes {
+#ifdef __WIN32__
+	void (__cdecl *S9xOpcode)( void);
+#else
+	void (*S9xOpcode)( void);
+#endif
 };
 
-struct SSA1 {
-    struct  SOpcodes *S9xOpcodes;
-    uint8   _Carry;
-    uint8   _Zero;
-    uint8   _Negative;
-    uint8   _Overflow;
-    bool8   CPUExecuting;
-    uint32  ShiftedPB;
-    uint32  ShiftedDB;
-    uint32  Flags;
-    bool8   Executing;
-    bool8   NMIActive;
-    bool8   IRQActive;
-    bool8   WaitingForInterrupt;
-    bool8   Waiting;
-//    uint8   WhichEvent;
-    uint8   *PC;
-    uint8   *PCBase;
-    uint8   *BWRAM;
-    uint8   *PCAtOpcodeStart;
-    uint8   *WaitAddress;
-    uint32  WaitCounter;
-    uint8   *WaitByteAddress1;
-    uint8   *WaitByteAddress2;
-//    long    Cycles;
-//    long    NextEvent;
-//    long    V_Counter;
-    uint8   *Map [MEMMAP_NUM_BLOCKS];
-    uint8   *WriteMap [MEMMAP_NUM_BLOCKS];
-    int16   op1;
-    int16   op2;
-    int     arithmetic_op;
-    int64   sum;
-    bool8   overflow;
-    uint8   VirtualBitmapFormat;
-    bool8   in_char_dma;
-    uint8   variable_bit_pos;
-    
-    long    OpAddress;
+struct SICPU
+{
+    uint8  *Speed;
+    struct SOpcodes *S9xOpcodes;
+    uint8  _Carry;
+    uint8  _Zero;
+    uint8  _Negative;
+    uint8  _Overflow;
+    bool8  CPUExecuting;
+    uint32 ShiftedPB;
+    uint32 ShiftedDB;
+    uint32 Frame;
+    uint32 Scanline;
+    uint32 FrameAdvanceCount;
 };
-
-#define SA1CheckZero() (SA1._Zero == 0)
-#define SA1CheckCarry() (SA1._Carry)
-#define SA1CheckIRQ() (SA1Registers.PL & IRQ)
-#define SA1CheckDecimal() (SA1Registers.PL & Decimal)
-#define SA1CheckIndex() (SA1Registers.PL & IndexFlag)
-#define SA1CheckMemory() (SA1Registers.PL & MemoryFlag)
-#define SA1CheckOverflow() (SA1._Overflow)
-#define SA1CheckNegative() (SA1._Negative & 0x80)
-#define SA1CheckEmulation() (SA1Registers.P.W & Emulation)
-
-#define SA1ClearFlags(f) (SA1Registers.P.W &= ~(f))
-#define SA1SetFlags(f)   (SA1Registers.P.W |=  (f))
-#define SA1CheckFlag(f)  (SA1Registers.PL & (f))
-
 
 START_EXTERN_C
-uint8 S9xSA1GetByte (uint32);
-uint16 S9xSA1GetWord (uint32);
-void S9xSA1SetByte (uint8, uint32);
-void S9xSA1SetWord (uint16, uint32);
-void S9xSA1SetPCBase (uint32);
-uint8 S9xGetSA1 (uint32);
-void S9xSetSA1 (uint8, uint32);
+void S9xMainLoop (void);
+void S9xReset (void);
+void S9xSoftReset (void);
+void S9xDoHBlankProcessing ();
+void S9xClearIRQ (uint32);
+void S9xSetIRQ (uint32);
 
-extern struct SOpcodes S9xSA1OpcodesM1X1 [256];
-extern struct SOpcodes S9xSA1OpcodesM1X0 [256];
-extern struct SOpcodes S9xSA1OpcodesM0X1 [256];
-extern struct SOpcodes S9xSA1OpcodesM0X0 [256];
-extern struct SSA1Registers SA1Registers;
-extern struct SSA1 SA1;
+extern struct SOpcodes S9xOpcodesE1 [256];
+extern struct SOpcodes S9xOpcodesM1X1 [256];
+extern struct SOpcodes S9xOpcodesM1X0 [256];
+extern struct SOpcodes S9xOpcodesM0X1 [256];
+extern struct SOpcodes S9xOpcodesM0X0 [256];
 
-void S9xSA1MainLoop ();
-void S9xSA1Init ();
-void S9xFixSA1AfterSnapshotLoad ();
-void S9xSA1ExecuteDuringSleep ();
+extern struct SICPU ICPU;
 END_EXTERN_C
 
-#define SNES_IRQ_SOURCE	    (1 << 7)
-#define TIMER_IRQ_SOURCE    (1 << 6)
-#define DMA_IRQ_SOURCE	    (1 << 5)
-
-STATIC inline void S9xSA1UnpackStatus()
+STATIC inline void S9xUnpackStatus()
 {
-    SA1._Zero = (SA1Registers.PL & Zero) == 0;
-    SA1._Negative = (SA1Registers.PL & Negative);
-    SA1._Carry = (SA1Registers.PL & Carry);
-    SA1._Overflow = (SA1Registers.PL & Overflow) >> 6;
+    ICPU._Zero = (Registers.PL & Zero) == 0;
+    ICPU._Negative = (Registers.PL & Negative);
+    ICPU._Carry = (Registers.PL & Carry);
+    ICPU._Overflow = (Registers.PL & Overflow) >> 6;
 }
 
-STATIC inline void S9xSA1PackStatus()
+STATIC inline void S9xPackStatus()
 {
-    SA1Registers.PL &= ~(Zero | Negative | Carry | Overflow);
-    SA1Registers.PL |= SA1._Carry | ((SA1._Zero == 0) << 1) |
-		       (SA1._Negative & 0x80) | (SA1._Overflow << 6);
+    Registers.PL &= ~(Zero | Negative | Carry | Overflow);
+    Registers.PL |= ICPU._Carry | ((ICPU._Zero == 0) << 1) |
+		    (ICPU._Negative & 0x80) | (ICPU._Overflow << 6);
 }
 
-STATIC inline void S9xSA1FixCycles ()
+STATIC inline void CLEAR_IRQ_SOURCE (uint32 M)
 {
-    if (SA1CheckEmulation ())
-	SA1.S9xOpcodes = S9xSA1OpcodesM1X1;
-    else
-    if (SA1CheckMemory ())
+    CPU.IRQActive &= ~M;
+    if (!CPU.IRQActive)
+	CPU.Flags &= ~IRQ_PENDING_FLAG;
+}
+	
+STATIC inline void S9xFixCycles ()
+{
+    if (CheckEmulation ())
     {
-	if (SA1CheckIndex ())
-	    SA1.S9xOpcodes = S9xSA1OpcodesM1X1;
+	ICPU.S9xOpcodes = S9xOpcodesE1;
+    }
+    else
+    if (CheckMemory ())
+    {
+	if (CheckIndex ())
+	{
+	    ICPU.S9xOpcodes = S9xOpcodesM1X1;
+	}
 	else
-	    SA1.S9xOpcodes = S9xSA1OpcodesM1X0;
+	{
+	    ICPU.S9xOpcodes = S9xOpcodesM1X0;
+	}
     }
     else
     {
-	if (SA1CheckIndex ())
-	    SA1.S9xOpcodes = S9xSA1OpcodesM0X1;
+	if (CheckIndex ())
+	{
+	    ICPU.S9xOpcodes = S9xOpcodesM0X1;
+	}
 	else
-	    SA1.S9xOpcodes = S9xSA1OpcodesM0X0;
+	{
+	    ICPU.S9xOpcodes = S9xOpcodesM0X0;
+	}
     }
 }
+
+STATIC inline void S9xReschedule ()
+{
+    uint8 which;
+    long max;
+    
+    if (CPU.WhichEvent == HBLANK_START_EVENT ||
+	CPU.WhichEvent == HTIMER_AFTER_EVENT)
+    {
+	which = HBLANK_END_EVENT;
+	max = Settings.H_Max;
+    }
+    else
+    {
+	which = HBLANK_START_EVENT;
+	max = Settings.HBlankStart;
+    }
+
+    if (PPU.HTimerEnabled &&
+        (long) PPU.HTimerPosition < max &&
+	(long) PPU.HTimerPosition > CPU.NextEvent &&
+	(!PPU.VTimerEnabled ||
+	 (PPU.VTimerEnabled && CPU.V_Counter == PPU.IRQVBeamPos)))
+    {
+	which = (long) PPU.HTimerPosition < Settings.HBlankStart ?
+			HTIMER_BEFORE_EVENT : HTIMER_AFTER_EVENT;
+	max = PPU.HTimerPosition;
+    }
+    CPU.NextEvent = max;
+    CPU.WhichEvent = which;
+}
+
 #endif
 

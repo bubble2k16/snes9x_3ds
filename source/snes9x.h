@@ -210,6 +210,7 @@ enum {
 #define FRAME_ADVANCE_FLAG  (1 << 9)
 #define DELAYED_NMI_FLAG2   (1 << 10)
 #define IRQ_PENDING_FLAG    (1 << 11)
+#define HALTED_FLAG         (1 << 12)
 
 struct SICPU
 {

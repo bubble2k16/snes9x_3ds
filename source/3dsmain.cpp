@@ -87,6 +87,7 @@ u64 frameCountTick = 0;
 int framesSkippedCount = 0;
 char *romFileName = 0;
 char romFileNameFullPath[_MAX_PATH];
+char romFileNameLastSelected[_MAX_PATH];
 char cwd[_MAX_PATH];
 
 
@@ -811,6 +812,7 @@ void settingsReadWrite(FILE *fp, char *format, int *value, int minValue, int max
     }
 }
 
+char dummyString[1024];
 void settingsReadWriteString(FILE *fp, char *writeFormat, char *readFormat, char *value)
 {
     //if (strlen(format) == 0)
@@ -834,11 +836,16 @@ void settingsReadWriteString(FILE *fp, char *writeFormat, char *readFormat, char
         if (value != NULL)
         {
             fscanf(fp, readFormat, value);
+            char c;
+            fscanf(fp, "%c", &c);
             //printf ("Scanned %s\n", value);
         }
         else
         {
             fscanf(fp, readFormat);
+            char c;
+            fscanf(fp, "%c", &c);
+            //fscanf(fp, "%s", dummyString);
             //printf ("skipped line\n");
         }
     }
@@ -888,7 +895,8 @@ void settingsReadWriteFullListGlobal(FILE *fp)
     settingsReadWrite(fp, "HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
 
     // Fixes the bug where we have spaces in the directory name
-    settingsReadWriteString(fp, "Dir=%s\n", "Dir=%500[^\n]s\n", cwd);
+    settingsReadWriteString(fp, "Dir=%s\n", "Dir=%1000[^\n]s\n", cwd);
+    settingsReadWriteString(fp, "ROM=%s\n", "ROM=%1000[^\n]s\n", romFileNameLastSelected);
 
     // All new options should come here!
 }
@@ -1191,6 +1199,18 @@ void fileGetAllFiles(void)
 }
 
 
+//----------------------------------------------------------------------
+// Find the ID of the last selected file in the file list.
+//----------------------------------------------------------------------
+int fileFindLastSelectedFile()
+{
+    for (int i = 0; i < totalRomFileCount && i < 1000; i++)
+    {
+        if (strncmp(fileMenu[i].Text, romFileNameLastSelected, _MAX_PATH) == 0)
+            return i;
+    }
+    return -1;
+}
 
 
 
@@ -1289,12 +1309,15 @@ void menuSelectFile(void)
     optionMenuCount = sizeof(optionMenu) / sizeof(SMenuItem);
     
     fileGetAllFiles();
+    int previousFileID = fileFindLastSelectedFile();
     S9xClearMenuTabs();
     S9xAddTab("Emulator", emulatorNewMenu, emulatorMenuCount);
     S9xAddTab("Select ROM", fileMenu, totalRomFileCount);
     S9xSetTabSubTitle(0, NULL);
     S9xSetTabSubTitle(1, cwd);
     S9xSetCurrentMenuTab(1);
+    if (previousFileID >= 0)
+        S9xSetSelectedItemIndexByID(1, previousFileID);
     S9xSetTransferGameScreen(false);
 
     int selection = 0;
@@ -1311,6 +1334,7 @@ void menuSelectFile(void)
             // Load ROM
             //
             romFileName = romFileNames[selection];
+            strncpy(romFileNameLastSelected, romFileName, _MAX_PATH);
             if (romFileName[0] == 1)
             {
                 if (strcmp(romFileName, "\x01 ..") == 0)
@@ -1371,6 +1395,10 @@ void menuPause()
     S9xAddTab("Options", optionMenu, optionMenuCount);
     S9xAddTab("Cheats", cheatMenu, cheatMenuCount);
     S9xAddTab("Select ROM", fileMenu, totalRomFileCount);
+    int previousFileID = fileFindLastSelectedFile();
+    if (previousFileID >= 0)
+        S9xSetSelectedItemIndexByID(3, previousFileID);
+    S9xSetCurrentMenuTab(0);
     S9xSetTabSubTitle(0, NULL);
     S9xSetTabSubTitle(1, NULL);
     S9xSetTabSubTitle(2, NULL);
@@ -1419,6 +1447,7 @@ void menuPause()
             }
             else
             {
+                strncpy(romFileNameLastSelected, romFileName, _MAX_PATH);
                 loadRomBeforeExit = true;
                 break;
             }
@@ -1701,6 +1730,7 @@ bool snesInitialize()
 void emulatorInitialize()
 {
     getcwd(cwd, 1023);
+    romFileNameLastSelected[0] = 0;
     
     if (!gpu3dsInitialize())
     {
@@ -1901,13 +1931,7 @@ void snesEmulatorLoop()
         ui3dsSetColor(0x7f7f7f, 0);
         ui3dsDrawString(100, 100, 220, true, "Touch screen for menu");
     }
-    if (Settings.SA1)
-    {
-        ui3dsSetColor(0xff2f2f, 0);
-        ui3dsDrawString(50, 170, 270, true, "This ROM uses the SA-1 chip");
-        ui3dsDrawString(50, 182, 270, true, "which is not supported in this emulator.");
-    }
-    
+
     snd3dsStartPlaying();
 
 	while (aptMainLoop())
@@ -1933,10 +1957,18 @@ void snesEmulatorLoop()
 	    gpu3dsUseShader(2);             // for drawing tiles             
 
 #ifdef RELEASE
-        S9xMainLoop();
+        if (!Settings.SA1)
+            S9xMainLoop();
+        else
+            S9xMainLoopWithSA1();
 #else
         if (!Settings.Paused)
-            S9xMainLoop();
+        {
+            if (!Settings.SA1)
+                S9xMainLoop();
+            else
+                S9xMainLoopWithSA1();
+        }
 #endif
 /*
         if (IPPU.RenderThisFrame)

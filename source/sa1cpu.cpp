@@ -138,7 +138,9 @@
 #undef VAR_CYCLES
 #define SA1_OPCODES
 
-#include "cpuops.cpp"
+long OpAddress = 0;
+
+#include "sa1cpuops.cpp"
 
 void S9xSA1MainLoop ()
 {
