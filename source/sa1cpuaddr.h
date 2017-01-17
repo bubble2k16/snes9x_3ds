@@ -473,6 +473,24 @@ STATIC inline void __attribute__((always_inline)) DirectIndexedY (AccessMode a)
 #endif
 }
 
+STATIC inline long __attribute__((always_inline)) DirectIndexedYFast (AccessMode a)
+{
+	if(a&READ) OpenBus = *CPU.PC;
+    long addr = (*CPU.PC++ + Registers.D.W + Registers.Y.W);
+    addr &= CheckEmulation() ? 0xff : 0xffff;
+#ifndef SA1_OPCODES
+    CPU.Cycles += CPU.MemSpeed;
+#endif
+
+#ifndef SA1_OPCODES
+//    if (Registers.DL != 0)
+//	CPU.Cycles += TWO_CYCLES;
+//    else
+	CPU.Cycles += ONE_CYCLE;
+#endif
+    return addr;
+}
+
 STATIC inline void __attribute__((always_inline)) AbsoluteIndexedX (AccessMode a)
 {
 #ifdef FAST_LSB_WORD_ACCESS

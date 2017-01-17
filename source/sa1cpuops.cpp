@@ -125,26 +125,34 @@ uint32 Ans32;
 /* ADC *************************************************************************************** */
 static void Op69M1 (void)
 {
-    Immediate8 (READ);
-    ADC8 ();
+    //Immediate8 (READ);
+    //ADC8 ();
+    long addr = Immediate8Fast (READ);
+    ADC8Fast (addr);
 }
 
 static void Op69M0 (void)
 {
-    Immediate16 (READ);
-    ADC16 ();
+    //Immediate16 (READ);
+    //ADC16 ();
+    long addr = Immediate16Fast (READ);
+    ADC16Fast (addr);
 }
 
 static void Op65M1 (void)
 {
-    Direct (READ);
-    ADC8 ();
+    //Direct (READ);
+    //ADC8 ();
+    long addr = DirectFast (READ);
+    ADC8Fast (addr);
 }
 
 static void Op65M0 (void)
 {
-    Direct (READ);
-    ADC16 ();
+    //Direct (READ);
+    //ADC16 ();
+    long addr = DirectFast (READ);
+    ADC16Fast (addr);
 }
 
 static void Op75M1 (void)
@@ -221,14 +229,18 @@ static void Op77M0 (void)
 
 static void Op6DM1 (void)
 {
-    Absolute (READ);
-    ADC8 ();
+    //Absolute (READ);
+    //ADC8 ();
+    long addr = AbsoluteFast (READ);
+    ADC8Fast (addr);
 }
 
 static void Op6DM0 (void)
 {
-    Absolute (READ);
-    ADC16 ();
+    //Absolute (READ);
+    //ADC16 ();
+    long addr = AbsoluteFast (READ);
+    ADC16Fast (addr);
 }
 
 static void Op7DM1 (void)
@@ -1274,62 +1286,62 @@ static void OpA9M0 (void)
 
 static void OpA5M1 (void)
 {
-    Direct (READ);
-    LDA8 ();
+    long addr = DirectFast (READ);
+    LDA8Fast (addr);
 }
 
 static void OpA5M0 (void)
 {
-    Direct (READ);
-    LDA16 ();
+    long addr = DirectFast (READ);
+    LDA16Fast (addr);
 }
 
 static void OpB5M1 (void)
 {
-    DirectIndexedX (READ);
-    LDA8 ();
+    long addr = DirectIndexedXFast (READ);
+    LDA8Fast (addr);
 }
 
 static void OpB5M0 (void)
 {
-    DirectIndexedX (READ);
-    LDA16 ();
+    long addr = DirectIndexedXFast (READ);
+    LDA16Fast (addr);
 }
 
 static void OpB2M1 (void)
 {
-    DirectIndirect (READ);
-    LDA8 ();
+    long addr = DirectIndirectFast (READ);
+    LDA8Fast (addr);
 }
 
 static void OpB2M0 (void)
 {
-    DirectIndirect (READ);
-    LDA16 ();
+    long addr = DirectIndirectFast (READ);
+    LDA16Fast (addr);
 }
 
 static void OpA1M1 (void)
 {
-    DirectIndexedIndirect (READ);
-    LDA8 ();
+    long addr = DirectIndexedIndirectFast (READ);
+    LDA8Fast (addr);
 }
 
 static void OpA1M0 (void)
 {
-    DirectIndexedIndirect (READ);
-    LDA16 ();
+    long addr = DirectIndexedIndirectFast (READ);
+    LDA16Fast (addr);
 }
 
 static void OpB1M1 (void)
 {
-    DirectIndirectIndexed (READ);
-    LDA8 ();
+    long addr = DirectIndirectIndexedFast (READ);
+    LDA8Fast (addr);
 }
 
 static void OpB1M0 (void)
 {
-    DirectIndirectIndexed (READ);
-    LDA16 ();
+    long addr = DirectIndirectIndexedFast (READ);
+    LDA16Fast (addr);
 }
 
 static void OpA7M1 (void)
@@ -1358,38 +1370,46 @@ static void OpB7M0 (void)
 
 static void OpADM1 (void)
 {
-    Absolute (READ);
-    LDA8 ();
+    long addr = AbsoluteFastRead ();
+    LDA8Fast (addr);
 }
 
 static void OpADM0 (void)
 {
-    Absolute (READ);
-    LDA16 ();
+    long addr = AbsoluteFastRead ();
+    LDA16Fast (addr);
 }
 
 static void OpBDM1 (void)
 {
-    AbsoluteIndexedX (READ);
-    LDA8 ();
+    //AbsoluteIndexedX (READ);
+    //LDA8 ();
+    long addr = AbsoluteIndexedXFast (READ);
+    LDA8Fast (addr);
 }
 
 static void OpBDM0 (void)
 {
-    AbsoluteIndexedX (READ);
-    LDA16 ();
+    //AbsoluteIndexedX (READ);
+    //LDA16 ();
+    long addr = AbsoluteIndexedXFast (READ);
+    LDA16Fast (addr);
 }
 
 static void OpB9M1 (void)
 {
-    AbsoluteIndexedY (READ);
-    LDA8 ();
+    //AbsoluteIndexedY (READ);
+    //LDA8 ();
+    long addr = AbsoluteIndexedYFast (READ);
+    LDA8Fast (addr);
 }
 
 static void OpB9M0 (void)
 {
-    AbsoluteIndexedY (READ);
-    LDA16 ();
+    //AbsoluteIndexedY (READ);
+    //LDA16 ();
+    long addr = AbsoluteIndexedYFast (READ);
+    LDA16Fast (addr);
 }
 
 static void OpAFM1 (void)
@@ -1468,50 +1488,54 @@ static void OpA2X0 (void)
 
 static void OpA6X1 (void)
 {
-    Direct (READ);
-    LDX8 ();
+    //Direct (READ);
+    //LDX8 ();
+    long addr = DirectFast (READ);
+    LDX8Fast(addr);
 }
 
 static void OpA6X0 (void)
 {
-    Direct (READ);
-    LDX16 ();
+    //Direct (READ);
+    //LDX16 ();
+    long addr = DirectFast (READ);
+    LDX16Fast (addr);
 }
 
 static void OpB6X1 (void)
 {
-    DirectIndexedY (READ);
-    LDX8 ();
+    long addr = DirectIndexedYFast (READ);
+    LDX8Fast (addr);
 }
 
 static void OpB6X0 (void)
 {
-    DirectIndexedY (READ);
-    LDX16 ();
+    long addr = DirectIndexedYFast (READ);
+    LDX16Fast (addr);
 }
 
 static void OpAEX1 (void)
 {
-    Absolute (READ);
-    LDX8 ();
+    long addr = AbsoluteFast (READ);
+    LDX8Fast (addr);
 }
 
 static void OpAEX0 (void)
 {
-    Absolute (READ);
-    LDX16 ();
+    long addr = AbsoluteFast (READ);
+    LDX16Fast (addr);
 }
 
 static void OpBEX1 (void)
 {
-    AbsoluteIndexedY (READ);
-    LDX8 ();
+    long addr = AbsoluteIndexedYFast (READ);
+    LDX8Fast (addr);
 }
 
 static void OpBEX0 (void)
 {
-    AbsoluteIndexedY (READ);
-    LDX16 ();
+    long addr = AbsoluteIndexedYFast (READ);
+    LDX16Fast (addr);
 }
 /**********************************************************************************************/
 
@@ -1542,50 +1566,54 @@ static void OpA0X0 (void)
 
 static void OpA4X1 (void)
 {
-    Direct (READ);
-    LDY8 ();
+    //Direct (READ);
+    //LDY8 ();
+    long addr = DirectFast (READ);
+    LDY8Fast (addr);
 }
 
 static void OpA4X0 (void)
 {
-    Direct (READ);
-    LDY16 ();
+    //Direct (READ);
+    //LDY16 ();
+    long addr = DirectFast (READ);
+    LDY16Fast (addr);
 }
 
 static void OpB4X1 (void)
 {
-    DirectIndexedX (READ);
-    LDY8 ();
+    long addr = DirectIndexedXFast (READ);
+    LDY8Fast (addr);
 }
 
 static void OpB4X0 (void)
 {
-    DirectIndexedX (READ);
-    LDY16 ();
+    long addr = DirectIndexedXFast (READ);
+    LDY16Fast (addr);
 }
 
 static void OpACX1 (void)
 {
-    Absolute (READ);
-    LDY8 ();
+    long addr = AbsoluteFast (READ);
+    LDY8Fast (addr);
 }
 
 static void OpACX0 (void)
 {
-    Absolute (READ);
-    LDY16 ();
+    long addr = AbsoluteFast (READ);
+    LDY16Fast (addr);
 }
 
 static void OpBCX1 (void)
 {
-    AbsoluteIndexedX (READ);
-    LDY8 ();
+    long addr = AbsoluteIndexedXFast (READ);
+    LDY8Fast (addr);
 }
 
 static void OpBCX0 (void)
 {
-    AbsoluteIndexedX (READ);
-    LDY16 ();
+    long addr = AbsoluteIndexedXFast (READ);
+    LDY16Fast (addr);
 }
 /**********************************************************************************************/
 
@@ -1967,26 +1995,34 @@ static void Op7EM0 (void)
 /* SBC *************************************************************************************** */
 static void OpE9M1 (void)
 {
-    Immediate8 (READ);
-    SBC8 ();
+    //Immediate8 (READ);
+    //SBC8 ();
+    long addr = Immediate8Fast (READ);
+    SBC8Fast (addr);
 }
 
 static void OpE9M0 (void)
 {
-    Immediate16 (READ);
-    SBC16 ();
+    //Immediate16 (READ);
+    //SBC16 ();
+    long addr = Immediate16Fast (READ);
+    SBC16Fast (addr);
 }
 
 static void OpE5M1 (void)
 {
-    Direct (READ);
-    SBC8 ();
+    //Direct (READ);
+    //SBC8 ();
+    long addr = DirectFast (READ);
+    SBC8Fast (addr);
 }
 
 static void OpE5M0 (void)
 {
-    Direct (READ);
-    SBC16 ();
+    //Direct (READ);
+    //SBC16 ();
+    long addr = DirectFast (READ);
+    SBC16Fast (addr);
 }
 
 static void OpF5M1 (void)
@@ -2063,14 +2099,18 @@ static void OpF7M0 (void)
 
 static void OpEDM1 (void)
 {
-    Absolute (READ);
-    SBC8 ();
+    //Absolute (READ);
+    //SBC8 ();
+    long addr = AbsoluteFast (READ);
+    SBC8Fast (addr);
 }
 
 static void OpEDM0 (void)
 {
-    Absolute (READ);
-    SBC16 ();
+    //Absolute (READ);
+    //SBC16 ();
+    long addr = AbsoluteFast (READ);
+    SBC16Fast (addr);
 }
 
 static void OpFDM1 (void)
@@ -2149,44 +2189,44 @@ static void OpF3M0 (void)
 /* STA *************************************************************************************** */
 static void Op85M1 (void)
 {
-    Direct (WRITE);
-    STA8 ();
+    long addr = DirectFast (WRITE);
+    STA8Fast (addr);
 }
 
 static void Op85M0 (void)
 {
-    Direct (WRITE);
-    STA16 ();
+    long addr = DirectFast (WRITE);
+    STA16Fast (addr);
 }
 
 static void Op95M1 (void)
 {
-    DirectIndexedX (WRITE);
-    STA8 ();
+    long addr = DirectIndexedXFast (WRITE);
+    STA8Fast (addr);
 }
 
 static void Op95M0 (void)
 {
-    DirectIndexedX (WRITE);
-    STA16 ();
+    long addr = DirectIndexedXFast (WRITE);
+    STA16Fast (addr);
 }
 
 static void Op92M1 (void)
 {
-    DirectIndirect (WRITE);
-    STA8 ();
+    long addr = DirectIndirectFast (WRITE);
+    STA8Fast (addr);
 }
 
 static void Op92M0 (void)
 {
-    DirectIndirect (WRITE);
-    STA16 ();
+    long addr = DirectIndirectFast (WRITE);
+    STA16Fast (addr);
 }
 
 static void Op81M1 (void)
 {
-    DirectIndexedIndirect (WRITE);
-    STA8 ();
+    long addr = DirectIndexedIndirectFast (WRITE);
+    STA8Fast (addr);
 #ifdef noVAR_CYCLES
     if (CheckIndex ())
 	CPU.Cycles += ONE_CYCLE;
@@ -2241,38 +2281,46 @@ static void Op97M0 (void)
 
 static void Op8DM1 (void)
 {
-    Absolute (WRITE);
-    STA8 ();
+    long addr = AbsoluteFast (WRITE);
+    STA8Fast (addr);
 }
 
 static void Op8DM0 (void)
 {
-    Absolute (WRITE);
-    STA16 ();
+    long addr = AbsoluteFast (WRITE);
+    STA16Fast (addr);
 }
 
 static void Op9DM1 (void)
 {
-    AbsoluteIndexedX (WRITE);
-    STA8 ();
+    //AbsoluteIndexedX (WRITE);
+    //STA8 ();
+    long addr = AbsoluteIndexedXFast (WRITE);
+    STA8Fast (addr);
 }
 
 static void Op9DM0 (void)
 {
-    AbsoluteIndexedX (WRITE);
-    STA16 ();
+    //AbsoluteIndexedX (WRITE);
+    //STA16 ();
+    long addr = AbsoluteIndexedXFast (WRITE);
+    STA16Fast (addr);
 }
 
 static void Op99M1 (void)
 {
-    AbsoluteIndexedY (WRITE);
-    STA8 ();
+    //AbsoluteIndexedY (WRITE);
+    //STA8 ();
+    long addr = AbsoluteIndexedYFast (WRITE);
+    STA8Fast (addr);
 }
 
 static void Op99M0 (void)
 {
-    AbsoluteIndexedY (WRITE);
-    STA16 ();
+    //AbsoluteIndexedY (WRITE);
+    //STA16 ();
+    long addr = AbsoluteIndexedYFast (WRITE);
+    STA16Fast (addr);
 }
 
 static void Op8FM1 (void)
@@ -2327,126 +2375,134 @@ static void Op93M0 (void)
 /* STX *************************************************************************************** */
 static void Op86X1 (void)
 {
-    Direct (WRITE);
-    STX8 ();
+    //Direct (WRITE);
+    //STX8 ();
+    long addr = DirectFast (WRITE);
+    STX8Fast (addr);
 }
 
 static void Op86X0 (void)
 {
-    Direct (WRITE);
-    STX16 ();
+    //Direct (WRITE);
+    //STX16 ();
+    long addr = DirectFast (WRITE);
+    STX16Fast (addr);
 }
 
 static void Op96X1 (void)
 {
-    DirectIndexedY (WRITE);
-    STX8 ();
+    long addr = DirectIndexedYFast (WRITE);
+    STX8Fast (addr);
 }
 
 static void Op96X0 (void)
 {
-    DirectIndexedY (WRITE);
-    STX16 ();
+    long addr = DirectIndexedYFast (WRITE);
+    STX16Fast (addr);
 }
 
 static void Op8EX1 (void)
 {
-    Absolute (WRITE);
-    STX8 ();
+    long addr = AbsoluteFast (WRITE);
+    STX8Fast (addr);
 }
 
 static void Op8EX0 (void)
 {
-    Absolute (WRITE);
-    STX16 ();
+    long addr = AbsoluteFast (WRITE);
+    STX16Fast (addr);
 }
 /**********************************************************************************************/
 
 /* STY *************************************************************************************** */
 static void Op84X1 (void)
 {
-    Direct (WRITE);
-    STY8 ();
+    //Direct (WRITE);
+    //STY8 ();
+    long addr = DirectFast (WRITE);
+    STY8Fast (addr);
 }
 
 static void Op84X0 (void)
 {
-    Direct (WRITE);
-    STY16 ();
+    //Direct (WRITE);
+    //STY16 ();
+    long addr = DirectFast (WRITE);
+    STY16Fast (addr);
 }
 
 static void Op94X1 (void)
 {
-    DirectIndexedX (WRITE);
-    STY8 ();
+    long addr = DirectIndexedXFast (WRITE);
+    STY8Fast (addr);
 }
 
 static void Op94X0 (void)
 {
-    DirectIndexedX (WRITE);
-    STY16 ();
+    long addr = DirectIndexedXFast (WRITE);
+    STY16Fast (addr);
 }
 
 static void Op8CX1 (void)
 {
-    Absolute (WRITE);
-    STY8 ();
+    long addr = AbsoluteFast (WRITE);
+    STY8Fast (addr);
 }
 
 static void Op8CX0 (void)
 {
-    Absolute (WRITE);
-    STY16 ();
+    long addr = AbsoluteFast (WRITE);
+    STY16Fast (addr);
 }
 /**********************************************************************************************/
 
 /* STZ *************************************************************************************** */
 static void Op64M1 (void)
 {
-    Direct (WRITE);
-    STZ8 ();
+    long addr = DirectFast (WRITE);
+    STZ8Fast (addr);
 }
 
 static void Op64M0 (void)
 {
-    Direct (WRITE);
-    STZ16 ();
+    long addr = DirectFast (WRITE);
+    STZ16Fast (addr);
 }
 
 static void Op74M1 (void)
 {
-    DirectIndexedX (WRITE);
-    STZ8 ();
+    long addr = DirectIndexedXFast (WRITE);
+    STZ8Fast (addr);
 }
 
 static void Op74M0 (void)
 {
-    DirectIndexedX (WRITE);
-    STZ16 ();
+    long addr = DirectIndexedXFast (WRITE);
+    STZ16Fast (addr);
 }
 
 static void Op9CM1 (void)
 {
-    Absolute (WRITE);
-    STZ8 ();
+    long addr = AbsoluteFast (WRITE);
+    STZ8Fast (addr);
 }
 
 static void Op9CM0 (void)
 {
-    Absolute (WRITE);
-    STZ16 ();
+    long addr = AbsoluteFast (WRITE);
+    STZ16Fast (addr);
 }
 
 static void Op9EM1 (void)
 {
-    AbsoluteIndexedX (WRITE);
-    STZ8 ();
+    long addr = AbsoluteIndexedXFast (WRITE);
+    STZ8Fast (addr);
 }
 
 static void Op9EM0 (void)
 {
-    AbsoluteIndexedX (WRITE);
-    STZ16 ();
+    long addr = AbsoluteIndexedXFast (WRITE);
+    STZ16Fast (addr);
 }
 
 /**********************************************************************************************/
@@ -2642,11 +2698,13 @@ static void OpB0 (void)
 /* BEQ */
 static void OpF0 (void)
 {
-    Relative (JUMP);
+    //Relative (JUMP);
+    long addr = RelativeFast (JUMP);
     BranchCheck2 ();
     if (CheckZero ())
     {
-	CPU.PC = CPU.PCBase + OpAddress;
+	//CPU.PC = CPU.PCBase + OpAddress;
+    CPU.PC = CPU.PCBase + addr;
 #ifndef SA1_OPCODES
 	CPU.Cycles += ONE_CYCLE;
 #endif
@@ -2657,11 +2715,13 @@ static void OpF0 (void)
 /* BMI */
 static void Op30 (void)
 {
-    Relative (JUMP);
+    //Relative (JUMP);
+    long addr = RelativeFast (JUMP);
     BranchCheck1 ();
     if (CheckNegative ())
     {
-	CPU.PC = CPU.PCBase + OpAddress;
+	//CPU.PC = CPU.PCBase + OpAddress;
+    CPU.PC = CPU.PCBase + addr;
 #ifndef SA1_OPCODES
 	CPU.Cycles += ONE_CYCLE;
 #endif
@@ -2672,12 +2732,13 @@ static void Op30 (void)
 /* BNE */
 static void OpD0 (void)
 {
-    Relative (JUMP);
+    //Relative (JUMP);
+    long addr = RelativeFast (JUMP);
     BranchCheck1 ();
     if (!CheckZero ())
     {
-	CPU.PC = CPU.PCBase + OpAddress;
-
+	//CPU.PC = CPU.PCBase + OpAddress;
+    CPU.PC = CPU.PCBase + addr;
 #ifndef SA1_OPCODES
 	CPU.Cycles += ONE_CYCLE;
 #endif
@@ -2688,11 +2749,13 @@ static void OpD0 (void)
 /* BPL */
 static void Op10 (void)
 {
-    Relative (JUMP);
+    //Relative (JUMP);
+    long addr = RelativeFast (JUMP);
     BranchCheck1 ();
     if (!CheckNegative ())
     {
-	CPU.PC = CPU.PCBase + OpAddress;
+	//CPU.PC = CPU.PCBase + OpAddress;
+    CPU.PC = CPU.PCBase + addr;
 #ifndef SA1_OPCODES
 	CPU.Cycles += ONE_CYCLE;
 #endif
@@ -2703,8 +2766,10 @@ static void Op10 (void)
 /* BRA */
 static void Op80 (void)
 {
-    Relative (JUMP);
-    CPU.PC = CPU.PCBase + OpAddress;
+    //Relative (JUMP);
+    long addr = RelativeFast (JUMP);
+    //CPU.PC = CPU.PCBase + OpAddress;
+    CPU.PC = CPU.PCBase + addr;
 #ifndef SA1_OPCODES
     CPU.Cycles += ONE_CYCLE;
 #endif
@@ -2714,11 +2779,13 @@ static void Op80 (void)
 /* BVC */
 static void Op50 (void)
 {
-    Relative (JUMP);
+    //Relative (JUMP);
+    long addr = RelativeFast (JUMP);
     BranchCheck0 ();
     if (!CheckOverflow ())
     {
-	CPU.PC = CPU.PCBase + OpAddress;
+    //CPU.PC = CPU.PCBase + OpAddress;
+	CPU.PC = CPU.PCBase + addr;
 #ifndef SA1_OPCODES
 	CPU.Cycles += ONE_CYCLE;
 #endif
@@ -2729,11 +2796,13 @@ static void Op50 (void)
 /* BVS */
 static void Op70 (void)
 {
-    Relative (JUMP);
+    //Relative (JUMP);
+    long addr = RelativeFast (JUMP);
     BranchCheck0 ();
     if (CheckOverflow ())
     {
-	CPU.PC = CPU.PCBase + OpAddress;
+    //CPU.PC = CPU.PCBase + OpAddress;
+	CPU.PC = CPU.PCBase + addr;
 #ifndef SA1_OPCODES
 	CPU.Cycles += ONE_CYCLE;
 #endif

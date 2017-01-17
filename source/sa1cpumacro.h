@@ -1162,9 +1162,19 @@ STATIC inline void STZ16 ()
     S9xSetWord (0, OpAddress);
 }
 
+STATIC inline void STZ16Fast (long addr)
+{
+    S9xSetWord (0, addr);
+}
+
 STATIC inline void STZ8 ()
 {
     S9xSetByte (0, OpAddress);
+}
+
+STATIC inline void STZ8Fast (long addr)
+{
+    S9xSetByte (0, addr);
 }
 
 STATIC inline void TSB16 ()
