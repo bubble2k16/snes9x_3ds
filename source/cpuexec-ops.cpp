@@ -6582,6 +6582,27 @@ static void OpCB (void)
                 skip = true;
             else if ((CPU.Flags & IRQ_PENDING_FLAG) && (CPU.IRQCycleCount == 0) && CheckFlag (IRQ))
                 skip = true;
+            
+            // Checks if the current ROM uses SA-1. If so, then we must ensure that 
+            // the SA-1's PC is in the list of idle loop addresses before we allow
+            // skipping.
+            //
+            if (Settings.SA1)
+            {
+                bool sa1InIdleLoop = false;
+                uint32 sa1PBPC = (uint32)SA1.PC - (uint32)SA1.PCBase + (uint32) SA1Registers.PB << 16;
+                for (int i = 0; i < SNESGameFixes.SpeedHackSA1AddressCount; i++)
+                {
+                    if (SNESGameFixes.SpeedHackSA1Address[i] == sa1PBPC)
+                    {
+                        sa1InIdleLoop = true;
+                        break;
+                    }
+                }
+                if (!sa1InIdleLoop)
+                    skip = false;
+            }
+
             if (skip)
                 if (CPU_Cycles < OCPU.NextEvent)
                     CPU_Cycles = OCPU.NextEvent;
@@ -6628,6 +6649,8 @@ static void Op42 (void)
 {
     bool doSkip = false;
 
+    //printf ("42\n");
+
     // If there's any pending NMI/IRQ don't speed hack
     //
     if (((CPU.Flags & NMI_FLAG) && (CPU.NMICycleCount - 1 == 0)) ||
@@ -6642,6 +6665,8 @@ static void Op42 (void)
             doSkip = true;
     }
 
+    //printf ("  doSkip = %d\n", doSkip);
+
     int foundHackIndex = -1;
     // Search for the appropriate speed hack
     //
@@ -6654,6 +6679,7 @@ static void Op42 (void)
         if (SNESGameFixes.SpeedHackAddress[i] == (uint32)prevCPUPC) 
         { 
             foundHackIndex = i; 
+            //printf ("  @ %6x\n", SNESGameFixes.SpeedHackSNESAddress[i]);
             break; 
         }
     }
@@ -6672,12 +6698,41 @@ static void Op42 (void)
     // Executes the original opcode that we replaced.
     //
     (*ICPU.S9xOpcodes [SNESGameFixes.SpeedHackOriginalOpcode[foundHackIndex]].S9xOpcode) (); 
+
+    //printf ("  Executed op %2x\n", SNESGameFixes.SpeedHackOriginalOpcode[foundHackIndex]);
+
+    // Checks if the current ROM uses SA-1. If so, then we must ensure that 
+    // the SA-1's PC is in the list of idle loop addresses before we allow
+    // skipping.
+    //
+    if (Settings.SA1)
+    {
+        bool sa1InIdleLoop = false;
+        uint32 sa1PBPC = (uint32)SA1.PC - (uint32)SA1.PCBase + (uint32) (SA1Registers.PB << 16);
+        //printf ("SA1 PBPC: %6x\n", sa1PBPC);
+        for (int i = 0; i < SNESGameFixes.SpeedHackSA1AddressCount; i++)
+        {
+            if (SNESGameFixes.SpeedHackSA1Address[i] == sa1PBPC)
+            {
+                sa1InIdleLoop = true;
+                break;
+            }
+        }
+        if (!sa1InIdleLoop)
+            doSkip = false;
+        //else
+        //  printf ("  doSkip = %d (after SA1 check)\n", doSkip);
+    }
+    
+    
     
     // If we decide to skip, then we add cycles to the CPU_Cycles
     // until just before the next event.
     //
     if (doSkip)
     {
+        //printf ("  Skipped!\n");
+        
         int cyclesToSkip = SNESGameFixes.SpeedHackCycles[foundHackIndex];
 
         if (cyclesToSkip == -1)

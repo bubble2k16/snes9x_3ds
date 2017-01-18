@@ -94,6 +94,7 @@
 
 #include "sa1.h"
 
+
 static void S9xSA1CharConv2 ();
 static void S9xSA1DMA ();
 static void S9xSA1ReadVariableLengthData (bool8 inc, bool8 no_shift);

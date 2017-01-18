@@ -460,9 +460,16 @@ struct SSNESGameFixes
     // Speed hacks on specific branch instructions.
     //
     int     SpeedHackCount;
+    uint32  SpeedHackSNESAddress[8];        // SNES address up to 8 locations.
     uint32  SpeedHackAddress[8];            // Actual 3DS address up to 8 locations.
+    int     SpeedHackOriginalBytes[8][4];   // Original bytes for comparison.
     uint8   SpeedHackOriginalOpcode[8];     // Original opcode.
     int     SpeedHackCycles[8];             // cycles to add
+    bool    SpeedHackPatched[8];            // Flag to indicate if patched.
+
+    int     SpeedHackSA1AddressCount;       // Total number of SA1 PC addresses
+    uint32  SpeedHackSA1Address[8];         // Allow the speed hack to skip cycles only if the SA1 PC addresses are in this list.
+    int     SpeedHackPatchTryCount;
 };
 
 START_EXTERN_C

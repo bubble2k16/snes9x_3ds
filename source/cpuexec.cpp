@@ -107,6 +107,8 @@
 #include "3dsopt.h"
 #include "3dssnes9x.h"
 
+extern struct SSA1 SA1;
+
 #define CPUCYCLES_REGISTERS
 #define OPCODE_REGISTERS
 
@@ -264,9 +266,10 @@ void S9xDoHBlankProcessingWithRegisters()
 		(*ICPU.S9xOpcodes [*CPU_PC++].S9xOpcode) (); \
 		if (SA1.Executing) \
 		{ \
-			CpuSaveFastRegisters(); \
-	    	S9xSA1MainLoop (); \
-			CpuLoadFastRegisters(); \
+			if (SA1.Flags & IRQ_PENDING_FLAG) S9xSA1CheckIRQ(); \
+			(*SA1.S9xOpcodes [*SA1.PC++].S9xOpcode) (); \
+			(*SA1.S9xOpcodes [*SA1.PC++].S9xOpcode) (); \
+			(*SA1.S9xOpcodes [*SA1.PC++].S9xOpcode) (); \
 		} \
 		if (CPU.Flags) goto S9xMainLoop_HandleFlags; \
 	} \

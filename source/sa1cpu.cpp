@@ -199,11 +199,27 @@ void S9xSA1MainLoop ()
 	(*SA1.S9xOpcodes [*SA1.PC++].S9xOpcode) ();
     }
     */
-    if (!SA1.Executing) return; 
+    //if (!SA1.Executing) return; 
     (*SA1.S9xOpcodes [*SA1.PC++].S9xOpcode) ();
-    if (!SA1.Executing) return; 
+    //if (!SA1.Executing) return; 
     (*SA1.S9xOpcodes [*SA1.PC++].S9xOpcode) ();
-    if (!SA1.Executing) return; 
+    //if (!SA1.Executing) return; 
     (*SA1.S9xOpcodes [*SA1.PC++].S9xOpcode) ();
 }
 
+
+void S9xSA1CheckIRQ()
+{
+	if (SA1.IRQActive)
+	{
+	    if (SA1.WaitingForInterrupt)
+	    {
+		SA1.WaitingForInterrupt = FALSE;
+		SA1.PC++;
+	    }
+	    if (!SA1CheckFlag (IRQ))
+		S9xSA1Opcode_IRQ ();
+	}
+	else
+	    SA1.Flags &= ~IRQ_PENDING_FLAG;    
+}
