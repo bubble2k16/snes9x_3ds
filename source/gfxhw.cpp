@@ -2225,7 +2225,7 @@ inline void __attribute__((always_inline)) S9xDrawHiresBackgroundHardwarePriorit
 	// So if the subscreen has already been drawn, and we are drawing the main screen,
 	// we simply just redraw the same vertices that we have saved.
 	//
-	if (layerDrawn[bg])
+	/*if (layerDrawn[bg])
 	{
 		gpu3dsBindTextureSnesTileCache(GPU_TEXUNIT0);
 		gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
@@ -2233,7 +2233,7 @@ inline void __attribute__((always_inline)) S9xDrawHiresBackgroundHardwarePriorit
 		gpu3dsDisableDepthTest();
 		gpu3dsDrawVertexes(true, bg);
 		return;		
-	}
+	}*/
 
 	//printf ("BG%d Y=%d-%d W1:%d-%d W2:%d-%d\n", bg, GFX.StartY, GFX.EndY, PPU.Window1Left, PPU.Window1Right, PPU.Window2Left, PPU.Window2Right);
 
@@ -2517,7 +2517,7 @@ inline void __attribute__((always_inline)) S9xDrawHiresBackgroundHardwarePriorit
 	gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
 	gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsEnableDepthTest();
-	gpu3dsDrawVertexes(false, bg);
+	gpu3dsDrawVertexes();
 	layerDrawn[bg] = true;
 }
 
