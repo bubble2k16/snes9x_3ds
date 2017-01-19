@@ -446,6 +446,7 @@ struct SSettings{
 struct SSNESGameFixes
 {
     uint8 alienVSpredetorFix;
+    uint8 cuonpaFix;
     uint8 APU_OutPorts_ReturnValueFix;
     uint8 SoundEnvelopeHeightReading2;
     uint8 SRAMInitialValue;

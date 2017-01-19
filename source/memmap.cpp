@@ -3723,7 +3723,7 @@ bool CMemory::ApplySpeedHackPatches()
 			if (SNESGameFixes.SpeedHackPatched[n])
 				continue;
 
-			printf ("Patching speed hack #%d @ %6x\n", n, SNESGameFixes.SpeedHackSNESAddress[n]);
+			//printf ("Patching speed hack #%d @ %6x\n", n, SNESGameFixes.SpeedHackSNESAddress[n]);
 
 			// First check that the original bytes matches.
 			//
@@ -3732,14 +3732,14 @@ bool CMemory::ApplySpeedHackPatches()
 			for (int i = 0; i < 4 && SNESGameFixes.SpeedHackOriginalBytes[n][i] != -1; i++)
 			{
 				uint8 byte = S9xGetByte(SNESGameFixes.SpeedHackSNESAddress[n] + i);
-				printf ("%2x = %2x? ", SNESGameFixes.SpeedHackOriginalBytes[n][i], byte);
+				//printf ("%2x = %2x? ", SNESGameFixes.SpeedHackOriginalBytes[n][i], byte);
 				if (SNESGameFixes.SpeedHackOriginalBytes[n][i] != byte)
 				{
 					allMatches = false;
 					break;
 				}
 			}
-			printf ("\n");
+			//printf ("\n");
 
 			if (allMatches)
 			{
@@ -3755,7 +3755,7 @@ bool CMemory::ApplySpeedHackPatches()
 
 		if (appliedAll)
 		{
-			printf ("All speed hacks patched\n");
+			//printf ("All speed hacks patched\n");
 			SNESGameFixes.SpeedHackPatchTryCount = -1;
 		}
 		SNESGameFixes.SpeedHackPatchTryCount --;
@@ -4019,6 +4019,10 @@ void CMemory::ApplyROMFixes ()
 	//is this even useful now?
     if (strcmp (ROMName, "ALIENS vs. PREDATOR") == 0)
 		SNESGameFixes.alienVSpredetorFix = TRUE;
+
+	// Fixes CuOnPa
+    if (strcmp (ROMId, "AC6J") == 0)
+		SNESGameFixes.cuonpaFix = TRUE;
 		
     if (strcmp (ROMName, "\xBD\xB0\xCA\xDF\xB0\xCC\xA7\xD0\xBD\xC0") == 0 ||  //Super Famista
 		strcmp (ROMName, "\xBD\xB0\xCA\xDF\xB0\xCC\xA7\xD0\xBD\xC0 2") == 0 || //Super Famista 2

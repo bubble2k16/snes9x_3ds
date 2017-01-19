@@ -1740,12 +1740,15 @@ void S9xSetCPU (uint8 byte, uint16 Address)
 				!(Memory.FillRAM [0x4200] & 0x80) &&
 				CPU.V_Counter >= PPU.ScreenHeight + FIRST_VISIBLE_LINE &&
 				
-				// Bug in SNES9x v1.43 (which was fixed in v1.51)
+				// Bug in SNES9x v1.43
 				// NMI can trigger during VBlank as long as NMI_read ($4210) wasn't cleared.
-				// This fixes Cu-On-Pa SFC.
+				// This fixes Cu-On-Pa SFC. But since this cannot be applied to all games
+				// we created a setting in SNESGameFixes to apply this fix only
+				// to Cu-On-Pa. (If we allow NMI to fire anytime in V-Blank, 
+				// Super Mario World 2's title screen becomes corrupted!)
 				//
-				/*CPU.V_Counter <= PPU.ScreenHeight + 
-				(SNESGameFixes.alienVSpredetorFix ? 25 : 15) && */  //jyam 15->25 alien vs predetor
+				CPU.V_Counter <= PPU.ScreenHeight + 
+				(SNESGameFixes.cuonpaFix ? 35 : SNESGameFixes.alienVSpredetorFix ? 25 : 15) &&   //jyam 15->25 alien vs predetor
 // Panic Bomberman clears the NMI pending flag @ scanline 230 before enabling
 // NMIs again. The NMI routine crashes the CPU if it is called without the NMI
 // pending flag being set...
