@@ -1147,7 +1147,7 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 		gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
 		gpu3dsEnableAlphaTestNotEqualsZero();
 		gpu3dsEnableDepthTest();
-		//printf ("Redraw: %d (%s)\n", bg + 1, sub ? "sub" : "main");
+		//printf ("Redraw: %d (%s)\n", bg, sub ? "sub" : "main");
 		gpu3dsDrawVertexes(true, bg);	// redraw saved vertices
 		return;
 	}
@@ -1243,6 +1243,8 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 		for (; TotalLines < PPU.ScreenHeight - 1; TotalLines++)
 		{
 			int y = OY + TotalLines - 1;
+			if (y >= GFX.EndY)
+				break;
 			if (!(LineData [y].BG[bg].VOffset == LineData [y + 1].BG[bg].VOffset &&
 				LineData [y].BG[bg].HOffset == LineData [y + 1].BG[bg].HOffset &&
 				LineData [y].BG[2].VOffset == LineData [y + 1].BG[2].VOffset && 
@@ -1253,7 +1255,7 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 		// For those lines, draw the tiles column by column 
 		// (from the left to the right of the screen)
 		//
-		for (int Left = 0; Left < 256; Left += 8)
+		for (int Left = 0; Left <= 256; Left += 8)	// Bug fix: It should be Left <= 256 instead of Left < 256
 		{
 			for (int Y = OY; Y < OY + TotalLines; )
 			{
@@ -1435,6 +1437,11 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 					Offset = HPos & 7;
 					
 					int sX = Left - Offset;
+
+					// Don't display anything beyond the right edge.
+					if (sX >= 256)
+						break;
+
 					Tile = READ_2BYTES(t);
 
 					int tpriority = (Tile & 0x2000) >> 13;
@@ -1496,11 +1503,13 @@ inline void __attribute__((always_inline)) S9xDrawOffsetBackgroundHardwarePriori
 		OY += TotalLines;
     }
 
+	//printf ("BG OPT %d (Mode = %d)\n", bg, BGMode);
 	//gpu3dsSetTextureEnvironmentReplaceTexture0();
 	gpu3dsBindTextureSnesTileCache(GPU_TEXUNIT0);
 	gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
 	gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsEnableDepthTest();
+	//printf ("Draw  : %d (%s)\n", bg, sub ? "sub" : "main");
 	gpu3dsDrawVertexes(false, bg);
 	layerDrawn[bg] = true;
 }
@@ -3834,9 +3843,9 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 				}
 
 				
+			DRAW_OBJS(0);
 			if ((Memory.FillRAM [0x2133] & 0x40) && !BG0)  
 				DRAW_M7BG(1, 2);
-			DRAW_OBJS(0);
 			DRAW_M7BG(0, 5);
 
 			// debugging only
@@ -4202,6 +4211,14 @@ void S9xUpdateScreenHardware ()
 
 	}*/
 
+	layerDrawn[0] = false;
+	layerDrawn[1] = false;
+	layerDrawn[2] = false;
+	layerDrawn[3] = false;
+	layerDrawn[4] = false;
+	layerDrawn[5] = false;
+	layerDrawn[6] = false;
+
 	// Bug fix: We have to render as long as 
 	// the 2130 register says that we have are
 	// doing color math using the subscreen 
@@ -4210,13 +4227,6 @@ void S9xUpdateScreenHardware ()
 	// This is because the backdrop color will be
 	// used for the color math.
 	//
-	layerDrawn[0] = false;
-	layerDrawn[1] = false;
-	layerDrawn[2] = false;
-	layerDrawn[3] = false;
-	layerDrawn[4] = false;
-	layerDrawn[5] = false;
-	layerDrawn[6] = false;
 	//printf ("Render Y:%d-%d M%d\n", GFX.StartY, GFX.EndY, PPU.BGMode);
 
 	if (ANYTHING_ON_SUB || (GFX.r2130 & 2))
