@@ -85,19 +85,27 @@ Castlevania - Dracula X
 10. SFX1/2 chip (Yoshi's Island, but slow on old 3DS)
 11. CX4 chip (Megaman X-2, Megaman X-3)
 12. DSP chips (Super Mario Kart, Ace o Nerae)
-13. Use of full clock speed in the New 3DS.
-14. Sound emulation (at 32KHz, with echo and interpolation)
+13. SA-1 chip (Super Mario RPG, Kirby Superstar)
+14. Use of full clock speed in the New 3DS.
+15. Sound emulation (at 32KHz, with echo and interpolation)
 
 ##What's missing / needs to be improved
 
 1. Some sound emulation errors.
-2. All the other add-on chips. 
-3. Mosaics.
-4. In-frame palette changes - This is because this emulator uses the 3DS GPU for all graphic rendering. Without in-frame palette changes implemented, a small number of games experience colour issues.
+2. Mosaics.
+3. In-frame palette changes - This is because this emulator uses the 3DS GPU for all graphic rendering. Without in-frame palette changes implemented, a small number of games experience colour issues.
 
 -------------------------------------------------------------------------------------------------------
 
 ##Change History
+
+v0.80
+- Fixed NMI interrupt for specific games such as Cu-On-Pa. This allows Cu-On-Pa to get past the selection screen.
+- Fixed ROM size calculation for Wonder Project J (English Patch). The game no longer hangs at the menu.
+- Implemented optimized rendering for offset-per-tile modes. This gives many games a major performance boost. Games such as Strike Gunner STG, Tetris Attack, Kirby's Avalanche, Contra's Stage 1 Boss, Super Mario All-Stars' Super Mario 2 all benefit from this improvement.
+- Implemented optimized rendering for sprites for modest performance boost.
+- Used SPC700 core from Snes9x v1.51.
+- Re-implemented an moderately optimized SA-1 core. Now games like Kirby Super Star, Super Mario RPG can boot. It will NOT run well on the old 3DS currently, but it will run smooth on a new 3DS with full clock speed.
 
 v0.71
 - Fixed nasty bug that breaks loading of the second ROM, if the first ROM was loaded from a directory path that has spaces in it.
