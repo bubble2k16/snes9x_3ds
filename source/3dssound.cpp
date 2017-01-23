@@ -98,7 +98,9 @@ void snd3dsMixSamples()
     if (snd3DS.audioType==1)
     {
         if (generateSound)
+        {
             S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(&snd3DS.leftBuffer[p], &snd3DS.rightBuffer[p], SAMPLES_TO_GENERATE * 2);
+        }
         else
         {
             for (int i = 0; i < SAMPLES_TO_GENERATE; i++)
@@ -115,7 +117,7 @@ void snd3dsMixSamples()
         }
         fclose(fp);*/
     }
-    else
+    /*else
     {
         if (generateSound)
             S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffersNDSP(&snd3DS.fullBuffers[p], SAMPLES_TO_GENERATE * 2);
@@ -127,7 +129,7 @@ void snd3dsMixSamples()
                 snd3DS.rightBuffer[p + i] = 0;
             }
         }
-    }
+    }*/
     t3dsEndTiming(42);
 
     // Now that we have the samples, we have to copy it back into our buffers
@@ -237,6 +239,8 @@ void snd3dsStopPlaying()
 
 bool snd3dsInitialize()
 {
+    S9xSetPlaybackRate(32000);
+
     snd3DS.isPlaying = false;
     snd3DS.audioType = 0;
     Result ret = 0;

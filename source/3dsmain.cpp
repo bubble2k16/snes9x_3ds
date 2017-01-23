@@ -1475,9 +1475,6 @@ void menuPause()
             sprintf(s, ".%d.frz", slot);
             if (S9xLoadSnapshot(S9xGetFilename (s)))
             {    
-                for (int i = 0; i < 8; i++)
-                    SNESGameFixes.SpeedHackPatched[i] = 0;
-                SNESGameFixes.SpeedHackPatchTryCount = 10;
                 gpu3dsInitializeMode7Vertexes();
                 gpu3dsCopyVRAMTilesIntoMode7TileVertexes(Memory.VRAM);
                 debugFrameCounter = 0;
@@ -2046,7 +2043,7 @@ void snesEmulatorLoop()
         /*if (!GPU3DS.isReal3DS)
         {
             snd3dsMixSamples();     
-            snd3dsMixSamples();     
+            //snd3dsMixSamples();     
             //printf ("---\n");       
         }*/
         

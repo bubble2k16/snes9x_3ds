@@ -3674,6 +3674,8 @@ void S9xOpcode_IRQ (void)
     if (CPU.Flags & TRACE_FLAG)
 	S9xTraceMessage ("*** IRQ");
 #endif
+    ICPU.isInIdleLoop = false;
+
     if (!CheckEmulation())
     {
 	PushB (Registers.PB);
@@ -3736,6 +3738,8 @@ void S9xOpcode_NMI (void)
     if (CPU.Flags & TRACE_FLAG)
 	S9xTraceMessage ("*** NMI");
 #endif
+    ICPU.isInIdleLoop = false;
+
     if (!CheckEmulation())
     {
 	PushB (Registers.PB);
@@ -4227,10 +4231,58 @@ static void OpDB (void)
     CPU.Flags |= DEBUG_MODE_FLAG;
 }
 
-// Reserved S9xOpcode
+
+// Speed hack
 static void Op42 (void)
 {
+    bool doSkip = false;
+
+    //printf ("42: %x %x\n", CPU.PC - 1, SNESGameFixes.SpeedHackSA1Address[0]);
+
+    int foundHackIndex = -1;
+    // Search for the appropriate speed hack
+    //
+    uint8* prevCPUPC = (uint8*)(CPU.PC - 1);
+    int branchOffset = *(int8 *)(CPU.PC);
+
+    // Bug fix: Make sure we check again SpeedHackCount.
+    //
+    doSkip = true;
+    for (int i = 0; i < SNESGameFixes.SpeedHackSA1Count; i++)
+    {
+        if (SNESGameFixes.SpeedHackSA1Address[i] == prevCPUPC) 
+        { 
+            foundHackIndex = i; 
+            break; 
+        }
+    }
+
+    // Some games actually use NOP. So we must ensure
+    // That this is a registered speed hack
+    //
+    if (foundHackIndex == -1)
+    {
+        // Bug fix: If we can't find the speed hack, then
+        // we will treat this like a NOP (as it was before)
+        //
+        doSkip = false;
+        return;
+    }
+
+    // Executes the original opcode that we replaced.
+    //
+    (*ICPU.S9xOpcodes [SNESGameFixes.SpeedHackSA1OriginalOpcode[foundHackIndex]].S9xOpcode) (); 
+
+    //printf ("  Executed op %2x\n", SNESGameFixes.SpeedHackOriginalOpcode[foundHackIndex]);
+
+    if (doSkip)
+    {
+        //printf ("S");
+        SA1.isInIdleLoop = true;
+    }
+    
 }
+
 
 /*****************************************************************************/
 

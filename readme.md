@@ -1,6 +1,8 @@
 ##Snes9x for 3DS
 
-Snes9x for 3DS is a high-compatibility SNES emulator for your old 3DS / 2DS. It runs many games at full speed (60 fps). It supports games that use CX4 chip (Megaman X2/X3), and the SDD-1 chip (Star Ocean, Super Street Fighter 2 Alpha). It can also play games that use the SuperFX chip (Yoshi's Island, etc) but they run with plenty of frame skips. It has generally much high compatibility than existing SNES emulators on the old 3DS because it uses Snes9x 1.43 as a base, and is a good alternative if your existing emulators cannot play all the games.
+Snes9x for 3DS is a high-compatibility SNES emulator for your Old 3DS / 2DS. It runs many games at full speed (60 fps). It supports games that use CX4 chip (Megaman X2/X3), and the SDD-1 chip (Star Ocean, Super Street Fighter 2 Alpha). It can also play games that use the SuperFX chip (Yoshi's Island, etc), and the SA-1 chip (Super Mario RPG, Kirby's Dreamland, Kirby Super Star) but it runs slowly. It has generally much high compatibility than existing SNES emulators on the old 3DS because it uses Snes9x 1.43 as a base, and is a good alternative if your existing emulators cannot play all the games.
+
+It also runs on your New 3DS, and it runs games faster! Use your New 3DS if you want to play SuperFX and SA-1 games!
 
 Download the latest from:
    https://github.com/bubble2k16/snes9x_3ds/releases
@@ -68,6 +70,38 @@ Megaman X3
 ![Castlevania - Dracula X](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_7.jpg?raw=1) 
 
 Castlevania - Dracula X
+
+-------------------------------------------------------------------------------------------------------
+
+##Frequently Asked Questions 
+
+1. Why do some games have strange color issues (Wild Guns, Kirby Super Star, Batman Forever)?
+
+Try going to the Settings and change the In-Frame Palette Changes to either one of the 3 options: Enabled, Disabled Style 1, Disabled Style 2. Color emulation is never perfect because we are using the 3DS GPU for rendering, which lacks certain capabilities
+
+2. Why some games keep writing to SRAM every second or so (Treasure Hunter G, Kirby's Dreamland)?
+
+Try going to the Settings and change the SRAM Auto-Save Delay to 10 seconds, 60 seconds, or disable it entirely! Don't worry, the SRAM will be saved again when you tap on the bottom screen.
+
+3. Why can't I load some games? They are supposed to be supported according to the compatibility list!
+
+Ensure that your ROM file is not a zipped file. Currently, the emulator only supports .SFC, .SMC, .FIG formats.
+
+4. Can I use my save states generated from Windows versions of Snes9x?
+
+You can try using save states from Snes9x v1.43, but sometimes this emulator doesn't recognize them.
+
+5. How can I make Snes9x utilize the full speed of the New 3DS?
+
+The .3DSX version currently uses the full clock speed of the New 3DS, enabling all your SuperFX, SA-1 games to run faster. But the .CIA version currently has some problems, so you may have to use another app like HANS to configure the New 3DS to switch to its full clock speed before starting up this Snes9x emulator.
+
+6. After closing the lid and re-opening it, the sound synchronization during game emulation goes off!
+
+Yes, this is a known issue. You can try to tap the bottom to bring up the menu, and then resume your game. The sound should become synchronized again. 
+
+7. After pressing the Home button, the emulator music still plays!
+
+Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emulator entirely from the emulator's menu before going to the Home screen.
 
 -------------------------------------------------------------------------------------------------------
 

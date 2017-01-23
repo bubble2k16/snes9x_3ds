@@ -143,6 +143,8 @@ struct SSA1 {
     uint8   variable_bit_pos;
     
     long    OpAddress;
+
+    bool    isInIdleLoop;
 };
 
 #define SA1CheckZero() (SA1._Zero == 0)

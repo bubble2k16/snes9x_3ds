@@ -494,17 +494,45 @@ void S9xDoHBlankProcessing ()
 			// at least one of the registers have changed from the
 			// value in the previous scanline.
 			//
-			for (int i = 0; i < sizeof(addr) / sizeof(int); i++)
+			if (SNESGameFixes.AceONeraeHack)
 			{
-				int a = addr[i];
-				if (IPPU.DeferredRegisterWrite[a] != 0xff00 &&
-					IPPU.DeferredRegisterWrite[a] != Memory.FillRAM[a + 0x2100])
+				for (int i = 0; i < sizeof(addr) / sizeof(int); i++)
 				{
-					DEBUG_FLUSH_REDRAW(a + 0x2100, IPPU.DeferredRegisterWrite[a]);
-					FLUSH_REDRAW();
-					Memory.FillRAM[a + 0x2100] = IPPU.DeferredRegisterWrite[a];
+					int a = addr[i];
+					if (IPPU.DeferredRegisterWrite[a] != 0xff00 &&
+						IPPU.DeferredRegisterWrite[a] != Memory.FillRAM[a + 0x2100])
+					{
+						//printf ("$21%02x = %02x, Window 2126-29: %02x %02x %02x %02x\n", a, IPPU.DeferredRegisterWrite[a], 
+						//	Memory.FillRAM[0x2126], Memory.FillRAM[0x2127], Memory.FillRAM[0x2128], Memory.FillRAM[0x2129]);
+
+						if (a == 0x31 &&
+							Memory.FillRAM[0x2126] == 0xFF && Memory.FillRAM[0x2127] == 0x00 &&
+							Memory.FillRAM[0x2128] == 0xFF && Memory.FillRAM[0x2129] == 0x00)
+						{
+							Memory.FillRAM[a + 0x2100] = IPPU.DeferredRegisterWrite[a];
+							continue;
+						}
+						DEBUG_FLUSH_REDRAW(a + 0x2100, IPPU.DeferredRegisterWrite[a]);
+						FLUSH_REDRAW();
+						Memory.FillRAM[a + 0x2100] = IPPU.DeferredRegisterWrite[a];
+					}
+					IPPU.DeferredRegisterWrite[a] = 0xff00;
 				}
-				IPPU.DeferredRegisterWrite[a] = 0xff00;
+			}
+			else
+			{
+				for (int i = 0; i < sizeof(addr) / sizeof(int); i++)
+				{
+					int a = addr[i];
+					if (IPPU.DeferredRegisterWrite[a] != 0xff00 &&
+						IPPU.DeferredRegisterWrite[a] != Memory.FillRAM[a + 0x2100])
+					{
+						DEBUG_FLUSH_REDRAW(a + 0x2100, IPPU.DeferredRegisterWrite[a]);
+						FLUSH_REDRAW();
+						Memory.FillRAM[a + 0x2100] = IPPU.DeferredRegisterWrite[a];
+					}
+					IPPU.DeferredRegisterWrite[a] = 0xff00;
+				}
 			}
 
 		#ifndef STORM
