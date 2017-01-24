@@ -216,7 +216,8 @@ void GPU_SetAttributeBuffers(u8 totalAttributes, u32* baseAddress, u64 attribute
 	GPUCMD_AddMaskedWrite(GPUREG_VSH_INPUTBUFFER_CONFIG, 0xB, 0xA0000000|(totalAttributes-1));
 	GPUCMD_AddWrite(GPUREG_VSH_NUM_ATTR, (totalAttributes-1));
 
-	GPUCMD_AddIncrementalWrites(GPUREG_VSH_ATTRIBUTES_PERMUTATION_LOW, ((u32[]){attributePermutation&0xFFFFFFFF, (attributePermutation>>32)&0xFFFF}), 2);
+    u32[] permutationArray = {attributePermutation&0xFFFFFFFF, (attributePermutation>>32)&0xFFFF};
+	GPUCMD_AddIncrementalWrites(GPUREG_VSH_ATTRIBUTES_PERMUTATION_LOW, permutationArray, 2);
 }
 
 void GPU_SetAttributeBuffersAddress(u32* baseAddress)
