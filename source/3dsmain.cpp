@@ -153,6 +153,13 @@ void _makepath (char *path, const char *, const char *dir, const char *fname, co
 	}
 }
 
+void setExitFlag(APT_HookType hook, void* param)
+{
+    if (hook == APTHOOK_ONEXIT) {
+        appExiting = 1;
+    }
+}
+
 void S9xMessage (int type, int number, const char *message)
 {
 	printf("%s\n", message);
@@ -2516,13 +2523,6 @@ void testTileCache()
             }
         }
         }
-    }
-}
-
-void setExitFlag(APT_HookType hook, void* param)
-{
-    if (hook == APT_HookType.APTHOOK_ONEXIT) {
-        appExiting = 1;
     }
 }
 
