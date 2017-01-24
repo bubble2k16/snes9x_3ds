@@ -39,15 +39,15 @@ INCLUDES	:=	include
 #---------------------------------------------------------------------------------
 
 
-ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft 
+ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 
 CFLAGS	:=	-g -w -O3 -mword-relocations -finline-limit=20000 \
 			-fomit-frame-pointer -ffunction-sections \
-			$(ARCH) 
+			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS 
+CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS
 
-CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11  
+CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
@@ -78,8 +78,9 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
 #CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 #CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-CFILES		:=	
-CPPFILES	:=	3dsmain.cpp 3dsmenu.cpp 3dsopt.cpp 3dsgpu.cpp 3dssound.cpp 3dsui.cpp 3dsfont.cpp \
+CFILES		:=
+CPPFILES	:=	3dsmain.cpp 3dsmenu.cpp 3dsopt.cpp 3dsgpu.cpp 3dssound.cpp 3dsui.cpp 3dsfont.cpp 3dsexit.cpp \
+			gpulib.cpp \
 			sf2d_private.cpp \
 			fxinst.cpp fxemu.cpp fxdbg.cpp \
 			c4.cpp c4emu.cpp \
@@ -95,7 +96,7 @@ CPPFILES	:=	3dsmain.cpp 3dsmenu.cpp 3dsopt.cpp 3dsgpu.cpp 3dssound.cpp 3dsui.cpp
 			gfx.cpp gfxhw.cpp memmap.cpp clip.cpp cliphw.cpp \
 			dsp1.cpp ppu.cpp ppuvsect.cpp dma.cpp snes9x.cpp data.cpp globals.cpp \
 			lodepng.cpp
-			
+
 
 
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))

@@ -3,8 +3,8 @@
 
 #include <3ds.h>
 
-aptHookCookie hookCookie;
-int appExiting = 0;
+extern aptHookCookie hookCookie;
+extern int appExiting;
 
 void setExitFlag(APT_HookType hook, void* param);
 void enableExitHook();
