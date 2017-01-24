@@ -196,11 +196,6 @@ u32 vertexListBufferOffsets[1] = { 0 };
 u64 vertexListAttribPermutations[1] = { 0x3210 };
 u8 vertexListNumberOfAttribs[1] = { 2 };
 
-void GPU_SetAttributeBuffersAddress(u32* baseAddress)
-{
-	GPUCMD_AddWrite(GPUREG_ATTRIBBUFFERS_LOC, ((u32)baseAddress)>>3);
-}
-
 inline void gpu3dsSetAttributeBuffers(
     u8 totalAttributes,
     u32 *listAddress, u64 attributeFormats)
@@ -230,7 +225,7 @@ inline void gpu3dsSetAttributeBuffers(
         }
         else
         {
-            GPU_SetAttributeBuffersAddress(osAddress);
+            GPUCMD_AddWrite(GPUREG_ATTRIBBUFFERS_LOC, ((u32)osAddress)>>3);
 
             // The real 3DS doesn't allow us to set the osAddress independently without
             // setting the additional register as below. If we don't do this, the
