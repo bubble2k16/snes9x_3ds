@@ -21,6 +21,7 @@
 #include "display.h"
 #include "soundux.h"
 
+#include "3dsexit.h"
 #include "3dsgpu.h"
 #include "3dsopt.h"
 #include "3dssound.h"
@@ -81,12 +82,9 @@ S9xSettings3DS settings3DS;
 #define TICKS_PER_FRAME_NTSC (4468724)
 #define TICKS_PER_FRAME_PAL (5362469)
 
-aptHookCookie hookCookie;
-
 int frameCount60 = 60;
 u64 frameCountTick = 0;
 int framesSkippedCount = 0;
-int appExiting = 0;
 char *romFileName = 0;
 char romFileNameFullPath[_MAX_PATH];
 char romFileNameLastSelected[_MAX_PATH];
@@ -151,13 +149,6 @@ void _makepath (char *path, const char *, const char *dir, const char *fname, co
 		strcat(path, ".");
 		strcat(path, ext);
 	}
-}
-
-void setExitFlag(APT_HookType hook, void* param)
-{
-    if (hook == APTHOOK_ONEXIT) {
-        appExiting = 1;
-    }
 }
 
 void S9xMessage (int type, int number, const char *message)
@@ -1769,7 +1760,7 @@ void emulatorInitialize()
     ptmSysmInit ();
     osSetSpeedupEnable(1);    // Performance: use the higher clock speed for new 3DS.
 
-    aptHook(&hookCookie, setExitFlag, NULL);
+    enableExitHook();
 
     settingsLoad(false);
     if (cwd[0] == 0)
