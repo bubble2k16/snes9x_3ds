@@ -1641,47 +1641,6 @@ void gpu3dsSetRenderTargetToMode7Tile0Texture()
     gpu3dsSetRenderTargetToTexture(snesMode7Tile0Texture, snesDepthForOtherTextures);
 }
 
-
-
-
-extern Handle gspEvents[GSPGPU_EVENT_MAX];
-
-bool gpu3dsCheckEvent(GSPGPU_Event id)
-{
-	Result res = svcWaitSynchronization(gspEvents[id], 0);
-	if (!res)
-	{
-		svcClearEvent(gspEvents[id]);
-		return true;
-	}
-
-	return false;
-}
-
-
-bool gpu3dsWaitEvent(GSPGPU_Event id, u64 timeInMilliseconds)
-{
-    //if (GPU3DS.enableDebug)
-    //    printf("  gpu3dsWaitEvent\n");
-
-	Result res = svcWaitSynchronization(gspEvents[id], timeInMilliseconds * 1000000);
-	if (!res)
-	{
-        //if (GPU3DS.enableDebug)
-        //    printf("  gpu3dsWaitEvent complete\n");
-
-		svcClearEvent(gspEvents[id]);
-		return true;
-	}
-
-    //if (GPU3DS.enableDebug)
-    //    printf("  gpu3dsWaitEvent timeout\n");
-
-	return false;
-}
-
-
-
 void gpu3dsFlush()
 {
     u32 offset;
@@ -1702,10 +1661,7 @@ void gpu3dsWaitForPreviousFlush()
 {
     if (somethingWasFlushed)
     {
-        if (GPU3DS.isReal3DS)
-            gpu3dsWaitEvent(GSPGPU_EVENT_P3D, 500);
-        else
-            gpu3dsWaitEvent(GSPGPU_EVENT_P3D, 1);
+        gspWaitForP3D();
         somethingWasFlushed = false;
     }
 
@@ -1714,7 +1670,7 @@ void gpu3dsWaitForPreviousFlush()
 
 void gpu3dsFlushIfPossible()
 {
-    if (somethingWasDrawn && gpu3dsCheckEvent(GSPGPU_EVENT_P3D))
+    if (somethingWasDrawn)
         gpu3dsFlush();
 }
 
