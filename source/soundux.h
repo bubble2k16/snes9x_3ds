@@ -259,6 +259,7 @@ typedef struct {
     uint32			release_rate;			// ** unused
     uint32			sustain_level;			// ** unused
     signed short	sample;					// signed 16 bit sample
+    int32           diff;                   // added for SNES9x Old 3DS.
     signed short	decoded[16];			// decoded 16 samples
     signed short	previous16[2];
     signed short	*block;
@@ -270,7 +271,7 @@ typedef struct {
     int32			*echo_buf_ptr;			// EchoBuffer[] or DummyEchoBuffer[]
     int32			mode;					// ADSR/GAIN/RELEASE/SILENT
     int32			envxx;					// ** unused
-    signed short	next_sample;			// ** unused
+    signed short	prev_sample;			// ** unused
     int32			interpolate;			// ** unused
     int32			previous[2];			// last two nybbles for BRR decode
     uint32			dummy[8];				// Just incase they are needed in the future,

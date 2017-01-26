@@ -421,11 +421,11 @@ void S9xPrintAPUState ()
 	    else
 		printf ("SAM%d ", APU.DSP [APU_SRCN + J * 0x10]);
 
-	    printf ("FREQ %4x", freq);
+	    printf ("FQ %4x", freq);
 	    if (J > 0 && (SoundData.pitch_mod & (1 << J)) &&
 		ch->type != SOUND_NOISE)
 	    {
-		printf ("(mod) ");
+		printf ("(M) ");
 	    }
 	    else
 		printf (" ");
@@ -437,12 +437,12 @@ void S9xPrintAPUState ()
 
 	    static char* envelope [] = 
 	    {
-		"silent", "attack", "decay", "sustain", "release", "gain",
-		"inc_lin", "inc_bent", "dec_lin", "dec_exp"
+            "--", "A ", "D", "S", "R", "G",
+            "+", "/", "\\", "e"
 	    };
         
-	    //printf ("   %s %d envx:%d, target: %d, %ld", ch->state > 9 ? "???" : envelope [ch->state],
-		//    ch->env_error, ch->envx, ch->envx_target, ch->erate);
+	    printf ("\n   %s r:%4d e:%4d t:%4d", ch->state > 9 ? "???" : envelope [ch->state],
+		    ch->xenv_rate, ch->xenvx, ch->xenvx_target);
 	    printf ("\n");
 	}
     }

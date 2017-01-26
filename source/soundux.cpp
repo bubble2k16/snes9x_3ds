@@ -244,10 +244,10 @@ static const int32 gauss[512] =
 //static const int32	*G1 = &gauss[256], *G2 = &gauss[512],
 //						*G3 = &gauss[255], *G4 = &gauss[-1];
 
-#define	G1(n)	gauss[256 + (n)]
-#define	G2(n)	gauss[512 + (n)]
-#define	G3(n)	gauss[255 + (n)]
-#define	G4(n)	gauss[ -1 + (n)]
+#define	G1(n)	gauss[256 + (n)]		// n = [-1, -256]
+#define	G2(n)	gauss[512 + (n)]		// n = [-1, -256]
+#define	G3(n)	gauss[255 + (n)]		// n = [1, 256]
+#define	G4(n)	gauss[ -1 + (n)]		// n = [1, 256]
 
 // envelope/noise table by libopenspc and SNEeSe
 int32 env_counter_table[32] =
@@ -1383,298 +1383,332 @@ void __attribute__ ((noinline)) DecodeBlockFast (Channel *ch)
 }
 
 
-int __attribute__((always_inline)) MixComputeEnvelope(Channel *ch, int state, int J)
-{
-	switch (state)
-	{
-		case SOUND_ATTACK:
-			if (ch->xenv_rate == env_counter_max_master)
-				ch->xenvx += (ENV_RANGE >> 1); // FIXME
-			else
-			{
-				ch->xenv_count -= ch->xenv_rate;
-				while (ch->xenv_count <= 0)
-				{
-					ch->xenvx += (ENV_RANGE >> 6); // 1/64
-					ch->xenv_count += env_counter_max;
-				}
-			}
-
-			if (ch->xenvx > ENV_MAX)
-			{
-				ch->xenvx = ENV_MAX;
-
-				if (ch->xsustain_level != ENV_RANGE)
-				{
-					ch->state = SOUND_DECAY;
-					S9xSetEnvRate (ch, ch->xdecay_rate, ch->xsustain_level);
-				}
-				else
-				{
-					ch->state = SOUND_SUSTAIN;
-					S9xSetEnvRate (ch, ch->xsustain_rate, 0);
-				}
-			}
-
-			break;
-
-		case SOUND_DECAY:
-			ch->xenv_count -= ch->xenv_rate;
-			while (ch->xenv_count <= 0)
-			{
-				ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
-				ch->xenv_count += env_counter_max;
-			}
-
-			if (ch->xenvx <= ch->xenvx_target)
-			{
-				if (ch->xenvx <= 0)
-				{
-					S9xAPUSetEndOfSample (J, ch);
-					return 1;
-				}
-				else
-				{
-					ch->state = SOUND_SUSTAIN;
-					S9xSetEnvRate (ch, ch->xsustain_rate, 0);
-				}
-			}
-
-			break;
-
-		case SOUND_SUSTAIN:
-			ch->xenv_count -= ch->xenv_rate;
-			while (ch->xenv_count <= 0)
-			{
-				ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1;  // 1 - 1/256
-				ch->xenv_count += env_counter_max;
-			}
-
-			if (ch->xenvx <= 0)
-			{
-				S9xAPUSetEndOfSample (J, ch);
-				return 1;
-			}
-
-			break;
-
-		case SOUND_RELEASE:
-			ch->xenv_count -= env_counter_max;
-			while (ch->xenv_count <= 0)
-			{
-				ch->xenvx -= (ENV_RANGE >> 8); // 1/256
-				ch->xenv_count += env_counter_max;
-			}
-
-			if (ch->xenvx <= 0)
-			{
-				S9xAPUSetEndOfSample (J, ch);
-				return 1;
-			}
-
-			break;
-
-		case SOUND_INCREASE_LINEAR:
-			ch->xenv_count -= ch->xenv_rate;
-			while (ch->xenv_count <= 0)
-			{
-				ch->xenvx += (ENV_RANGE >> 6); // 1/64
-				ch->xenv_count += env_counter_max;
-			}
-
-			if (ch->xenvx > ENV_MAX)
-			{
-				ch->xenvx = ENV_MAX;
-				ch->state = SOUND_GAIN;
-				ch->mode  = MODE_GAIN;
-				S9xSetEnvRate (ch, 0, 0);
-			}
-
-			break;
-
-		case SOUND_INCREASE_BENT_LINE:
-			ch->xenv_count -= ch->xenv_rate;
-			while (ch->xenv_count <= 0)
-			{
-				if (ch->xenvx >= ((ENV_RANGE * 3) >> 2)) // 0x600
-					ch->xenvx += (ENV_RANGE >> 8); // 1/256
-				else
-					ch->xenvx += (ENV_RANGE >> 6); // 1/64
-
-				ch->xenv_count += env_counter_max;
-			}
-
-			if (ch->xenvx > ENV_MAX)
-			{
-				ch->xenvx = ENV_MAX;
-				ch->state = SOUND_GAIN;
-				ch->mode  = MODE_GAIN;
-				S9xSetEnvRate (ch, 0, 0);
-			}
-
-			break;
-
-		case SOUND_DECREASE_LINEAR:
-			ch->xenv_count -= ch->xenv_rate;
-			while (ch->xenv_count <= 0)
-			{
-				ch->xenvx -= (ENV_RANGE >> 6); // 1/64
-				ch->xenv_count += env_counter_max;
-			}
-
-			if (ch->xenvx <= 0)
-			{
-				S9xAPUSetEndOfSample (J, ch);
-				return 1;
-			}
-
-			break;
-
-		case SOUND_DECREASE_EXPONENTIAL:
-			ch->xenv_count -= ch->xenv_rate;
-			while (ch->xenv_count <= 0)
-			{
-				ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
-				ch->xenv_count += env_counter_max;
-			}
-
-			if (ch->xenvx <= 0)
-			{
-				S9xAPUSetEndOfSample (J, ch);
-				return 1;
-			}
-
-			break;
-
-		case SOUND_GAIN:
-			S9xSetEnvRate (ch, 0, 0);
-
-			break;
-	}
-
-	return 0;
-}
-
-
 
 int32 noise_cache[256];
 int32 wave[SOUND_BUFFER_SIZE];
 int32 noise_index = 0;
 int32 noise_count = 0;
-uint32 freq = 0;
 
-void MixComputeSample(Channel *ch, int J, int I, bool mod1, bool mod2)
+inline void __attribute__((always_inline)) MixComputeEnvelopeAndSample(
+	int J, Channel *ch, int32 freq,
+	bool echo, bool env, bool mod1, bool mod2)
 {
-	ch->xsmp_count += mod1 ? (((int64) freq * (32768 + wave[I >> 1])) >> 15) : freq;
-
-	while (ch->xsmp_count >= 0)
+	if (ch->needs_decode)
 	{
-		ch->xsmp_count -= FIXED_POINT;
-		ch->nb_sample[ch->nb_index] = ch->sample;
-		ch->nb_index = (ch->nb_index + 1) & 3;
+		DecodeBlockFast (ch);
+		ch->needs_decode = FALSE;
+		ch->sample = ch->block[0];
+		ch->sample_pointer = 0;
+	}
 
-		ch->sample_pointer++;
-		if (ch->sample_pointer == SOUND_DECODE_LENGTH)
+	for (uint32 I = 0; I < (uint32) 512; I += 2)
+	{
+		if (env)
 		{
-			ch->sample_pointer = 0;
-
-			if (ch->last_block)
+			switch (ch->state)
 			{
-				S9xAPUSetEndX (J);
-				if (!ch->loop)
-				{
-					ch->xenvx = 0;
-					//last_block = TRUE;
-					//S9xAPUSetEndOfSample (J, ch);
-					while (ch->xsmp_count >= 0)
+				case SOUND_ATTACK:
+					if (ch->xenv_rate == env_counter_max_master)
+						ch->xenvx += (ENV_RANGE >> 1); // FIXME
+					else
 					{
-						ch->xsmp_count -= FIXED_POINT;
-						ch->nb_sample[ch->nb_index] = 0;
-						ch->nb_index = (ch->nb_index + 1) & 3;
+						ch->xenv_count -= ch->xenv_rate;
+						while (ch->xenv_count <= 0)
+						{
+							ch->xenvx += (ENV_RANGE >> 6); // 1/64
+							ch->xenv_count += env_counter_max;
+						}
+					}
+
+					if (ch->xenvx > ENV_MAX)
+					{
+						ch->xenvx = ENV_MAX;
+
+						if (ch->xsustain_level != ENV_RANGE)
+						{
+							ch->state = SOUND_DECAY;
+							S9xSetEnvRate (ch, ch->xdecay_rate, ch->xsustain_level);
+						}
+						else
+						{
+							ch->state = SOUND_SUSTAIN;
+							S9xSetEnvRate (ch, ch->xsustain_rate, 0);
+						}
 					}
 
 					break;
-				}
-				else
+
+				case SOUND_DECAY:
+					ch->xenv_count -= ch->xenv_rate;
+					while (ch->xenv_count <= 0)
+					{
+						ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
+						ch->xenv_count += env_counter_max;
+					}
+
+					if (ch->xenvx <= ch->xenvx_target)
+					{
+						if (ch->xenvx <= 0)
+						{
+							S9xAPUSetEndOfSample (J, ch);
+							goto stereo_exit;
+						}
+						else
+						{
+							ch->state = SOUND_SUSTAIN;
+							S9xSetEnvRate (ch, ch->xsustain_rate, 0);
+						}
+					}
+
+					break;
+
+				case SOUND_SUSTAIN:
+					ch->xenv_count -= ch->xenv_rate;
+					while (ch->xenv_count <= 0)
+					{
+						ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1;  // 1 - 1/256
+						ch->xenv_count += env_counter_max;
+					}
+
+					if (ch->xenvx <= 0)
+					{
+						S9xAPUSetEndOfSample (J, ch);
+						goto stereo_exit;
+					}
+
+					break;
+
+				case SOUND_RELEASE:
+					ch->xenv_count -= env_counter_max;
+					while (ch->xenv_count <= 0)
+					{
+						ch->xenvx -= (ENV_RANGE >> 8); // 1/256
+						ch->xenv_count += env_counter_max;
+					}
+
+					if (ch->xenvx <= 0)
+					{
+						S9xAPUSetEndOfSample (J, ch);
+						goto stereo_exit;
+					}
+
+					break;
+
+				case SOUND_INCREASE_LINEAR:
+					ch->xenv_count -= ch->xenv_rate;
+					while (ch->xenv_count <= 0)
+					{
+						ch->xenvx += (ENV_RANGE >> 6); // 1/64
+						ch->xenv_count += env_counter_max;
+					}
+
+					if (ch->xenvx > ENV_MAX)
+					{
+						ch->xenvx = ENV_MAX;
+						ch->state = SOUND_GAIN;
+						ch->mode  = MODE_GAIN;
+						S9xSetEnvRate (ch, 0, 0);
+					}
+
+					break;
+
+				case SOUND_INCREASE_BENT_LINE:
+					ch->xenv_count -= ch->xenv_rate;
+					while (ch->xenv_count <= 0)
+					{
+						if (ch->xenvx >= ((ENV_RANGE * 3) >> 2)) // 0x600
+							ch->xenvx += (ENV_RANGE >> 8); // 1/256
+						else
+							ch->xenvx += (ENV_RANGE >> 6); // 1/64
+
+						ch->xenv_count += env_counter_max;
+					}
+
+					if (ch->xenvx > ENV_MAX)
+					{
+						ch->xenvx = ENV_MAX;
+						ch->state = SOUND_GAIN;
+						ch->mode  = MODE_GAIN;
+						S9xSetEnvRate (ch, 0, 0);
+					}
+
+					break;
+
+				case SOUND_DECREASE_LINEAR:
+					ch->xenv_count -= ch->xenv_rate;
+					while (ch->xenv_count <= 0)
+					{
+						ch->xenvx -= (ENV_RANGE >> 6); // 1/64
+						ch->xenv_count += env_counter_max;
+					}
+
+					if (ch->xenvx <= 0)
+					{
+						S9xAPUSetEndOfSample (J, ch);
+						goto stereo_exit;
+					}
+
+					break;
+
+				case SOUND_DECREASE_EXPONENTIAL:
+					ch->xenv_count -= ch->xenv_rate;
+					while (ch->xenv_count <= 0)
+					{
+						ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
+						ch->xenv_count += env_counter_max;
+					}
+
+					if (ch->xenvx <= 0)
+					{
+						S9xAPUSetEndOfSample (J, ch);
+						goto stereo_exit;
+					}
+
+					break;
+
+				case SOUND_GAIN:
+					S9xSetEnvRate (ch, 0, 0);
+
+					break;
+			}
+		}
+
+		ch->xsmp_count += mod1 ? (((int64) freq * (32768 + wave[I >> 1])) >> 15) : freq;
+
+		while (ch->xsmp_count >= 0)
+		{
+			ch->xsmp_count -= FIXED_POINT;
+			ch->nb_sample[ch->nb_index] = ch->sample;
+			ch->nb_index = (ch->nb_index + 1) & 3;
+
+			ch->sample_pointer++;
+			if (ch->sample_pointer == SOUND_DECODE_LENGTH)
+			{
+				ch->sample_pointer = 0;
+
+				if (ch->last_block)
 				{
-					ch->last_block = FALSE;
-					uint8 *dir = S9xGetSampleAddress (ch->sample_number);
-					ch->block_pointer = READ_WORD(dir + 2); // loop pointer
+					S9xAPUSetEndX (J);
+					if (!ch->loop)
+					{
+						ch->xenvx = 0;
+						//last_block = TRUE;
+						S9xAPUSetEndOfSample (J, ch);
+						/*while (ch->xsmp_count >= 0)
+						{
+							ch->xsmp_count -= FIXED_POINT;
+							ch->nb_sample[ch->nb_index] = 0;
+							ch->nb_index = (ch->nb_index + 1) & 3;
+						}*/
+						ch->sample = 0;
+						ch->nb_sample[ch->nb_index] = ch->sample;
+						ch->nb_index = (ch->nb_index + 1) & 3;
+
+						break;
+					}
+					else
+					{
+						ch->last_block = FALSE;
+						uint8 *dir = S9xGetSampleAddress (ch->sample_number);
+						ch->block_pointer = READ_WORD(dir + 2); // loop pointer
+					}
 				}
+
+				DecodeBlockFast (ch);
 			}
 
-			DecodeBlockFast (ch);
+			//ch->prev_sample = ch->sample;
+			ch->sample = ch->block[ch->sample_pointer];
+			//ch->diff = ch->sample - ch->prev_sample;
 		}
 
-		ch->sample = ch->block[ch->sample_pointer];
-	}
+		int32 outx, d;
 
-	int32 outx, d;
-
-	if (ch->type == SOUND_SAMPLE)
-	{
-		//ch->nb_sample[ch->nb_index] = ch->sample;
-		//ch->nb_index = (ch->nb_index + 1) & 3;
-		//outx = (ch->nb_sample[0] + ch->nb_sample[1] + ch->nb_sample[2] + ch->nb_sample[3]) / 4;
-		
-		// Always use interpolation, so don't bother checking
-		//
-		//if (Settings.InterpolatedSound)
+		if (ch->type == SOUND_SAMPLE)
 		{
-			// 4-point gaussian interpolation
-			/*
-			d = ch->xsmp_count >> (FIXED_POINT_SHIFT - 8);
-			outx  = ((G4(-d) * ch->nb_sample[ ch->nb_index         ]) >> 11) & ~1;
-			outx += ((G3(-d) * ch->nb_sample[(ch->nb_index + 1) & 3]) >> 11) & ~1;
-			outx += ((G2( d) * ch->nb_sample[(ch->nb_index + 2) & 3]) >> 11) & ~1;
-			outx = ((outx & 0xFFFF) ^ 0x8000) - 0x8000;
-			outx += ((G1( d) * ch->nb_sample[(ch->nb_index + 3) & 3]) >> 11) & ~1;
-			CLIP16(outx);*/
-			
-			d = ch->xsmp_count >> (FIXED_POINT_SHIFT - 8);
-			outx  = ((G4(-d) * ch->nb_sample[ ch->nb_index         ]) >> 11);
-			outx += ((G3(-d) * ch->nb_sample[(ch->nb_index + 1) & 3]) >> 11);
-			outx += ((G2( d) * ch->nb_sample[(ch->nb_index + 2) & 3]) >> 11);
-			//outx = ((outx & 0xFFFF) ^ 0x8000) - 0x8000;	// Is this really required?
-			outx += ((G1( d) * ch->nb_sample[(ch->nb_index + 3) & 3]) >> 11);
-			//CLIP16(outx);									// Is this really required?
-			
+			//if (Settings.InterpolatedSound)
+			{
+				// 4-point gaussian interpolation
+				d = ch->xsmp_count >> (FIXED_POINT_SHIFT - 8);
+				outx  = ((G4(-d) * ch->nb_sample[ ch->nb_index         ]) >> 11);
+				outx += ((G3(-d) * ch->nb_sample[(ch->nb_index + 1) & 3]) >> 11);
+				outx += ((G2( d) * ch->nb_sample[(ch->nb_index + 2) & 3]) >> 11);
+				outx += ((G1( d) * ch->nb_sample[(ch->nb_index + 3) & 3]) >> 11);
+				
+				/*
+				int countdiv8 = (ch->xsmp_count + FIXED_POINT) / 8;
+				int fixeddiv8 = FIXED_POINT / 8;
+				outx = ch->prev_sample + (ch->diff * countdiv8 / fixeddiv8);
+				*/
+			}
+			/*else
+				outx = ch->sample;*/
 		}
-		//else
-			//outx = ch->sample;
-	}
-	else // SAMPLE_NOISE
-	{
-		noise_count -= SoundData.noise_rate;
-		while (noise_count <= 0)
+		else // SAMPLE_NOISE
 		{
-			noise_count += env_counter_max;
-			noise_index = (noise_index + 1) & 0xFF;
+			noise_count -= SoundData.noise_rate;
+			while (noise_count <= 0)
+			{
+				noise_count += env_counter_max;
+				noise_index = (noise_index + 1) & 0xFF;
+			}
+
+			outx = noise_cache[noise_index] >> 16;
 		}
 
-		outx = noise_cache[noise_index] >> 16;
+		outx = ((outx * ch->xenvx) >> 11);
+		ch->out_sample = outx;
+
+		if (mod2)
+			wave[I >> 1] = outx;
+
+		int32 VL, VR;
+
+		VL = (outx * ch->volume_left ) >> 7;
+		VR = (outx * ch->volume_right) >> 7;
+
+		MixBuffer[I] += VL;
+		MixBuffer[I + 1] += VR;
+
+		if (echo)
+		{
+			ch->echo_buf_ptr[I] += VL;
+			ch->echo_buf_ptr[I + 1] += VR;
+		}
 	}
-
-	outx = ((outx * ch->xenvx) >> 11) & ~1;
-	ch->out_sample = outx;
-
-	if (mod2)
-		wave[I >> 1] = outx;
-
-	int32 VL, VR;
-
-	VL = (outx * ch->volume_left ) >> 7;
-	VR = (outx * ch->volume_right) >> 7;
-
-	MixBuffer[I      /*^ Settings.ReverseStereo*/ ] += VL;
-	MixBuffer[I + (1 /*^ Settings.ReverseStereo*/)] += VR;
-	
-	if (ch->echo_buf_ptr)
-	{	
-		ch->echo_buf_ptr[I      /*^ Settings.ReverseStereo*/ ] += VL;
-		ch->echo_buf_ptr[I + (1 /*^ Settings.ReverseStereo*/)] += VR;
-	}
+stereo_exit: ;
 }
+
+
+
+#define MIXCOMPUTEENVSAMPLE(x) \
+void M_ ##x (int J, Channel *ch, int32 freq) \
+{ \
+	 MixComputeEnvelopeAndSample (J, ch, freq, (x&1) != 0, (x&2) != 0, (x&4) != 0, (x&8) != 0);\
+} \
+
+
+MIXCOMPUTEENVSAMPLE(0)
+MIXCOMPUTEENVSAMPLE(1)
+MIXCOMPUTEENVSAMPLE(2)
+MIXCOMPUTEENVSAMPLE(3)
+MIXCOMPUTEENVSAMPLE(4)
+MIXCOMPUTEENVSAMPLE(5)
+MIXCOMPUTEENVSAMPLE(6)
+MIXCOMPUTEENVSAMPLE(7)
+MIXCOMPUTEENVSAMPLE(8)
+MIXCOMPUTEENVSAMPLE(9)
+MIXCOMPUTEENVSAMPLE(10)
+MIXCOMPUTEENVSAMPLE(11)
+MIXCOMPUTEENVSAMPLE(12)
+MIXCOMPUTEENVSAMPLE(13)
+MIXCOMPUTEENVSAMPLE(14)
+MIXCOMPUTEENVSAMPLE(15)
+
+void (*MixComputeFuncPtr []) (int, Channel *, int32) = {
+	M_0,  M_1,  M_2,  M_3,  M_4,  M_5,  M_6,  M_7,  M_8,  M_9, 
+	M_10, M_11, M_12, M_13, M_14, M_15 };
+
 
 
 void MixStereo (int sample_count)
@@ -1704,7 +1738,7 @@ void MixStereo (int sample_count)
 	for (uint32 J = 0; J < NUM_CHANNELS; J++)
 	{
 		Channel *ch = &SoundData.channels[J];
-		freq = ch->frequency;
+		int32 freq = ch->frequency;
 
 		//bool8 last_block = FALSE;
 
@@ -1719,7 +1753,21 @@ void MixStereo (int sample_count)
 
 		bool mod1 = pitch_mod & (1 << J);
 		bool mod2 = pitch_mod & (1 << (J + 1));
+		bool env = 
+			!((ch->state == SOUND_SUSTAIN || ch->state == SOUND_RELEASE || ch->state == SOUND_DECREASE_LINEAR || ch->state == SOUND_DECREASE_EXPONENTIAL) 
+			&& ch->xenv_rate == 0);
+		bool echo = ch->echo_buf_ptr != 0;
 
+		int functionNumber = 
+			(echo ? 1 : 0) + 
+			(env  ? 2 : 0) + 
+			(mod1 ? 4 : 0) + 
+			(mod2 ? 8 : 0);
+
+		MixComputeFuncPtr[functionNumber](J, ch, freq);
+		//MixComputeEnvelopeAndSample (J, ch, freq, echo, env, mod1, mod2);
+
+		/*
 		if (ch->needs_decode)
 		{
 			DecodeBlockFast (ch);
@@ -1728,40 +1776,52 @@ void MixStereo (int sample_count)
 			ch->sample_pointer = 0;
 		}
 
-		#define COMPUTE_SAMPLES(chstate, m1, m2) \
+		int32 VL = 0, VR = 0, outx = 0, mfreq = 0;
+		mixch = ch; 
+		mixJ = J; 
+
+		#define COMPUTE_SAMPLEx01(chstate, computeEnv) \
+			if (computeEnv && MixComputeEnvelope(ch, chstate, J)) goto stereo_exit; \
+			mfreq = mod1 ? (((int64) freq * (32768 + wave[I >> 1])) >> 15) : freq; \
+			ch->xsmp_count += mfreq; \
+			if (MixComputeSample(mfreq, &outx)) goto stereo_exit; \
+			if (mod2) \
+				wave[I >> 1] = outx; \
+			VL = ((outx * ch->volume_left ) >> 7); \
+			VR = ((outx * ch->volume_right) >> 7); \
+			MixBuffer[I] += VL; \
+			MixBuffer[I + 1] += VR; \
+			if (ch->echo_buf_ptr) \
 			{ \
-				for (uint32 I = 0; I < (uint32) sample_count; I += 8) \
+				ch->echo_buf_ptr[I] += VL; \
+				ch->echo_buf_ptr[I + 1] += VR; \
+			} \
+			I += 2;
+
+
+		#define COMPUTE_SAMPLES(chstate, computeEnv) \
+			{ \
+				for (uint32 I = 0; I < (uint32) sample_count; ) \
 				{ \
-					int result = MixComputeEnvelope(ch, chstate, J); \
-					if (result != 0) goto stereo_exit; \
-					MixComputeSample(ch, J, I, m1, m2); \
-					\
-					result = MixComputeEnvelope(ch, chstate, J); \
-					if (result != 0) goto stereo_exit; \
-					MixComputeSample(ch, J, I + 2, m1, m2); \
-					\
-					result = MixComputeEnvelope(ch, chstate, J); \
-					if (result != 0) goto stereo_exit; \
-					MixComputeSample(ch, J, I + 4, m1, m2); \
-					\
-					result = MixComputeEnvelope(ch, chstate, J); \
-					if (result != 0) goto stereo_exit; \
-					MixComputeSample(ch, J, I + 6, m1, m2); \
+					COMPUTE_SAMPLEx01(chstate, computeEnv); \
+					COMPUTE_SAMPLEx01(chstate, computeEnv); \
+					COMPUTE_SAMPLEx01(chstate, computeEnv); \
+					COMPUTE_SAMPLEx01(chstate, computeEnv); \
 				} \
 			}
 		
 
-		#define COMPUTE_SAMPLES_FOR_ENV(chstate) \
+		#define COMPUTE_SAMPLES_FOR_ENV(chstate, computeEnv) \
 			{ \
 				if (mod1) \
 				{ \
-					if (mod2) 	COMPUTE_SAMPLES(chstate, true, true) \
-					else	 	COMPUTE_SAMPLES(chstate, true, false) \
+					if (mod2) 	COMPUTE_SAMPLES(chstate, computeEnv) \
+					else	 	COMPUTE_SAMPLES(chstate, computeEnv) \
 				} \
 				else \
 				{ \
-					if (mod2) 	COMPUTE_SAMPLES(chstate, false, true) \
-					else	 	COMPUTE_SAMPLES(chstate, false, false) \
+					if (mod2) 	COMPUTE_SAMPLES(chstate, computeEnv) \
+					else	 	COMPUTE_SAMPLES(chstate, computeEnv) \
 				} \
 			}
 
@@ -1769,48 +1829,52 @@ void MixStereo (int sample_count)
 		switch (ch->state)
 		{
 			case SOUND_ATTACK:
-				COMPUTE_SAMPLES_FOR_ENV(ch->state);
+				COMPUTE_SAMPLES_FOR_ENV(ch->state, true);
 				break;
 
 			case SOUND_DECAY:
-				COMPUTE_SAMPLES_FOR_ENV(ch->state);
+				COMPUTE_SAMPLES_FOR_ENV(ch->state, true);
 				break;
 
 			case SOUND_SUSTAIN:
 				// no change of state, avoid switch checks
-				COMPUTE_SAMPLES_FOR_ENV(SOUND_SUSTAIN);		
+				if (ch->xenv_rate == 0)
+					COMPUTE_SAMPLES_FOR_ENV(SOUND_SUSTAIN, false)	
+				else
+					COMPUTE_SAMPLES_FOR_ENV(SOUND_SUSTAIN, true)	
 				break;
 
 			case SOUND_RELEASE:
 				// no change of state, avoid switch checks
-				COMPUTE_SAMPLES_FOR_ENV(SOUND_RELEASE);		
+				COMPUTE_SAMPLES_FOR_ENV(SOUND_RELEASE, true);		
 				break;
 
 			case SOUND_GAIN:
 				// no change of state, avoid switch checks
-				COMPUTE_SAMPLES_FOR_ENV(SOUND_GAIN);	
+				COMPUTE_SAMPLES_FOR_ENV(SOUND_GAIN, true);	
 				break;
 
 			case SOUND_INCREASE_LINEAR:
-				COMPUTE_SAMPLES_FOR_ENV(ch->state);
+				COMPUTE_SAMPLES_FOR_ENV(ch->state, true);
 				break;
 
 			case SOUND_INCREASE_BENT_LINE:
-				COMPUTE_SAMPLES_FOR_ENV(ch->state);
+				COMPUTE_SAMPLES_FOR_ENV(ch->state, true);
 				break;
 
 			case SOUND_DECREASE_LINEAR:
 				// no change of state, avoid switch checks
-				COMPUTE_SAMPLES_FOR_ENV(SOUND_DECREASE_LINEAR);
+				COMPUTE_SAMPLES_FOR_ENV(SOUND_DECREASE_LINEAR, true);
 				break;
 
 			case SOUND_DECREASE_EXPONENTIAL:
-				COMPUTE_SAMPLES_FOR_ENV(SOUND_DECREASE_EXPONENTIAL);
+				// no change of state, avoid switch checks
+				COMPUTE_SAMPLES_FOR_ENV(SOUND_DECREASE_EXPONENTIAL, true);
 				break;
 
 		}
 
-	stereo_exit: ;
+	stereo_exit: ;*/
 	}
 	DoFakeMute=FALSE;
 
@@ -3049,6 +3113,15 @@ void S9xPlaySample (int channel)
 {
 	Channel *ch = &SoundData.channels[channel];
 
+	if (ch->state == SOUND_SILENT)
+	{
+		ch->nb_sample[0] = 0;
+		ch->nb_sample[1] = 0;
+		ch->nb_sample[2] = 0;
+		ch->nb_sample[3] = 0;
+		ch->nb_index = 0;
+	}
+
 	ch->state = SOUND_SILENT;
 	ch->mode = MODE_NONE;
 	ch->xenvx = 0;
@@ -3073,12 +3146,16 @@ void S9xPlaySample (int channel)
 	ch->block_pointer = READ_WORD (dir);
 	ch->sample_pointer = 0;
 	ch->xenv_count = env_counter_max;
-	ch->xsmp_count = 3 * FIXED_POINT; // since gaussian interpolation uses 4 points
-	ch->nb_sample[0] = 0;
+	//ch->xsmp_count = 3 * FIXED_POINT; // since gaussian interpolation uses 4 points
+	ch->xsmp_count = 0;
+	/*ch->nb_sample[0] = 0;
 	ch->nb_sample[1] = 0;
 	ch->nb_sample[2] = 0;
 	ch->nb_sample[3] = 0;
-	ch->nb_index = 0;
+	ch->nb_index = 0;*/
+	ch->prev_sample = ch->sample;
+	ch->sample = 0;
+	ch->diff = 0;
 
 	switch (ch->mode)
 	{
