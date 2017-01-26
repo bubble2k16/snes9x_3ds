@@ -2730,7 +2730,10 @@ inline void __attribute__((always_inline)) S9xDrawOBJTileHardware2 (
 
 	// Render tile
 	//
-	if (!sub && pal < 4)
+	// Remove the test for sub screen (fixed Mickey mouse transparency problem when Mickey's
+	// talking to the wizard)
+	//
+	if (pal < 4)					
 		depth = depth & 0xfff;		// remove the alpha.
 	int x0 = screenX;
 	int y0 = screenY + depth;

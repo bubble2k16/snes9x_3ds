@@ -1405,172 +1405,172 @@ inline void __attribute__((always_inline)) MixComputeEnvelopeAndSample(
 	{
 		if (env)
 		{
-			switch (ch->state)
-			{
-				case SOUND_ATTACK:
-					if (ch->xenv_rate == env_counter_max_master)
-						ch->xenvx += (ENV_RANGE >> 1); // FIXME
-					else
-					{
-						ch->xenv_count -= ch->xenv_rate;
-						while (ch->xenv_count <= 0)
-						{
-							ch->xenvx += (ENV_RANGE >> 6); // 1/64
-							ch->xenv_count += env_counter_max;
-						}
-					}
-
-					if (ch->xenvx > ENV_MAX)
-					{
-						ch->xenvx = ENV_MAX;
-
-						if (ch->xsustain_level != ENV_RANGE)
-						{
-							ch->state = SOUND_DECAY;
-							S9xSetEnvRate (ch, ch->xdecay_rate, ch->xsustain_level);
-						}
-						else
-						{
-							ch->state = SOUND_SUSTAIN;
-							S9xSetEnvRate (ch, ch->xsustain_rate, 0);
-						}
-					}
-
-					break;
-
-				case SOUND_DECAY:
-					ch->xenv_count -= ch->xenv_rate;
-					while (ch->xenv_count <= 0)
-					{
-						ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
-						ch->xenv_count += env_counter_max;
-					}
-
-					if (ch->xenvx <= ch->xenvx_target)
-					{
-						if (ch->xenvx <= 0)
-						{
-							S9xAPUSetEndOfSample (J, ch);
-							goto stereo_exit;
-						}
-						else
-						{
-							ch->state = SOUND_SUSTAIN;
-							S9xSetEnvRate (ch, ch->xsustain_rate, 0);
-						}
-					}
-
-					break;
-
-				case SOUND_SUSTAIN:
-					ch->xenv_count -= ch->xenv_rate;
-					while (ch->xenv_count <= 0)
-					{
-						ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1;  // 1 - 1/256
-						ch->xenv_count += env_counter_max;
-					}
-
-					if (ch->xenvx <= 0)
-					{
-						S9xAPUSetEndOfSample (J, ch);
-						goto stereo_exit;
-					}
-
-					break;
-
-				case SOUND_RELEASE:
-					ch->xenv_count -= env_counter_max;
-					while (ch->xenv_count <= 0)
-					{
-						ch->xenvx -= (ENV_RANGE >> 8); // 1/256
-						ch->xenv_count += env_counter_max;
-					}
-
-					if (ch->xenvx <= 0)
-					{
-						S9xAPUSetEndOfSample (J, ch);
-						goto stereo_exit;
-					}
-
-					break;
-
-				case SOUND_INCREASE_LINEAR:
+		switch (ch->state)
+		{
+			case SOUND_ATTACK:
+				if (ch->xenv_rate == env_counter_max_master)
+					ch->xenvx += (ENV_RANGE >> 1); // FIXME
+				else
+				{
 					ch->xenv_count -= ch->xenv_rate;
 					while (ch->xenv_count <= 0)
 					{
 						ch->xenvx += (ENV_RANGE >> 6); // 1/64
 						ch->xenv_count += env_counter_max;
 					}
+				}
 
-					if (ch->xenvx > ENV_MAX)
+				if (ch->xenvx > ENV_MAX)
+				{
+					ch->xenvx = ENV_MAX;
+
+					if (ch->xsustain_level != ENV_RANGE)
 					{
-						ch->xenvx = ENV_MAX;
-						ch->state = SOUND_GAIN;
-						ch->mode  = MODE_GAIN;
-						S9xSetEnvRate (ch, 0, 0);
+						ch->state = SOUND_DECAY;
+						S9xSetEnvRate (ch, ch->xdecay_rate, ch->xsustain_level);
 					}
-
-					break;
-
-				case SOUND_INCREASE_BENT_LINE:
-					ch->xenv_count -= ch->xenv_rate;
-					while (ch->xenv_count <= 0)
+					else
 					{
-						if (ch->xenvx >= ((ENV_RANGE * 3) >> 2)) // 0x600
-							ch->xenvx += (ENV_RANGE >> 8); // 1/256
-						else
-							ch->xenvx += (ENV_RANGE >> 6); // 1/64
-
-						ch->xenv_count += env_counter_max;
+						ch->state = SOUND_SUSTAIN;
+						S9xSetEnvRate (ch, ch->xsustain_rate, 0);
 					}
+				}
 
-					if (ch->xenvx > ENV_MAX)
-					{
-						ch->xenvx = ENV_MAX;
-						ch->state = SOUND_GAIN;
-						ch->mode  = MODE_GAIN;
-						S9xSetEnvRate (ch, 0, 0);
-					}
+				break;
 
-					break;
+			case SOUND_DECAY:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
+					ch->xenv_count += env_counter_max;
+				}
 
-				case SOUND_DECREASE_LINEAR:
-					ch->xenv_count -= ch->xenv_rate;
-					while (ch->xenv_count <= 0)
-					{
-						ch->xenvx -= (ENV_RANGE >> 6); // 1/64
-						ch->xenv_count += env_counter_max;
-					}
-
+				if (ch->xenvx <= ch->xenvx_target)
+				{
 					if (ch->xenvx <= 0)
 					{
 						S9xAPUSetEndOfSample (J, ch);
 						goto stereo_exit;
 					}
-
-					break;
-
-				case SOUND_DECREASE_EXPONENTIAL:
-					ch->xenv_count -= ch->xenv_rate;
-					while (ch->xenv_count <= 0)
+					else
 					{
-						ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
-						ch->xenv_count += env_counter_max;
+						ch->state = SOUND_SUSTAIN;
+						S9xSetEnvRate (ch, ch->xsustain_rate, 0);
 					}
+				}
 
-					if (ch->xenvx <= 0)
-					{
-						S9xAPUSetEndOfSample (J, ch);
-						goto stereo_exit;
-					}
+				break;
 
-					break;
+			case SOUND_SUSTAIN:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1;  // 1 - 1/256
+					ch->xenv_count += env_counter_max;
+				}
 
-				case SOUND_GAIN:
+				if (ch->xenvx <= 0)
+				{
+					S9xAPUSetEndOfSample (J, ch);
+					goto stereo_exit;
+				}
+
+				break;
+
+			case SOUND_RELEASE:
+				ch->xenv_count -= env_counter_max;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= (ENV_RANGE >> 8); // 1/256
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx <= 0)
+				{
+					S9xAPUSetEndOfSample (J, ch);
+					goto stereo_exit;
+				}
+
+				break;
+
+			case SOUND_INCREASE_LINEAR:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx += (ENV_RANGE >> 6); // 1/64
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx > ENV_MAX)
+				{
+					ch->xenvx = ENV_MAX;
+					ch->state = SOUND_GAIN;
+					ch->mode  = MODE_GAIN;
 					S9xSetEnvRate (ch, 0, 0);
+				}
 
-					break;
-			}
+				break;
+
+			case SOUND_INCREASE_BENT_LINE:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					if (ch->xenvx >= ((ENV_RANGE * 3) >> 2)) // 0x600
+						ch->xenvx += (ENV_RANGE >> 8); // 1/256
+					else
+						ch->xenvx += (ENV_RANGE >> 6); // 1/64
+
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx > ENV_MAX)
+				{
+					ch->xenvx = ENV_MAX;
+					ch->state = SOUND_GAIN;
+					ch->mode  = MODE_GAIN;
+					S9xSetEnvRate (ch, 0, 0);
+				}
+
+				break;
+
+			case SOUND_DECREASE_LINEAR:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= (ENV_RANGE >> 6); // 1/64
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx <= 0)
+				{
+					S9xAPUSetEndOfSample (J, ch);
+					goto stereo_exit;
+				}
+
+				break;
+
+			case SOUND_DECREASE_EXPONENTIAL:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx <= 0)
+				{
+					S9xAPUSetEndOfSample (J, ch);
+					goto stereo_exit;
+				}
+
+				break;
+
+			case SOUND_GAIN:
+				S9xSetEnvRate (ch, 0, 0);
+
+				break;
+		}
 		}
 
 		ch->xsmp_count += mod1 ? (((int64) freq * (32768 + wave[I >> 1])) >> 15) : freq;
@@ -1594,15 +1594,12 @@ inline void __attribute__((always_inline)) MixComputeEnvelopeAndSample(
 						ch->xenvx = 0;
 						//last_block = TRUE;
 						S9xAPUSetEndOfSample (J, ch);
-						/*while (ch->xsmp_count >= 0)
+						while (ch->xsmp_count >= 0)
 						{
 							ch->xsmp_count -= FIXED_POINT;
 							ch->nb_sample[ch->nb_index] = 0;
 							ch->nb_index = (ch->nb_index + 1) & 3;
-						}*/
-						ch->sample = 0;
-						ch->nb_sample[ch->nb_index] = ch->sample;
-						ch->nb_index = (ch->nb_index + 1) & 3;
+						}
 
 						break;
 					}
@@ -1617,9 +1614,7 @@ inline void __attribute__((always_inline)) MixComputeEnvelopeAndSample(
 				DecodeBlockFast (ch);
 			}
 
-			//ch->prev_sample = ch->sample;
 			ch->sample = ch->block[ch->sample_pointer];
-			//ch->diff = ch->sample - ch->prev_sample;
 		}
 
 		int32 outx, d;
@@ -1630,19 +1625,15 @@ inline void __attribute__((always_inline)) MixComputeEnvelopeAndSample(
 			{
 				// 4-point gaussian interpolation
 				d = ch->xsmp_count >> (FIXED_POINT_SHIFT - 8);
-				outx  = ((G4(-d) * ch->nb_sample[ ch->nb_index         ]) >> 11);
-				outx += ((G3(-d) * ch->nb_sample[(ch->nb_index + 1) & 3]) >> 11);
-				outx += ((G2( d) * ch->nb_sample[(ch->nb_index + 2) & 3]) >> 11);
-				outx += ((G1( d) * ch->nb_sample[(ch->nb_index + 3) & 3]) >> 11);
-				
-				/*
-				int countdiv8 = (ch->xsmp_count + FIXED_POINT) / 8;
-				int fixeddiv8 = FIXED_POINT / 8;
-				outx = ch->prev_sample + (ch->diff * countdiv8 / fixeddiv8);
-				*/
+				outx  = ((G4(-d) * ch->nb_sample[ ch->nb_index         ]) >> 11) & ~1;
+				outx += ((G3(-d) * ch->nb_sample[(ch->nb_index + 1) & 3]) >> 11) & ~1;
+				outx += ((G2( d) * ch->nb_sample[(ch->nb_index + 2) & 3]) >> 11) & ~1;
+				outx = ((outx & 0xFFFF) ^ 0x8000) - 0x8000;
+				outx += ((G1( d) * ch->nb_sample[(ch->nb_index + 3) & 3]) >> 11) & ~1;
+				CLIP16(outx);
 			}
-			/*else
-				outx = ch->sample;*/
+			//else
+			//	outx = ch->sample;
 		}
 		else // SAMPLE_NOISE
 		{
@@ -1656,7 +1647,7 @@ inline void __attribute__((always_inline)) MixComputeEnvelopeAndSample(
 			outx = noise_cache[noise_index] >> 16;
 		}
 
-		outx = ((outx * ch->xenvx) >> 11);
+		outx = ((outx * ch->xenvx) >> 11) & ~1;
 		ch->out_sample = outx;
 
 		if (mod2)
@@ -1669,14 +1660,15 @@ inline void __attribute__((always_inline)) MixComputeEnvelopeAndSample(
 
 		MixBuffer[I] += VL;
 		MixBuffer[I + 1] += VR;
-
 		if (echo)
 		{
 			ch->echo_buf_ptr[I] += VL;
 			ch->echo_buf_ptr[I + 1] += VR;
 		}
 	}
+
 stereo_exit: ;
+
 }
 
 
@@ -1717,7 +1709,11 @@ void MixStereo (int sample_count)
 
 	int pitch_mod = SoundData.pitch_mod & ~APU.DSP[APU_NON];
 
-
+	// Must initialize this, otherwise the noise
+	// samples will sound off!
+	noise_index = 0;
+	noise_count = 0;
+	
 	if (APU.DSP[APU_NON])
 	{
 		noise_count = SoundData.noise_count;
@@ -1753,8 +1749,9 @@ void MixStereo (int sample_count)
 
 		bool mod1 = pitch_mod & (1 << J);
 		bool mod2 = pitch_mod & (1 << (J + 1));
-		bool env = 
-			!((ch->state == SOUND_SUSTAIN || ch->state == SOUND_RELEASE || ch->state == SOUND_DECREASE_LINEAR || ch->state == SOUND_DECREASE_EXPONENTIAL) 
+		bool env = !(
+			(ch->state == SOUND_SUSTAIN || ch->state == SOUND_GAIN ||
+			ch->state == SOUND_DECREASE_EXPONENTIAL || ch->state == SOUND_DECREASE_LINEAR) 
 			&& ch->xenv_rate == 0);
 		bool echo = ch->echo_buf_ptr != 0;
 
