@@ -75,31 +75,31 @@ Castlevania - Dracula X
 
 ##Frequently Asked Questions 
 
-1. Why do some games have strange color issues (Wild Guns, Kirby Super Star, Batman Forever)?
+###Why do some games have strange color issues (for eg., Wild Guns, Kirby Super Star, Judge Dredd, Batman Forever, Secret of Mana)?
 
 Try going to the Settings and change the In-Frame Palette Changes to either one of the 3 options: Enabled, Disabled Style 1, Disabled Style 2. Color emulation is never perfect because we are using the 3DS GPU for rendering, which lacks certain capabilities
 
-2. Why some games keep writing to SRAM every second or so (Treasure Hunter G, Kirby's Dreamland)?
+###Why some games keep writing to the SD Card every second or so (for eg., Treasure Hunter G, Some Super Mario Hacks, Final Fantasy Mystic Quest)?
 
 Try going to the Settings and change the SRAM Auto-Save Delay to 10 seconds, 60 seconds, or disable it entirely! Don't worry, the SRAM will be saved again when you tap on the bottom screen.
 
-3. Why can't I load some games? They are supposed to be supported according to the compatibility list!
+###Why can't I load some games? They are supposed to be supported according to the compatibility list!
 
 Ensure that your ROM file is not a zipped file. Currently, the emulator only supports .SFC, .SMC, .FIG formats.
 
-4. Can I use my save states generated from Windows versions of Snes9x?
+###Can I use my save states generated from Windows versions of Snes9x?
 
 You can try using save states from Snes9x v1.43, but sometimes this emulator doesn't recognize them.
 
-5. How can I make Snes9x utilize the full speed of the New 3DS?
+###How can I make Snes9x utilize the full speed of the New 3DS?
 
 The .3DSX version currently uses the full clock speed of the New 3DS, enabling all your SuperFX, SA-1 games to run faster. But the .CIA version currently has some problems, so you may have to use another app like HANS to configure the New 3DS to switch to its full clock speed before starting up this Snes9x emulator.
 
-6. After closing the lid and re-opening it, the sound synchronization during game emulation goes off!
+###After closing the lid and re-opening it, the sound synchronization during game emulation goes off!
 
 Yes, this is a known issue. You can try to tap the bottom to bring up the menu, and then resume your game. The sound should become synchronized again. 
 
-7. After pressing the Home button, the emulator music still plays!
+###After pressing the Home button, the emulator music still plays!
 
 Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emulator entirely from the emulator's menu before going to the Home screen.
 
