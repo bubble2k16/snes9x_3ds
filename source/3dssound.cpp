@@ -57,20 +57,20 @@ void snd3dsMixSamples()
         u64 nowSamplePosition = snd3dsGetSamplePosition();
         u64 deltaTimeAhead = snd3DS.upToSamplePosition - nowSamplePosition;
         long blocksAhead = deltaTimeAhead / SAMPLES_TO_GENERATE;
-        
+
         if (blocksAhead < MIN_FORWARD_BLOCKS)
         {
             // buffer is about to underrun.
             //
-            generateAtSamplePosition = 
-                ((u64)((nowSamplePosition + SAMPLES_TO_GENERATE - 1) / SAMPLES_TO_GENERATE)) * SAMPLES_TO_GENERATE + 
+            generateAtSamplePosition =
+                ((u64)((nowSamplePosition + SAMPLES_TO_GENERATE - 1) / SAMPLES_TO_GENERATE)) * SAMPLES_TO_GENERATE +
                 MIN_FORWARD_BLOCKS * SAMPLES_TO_GENERATE;
             break;
         }
         else if (blocksAhead < MAX_FORWARD_BLOCKS)
         {
             // play head is still within acceptable range.
-            // so we place the generated samples at where 
+            // so we place the generated samples at where
             // we left off previously
             //
             generateAtSamplePosition = snd3DS.upToSamplePosition;
@@ -80,17 +80,17 @@ void snd3dsMixSamples()
         // blocksAhead >= MAX_FORWARD_BLOCKS
         // although we've already mixed the previous block,
         // we are too ahead of time, so let's wait for 0.1 millisecs.
-        // 
+        //
         // That may help to save some battery.
         //
         svcSleepThread(100000);
     }
-    
+
     snd3DS.startSamplePosition = generateAtSamplePosition;
     snd3DS.upToSamplePosition = generateAtSamplePosition + SAMPLES_TO_GENERATE;
     t3dsEndTiming(41);
 
-    
+
 
     t3dsStartTiming(42, "Mix-Copy+Vol");
     int p = generateAtSamplePosition % BUFFER_SIZE;
@@ -121,7 +121,7 @@ void snd3dsMixSamples()
     {
         if (generateSound)
             S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffersNDSP(&snd3DS.fullBuffers[p], SAMPLES_TO_GENERATE * 2);
-        else 
+        else
         {
             for (int i = 0; i < SAMPLES_TO_GENERATE; i++)
             {
@@ -135,7 +135,7 @@ void snd3dsMixSamples()
     // Now that we have the samples, we have to copy it back into our buffers
     // for the 3DS to playback
     //
-    t3dsStartTiming(43, "Mix-Flush");    
+    t3dsStartTiming(43, "Mix-Flush");
     blockCount++;
     if (blockCount % MIN_FORWARD_BLOCKS == 0)
         GSPGPU_FlushDataCache(snd3DS.fullBuffers, BUFFER_SIZE * 2 * 2);
@@ -211,7 +211,7 @@ void snd3dsStartPlaying()
         //
         snd3dsPlaySound(LEFT_CHANNEL, SOUND_REPEAT | SOUND_FORMAT_16BIT, SAMPLE_RATE, 1.0f, -1.0f, (u32*)snd3DS.leftBuffer, (u32*)snd3DS.leftBuffer, BUFFER_SIZE * 2);
         snd3dsPlaySound(RIGHT_CHANNEL, SOUND_REPEAT | SOUND_FORMAT_16BIT, SAMPLE_RATE, 1.0f, 1.0f, (u32*)snd3DS.rightBuffer, (u32*)snd3DS.rightBuffer, BUFFER_SIZE * 2);
-        
+
         // Flush CSND command buffers
         csndExecCmds(true);
         snd3DS.startTick = svcGetSystemTick();
@@ -251,7 +251,7 @@ bool snd3dsInitialize()
         snd3DS.audioType = 1;
         printf ("CSND Initialized\n");
     }
-    else 
+    else
     {
         printf ("Unable to initialize 3DS CSND service\n");
         return false;
@@ -265,7 +265,7 @@ bool snd3dsInitialize()
         if (!R_FAILED(ret))
         {
             snd3DS.audioType = 2;
-            printf ("NDSP Initialized\n"); 
+            printf ("NDSP Initialized\n");
         }
         else
         {
@@ -276,7 +276,7 @@ bool snd3dsInitialize()
 
     // Initialize the sound buffers
     //
-    snd3DS.fullBuffers = (short *)linearAlloc(BUFFER_SIZE * 2 * 2); 
+    snd3DS.fullBuffers = (short *)linearAlloc(BUFFER_SIZE * 2 * 2);
 	snd3DS.leftBuffer = &snd3DS.fullBuffers[0];
 	snd3DS.rightBuffer = &snd3DS.fullBuffers[BUFFER_SIZE];
     memset(snd3DS.fullBuffers, 0, sizeof(BUFFER_SIZE * 2 * 2));
@@ -301,7 +301,7 @@ bool snd3dsInitialize()
 
         ndspSetOutputMode(NDSP_OUTPUT_STEREO);
         ndspSetOutputCount(1);
-        ndspSetMasterVol(1.0f);        
+        ndspSetMasterVol(1.0f);
 
         // Both left/right channels
         ndspChnReset(0);
@@ -315,9 +315,9 @@ bool snd3dsInitialize()
         snd3DS.waveBuf.data_vaddr = (u32*)snd3DS.fullBuffers;
         snd3DS.waveBuf.nsamples = BUFFER_SIZE;
         snd3DS.waveBuf.looping  = true;
-        snd3DS.waveBuf.status = NDSP_WBUF_FREE;        
+        snd3DS.waveBuf.status = NDSP_WBUF_FREE;
 
-        ndspChnWaveBufAdd(0, &snd3DS.waveBuf);    
+        ndspChnWaveBufAdd(0, &snd3DS.waveBuf);
         printf ("snd3dsInit - Start playing NDSP buffers\n");
     }
 
@@ -326,16 +326,14 @@ bool snd3dsInitialize()
 
     if (GPU3DS.isReal3DS)
     {
-        aptOpenSession();
         APT_SetAppCpuTimeLimit(30); // enables syscore usage
-        aptCloseSession();    
 
         printf ("snd3dsInit - DSP Stack: %x\n", snd3DS.dspThreadStack);
         printf ("snd3dsInit - DSP ThreadFunc: %x\n", &snd3dsDSPThread);
 
         IAPU.DSPReplayIndex = 0;
         IAPU.DSPWriteIndex = 0;
-        ret = svcCreateThread(&snd3DS.dspThreadHandle, snd3dsDSPThread, 0, 
+        ret = svcCreateThread(&snd3DS.dspThreadHandle, snd3dsDSPThread, 0,
             (u32*)(snd3DS.dspThreadStack+0x4000), 0x18, 1);
         if (ret)
         {
@@ -343,10 +341,10 @@ bool snd3dsInitialize()
             snd3DS.dspThreadHandle = NULL;
             snd3dsFinalize();
             return false;
-        } 
+        }
         printf ("snd3dsInit - Create DSP thread %x\n", snd3DS.dspThreadHandle);
     }
-    
+
     printf ("snd3DSInit complete\n");
 
 	return true;
@@ -360,7 +358,7 @@ void snd3dsFinalize()
 
      if (snd3DS.dspThreadHandle)
      {
-         // Wait (at most 1 second) for the sound thread to finish, 
+         // Wait (at most 1 second) for the sound thread to finish,
          printf ("Join dspThreadHandle\n");
          svcWaitSynchronization(snd3DS.dspThreadHandle, 1000 * 1000000);
          svcCloseHandle(snd3DS.dspThreadHandle);
@@ -376,7 +374,6 @@ void snd3dsFinalize()
     else if(snd3DS.audioType == 2)
     {
         ndspChnWaveBufClear(0);
-        ndspExit();        
+        ndspExit();
     }
 }
-

@@ -1,5 +1,6 @@
 #include <string.h>
 #include <math.h>
+#include "gpulib.h"
 #include "sf2d_private.h"
 
 #ifndef M_PI

@@ -6,6 +6,7 @@
 #include "snes9x.h"
 #include "port.h"
 
+#include "3dsexit.h"
 #include "3dsmenu.h"
 #include "3dsgpu.h"
 #include "3dsui.h"
@@ -32,6 +33,8 @@ SMenuTab            menuTab[10];
 int                 menuTabCount;
 int                 currentMenuTab = 0;
 bool                transferGameScreen = false;
+
+
 
 //-------------------------------------------------------
 // Sets a flag to tell the menu selector
@@ -91,9 +94,9 @@ void S9xMenuShowItems()
 {
     SMenuTab *currentTab = &menuTab[currentMenuTab];
     char gauge[52];
-    
+
     char tempBuffer[CONSOLE_WIDTH];
-    
+
     //void ui3dsDrawString(int x0, int x1, int y, bool centreAligned, char *format, ...);
     for (int i = 0; i < menuTabCount; i++)
     {
@@ -106,7 +109,7 @@ void S9xMenuShowItems()
 
     ui3dsSetColor(0xffffff, 0x1565C0);
     ui3dsDrawString(0, 226, 320, false, "  A:Select  B:Cancel  X+Up/Down:Page Up/Down         SNES9x for 3DS " SNES9X_VERSION);
-    
+
     int line = 0;
     int maxItems = MENU_HEIGHT;
     int menuStartY = 16;
@@ -120,7 +123,7 @@ void S9xMenuShowItems()
         ui3dsDrawString(0, 16, 320, false, menuTextBuffer);
     }
 
-    for (int i = currentTab->FirstItemIndex; 
+    for (int i = currentTab->FirstItemIndex;
         i < currentTab->ItemCount && i < currentTab->FirstItemIndex + maxItems; i++)
     {
         int y = line * 12 + menuStartY;
@@ -140,7 +143,7 @@ void S9xMenuShowItems()
 
         if (currentTab->MenuItems[i].Text == NULL)
             menuTextBuffer[0] = 0;
-        else    
+        else
             snprintf(menuTextBuffer, 512, "     %s", currentTab->MenuItems[i].Text);
         ui3dsDrawString(0, y, 280, false, menuTextBuffer);
 
@@ -155,7 +158,7 @@ void S9xMenuShowItems()
                 int max = 40;
                 int diff = currentTab->MenuItems[i].GaugeMaxValue - currentTab->MenuItems[i].GaugeMinValue;
                 int pos = (currentTab->MenuItems[i].GaugeValue - currentTab->MenuItems[i].GaugeMinValue) * (max - 1) / diff;
-                
+
                 for (int j = 0; j < max; j++)
                     gauge[j] = (j == pos) ? '\xfa' : '\xfb';
                 gauge[max] = 0;
@@ -183,7 +186,7 @@ void S9xMenuShowItems()
 // a list of choices.
 //
 int S9xMenuSelectItem()
-{    
+{
     int framesDKeyHeld = 0;
 
     SMenuTab *currentTab = &menuTab[currentMenuTab];
@@ -195,13 +198,12 @@ int S9xMenuSelectItem()
     u32 thisKeysHeld = 0;
     while (aptMainLoop())
     {
-        APT_AppStatus appStatus = aptGetStatus();
-        if (appStatus == APP_EXITING)
+        if (appExiting)
             return -1;
-        
+
         hidScanInput();
         thisKeysHeld = hidKeysHeld();
-        
+
         u32 keysDown = (~lastKeysHeld) & thisKeysHeld;
         lastKeysHeld = thisKeysHeld;
 
@@ -236,7 +238,7 @@ int S9xMenuSelectItem()
             currentTab = &menuTab[currentMenuTab];
 
             S9xMenuShowItems();
-            
+
         }
         if (keysDown & KEY_Y)
         {
@@ -255,7 +257,7 @@ int S9xMenuSelectItem()
             // Bug fix: Do not return if this is not a gauge
             //return currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
         }
-        
+
         if (keysDown & KEY_START || keysDown & KEY_A)
         {
             // Gauge adjustment
@@ -269,15 +271,15 @@ int S9xMenuSelectItem()
                     currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue ++ ;
                 }
             }
-            
+
             return currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
         }
         if (keysDown & KEY_UP || ((thisKeysHeld & KEY_UP) && (framesDKeyHeld > 30) && (framesDKeyHeld % 2 == 0)))
         {
             int moveCursorTimes = 0;
-            
-            do 
-            { 
+
+            do
+            {
                 if (thisKeysHeld & KEY_X)
                 {
                     currentTab->SelectedItemIndex -= 15;
@@ -294,22 +296,22 @@ int S9xMenuSelectItem()
                 }
                 moveCursorTimes++;
             }
-            while (currentTab->MenuItems[currentTab->SelectedItemIndex].ID <= -1 && 
+            while (currentTab->MenuItems[currentTab->SelectedItemIndex].ID <= -1 &&
                 moveCursorTimes < currentTab->ItemCount);
-            
+
             if (currentTab->SelectedItemIndex < currentTab->FirstItemIndex)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex;
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
 
             S9xMenuShowItems();
-            
+
         }
         if (keysDown & KEY_DOWN || ((thisKeysHeld & KEY_DOWN) && (framesDKeyHeld > 30) && (framesDKeyHeld % 2 == 0)))
         {
             int moveCursorTimes = 0;
-            do 
-            { 
+            do
+            {
                 if (thisKeysHeld & KEY_X)
                 {
                     currentTab->SelectedItemIndex += 15;
@@ -322,12 +324,12 @@ int S9xMenuSelectItem()
                     if (currentTab->SelectedItemIndex >= currentTab->ItemCount)
                     {
                         currentTab->SelectedItemIndex = 0;
-                        currentTab->FirstItemIndex = 0;                    
+                        currentTab->FirstItemIndex = 0;
                     }
                 }
                 moveCursorTimes++;
             }
-            while (currentTab->MenuItems[currentTab->SelectedItemIndex].ID <= -1 && 
+            while (currentTab->MenuItems[currentTab->SelectedItemIndex].ID <= -1 &&
                 moveCursorTimes < currentTab->ItemCount);
 
             if (currentTab->SelectedItemIndex < currentTab->FirstItemIndex)
@@ -338,7 +340,7 @@ int S9xMenuSelectItem()
             S9xMenuShowItems();
         }
 
-        
+
         gfxFlushBuffers();
         if (transferGameScreen)
             gpu3dsTransferToScreenBuffer();
@@ -352,11 +354,11 @@ int S9xMenuSelectItem()
 void S9xAddTab(char *title, SMenuItem *menuItems, int itemCount)
 {
     SMenuTab *currentTab = &menuTab[menuTabCount];
-    
+
     currentTab->Title = title;
     currentTab->MenuItems = menuItems;
     currentTab->ItemCount = itemCount;
- 
+
     currentTab->FirstItemIndex = 0;
     currentTab->SelectedItemIndex = 0;
     for (int i = 0; i < itemCount; i++)
@@ -428,7 +430,7 @@ void S9xClearMenuTabs()
 void S9xShowWaitingMessage(char *title, char *messageLine1, char *messageLine2)
 {
     S9xShowTitleAndMessage(
-        0xffffff, 0x2196F3, 
+        0xffffff, 0x2196F3,
         0x333333, 0xffffff,
         title, messageLine1, messageLine2, "", "");
 }
@@ -437,7 +439,7 @@ void S9xShowWaitingMessage(char *title, char *messageLine1, char *messageLine2)
 void S9xAlertSuccess(char *title, char *messageLine1, char *messageLine2)
 {
     S9xShowTitleAndMessage(
-        0xffffff, 0x43A047, 
+        0xffffff, 0x43A047,
         0x333333, 0xffffff,
         title, messageLine1, messageLine2, "", "A - OK");
 
@@ -456,7 +458,7 @@ void S9xAlertSuccess(char *title, char *messageLine1, char *messageLine2)
             return;
         }
         gspWaitForVBlank();
-        
+
     }
 }
 
@@ -464,7 +466,7 @@ void S9xAlertSuccess(char *title, char *messageLine1, char *messageLine2)
 void S9xAlertFailure(char *title, char *messageLine1, char *messageLine2)
 {
     S9xShowTitleAndMessage(
-        0xffffff, 0xC62828, 
+        0xffffff, 0xC62828,
         0x333333, 0xffffff,
         title, messageLine1, messageLine2, "", "A - OK");
 
@@ -483,7 +485,7 @@ void S9xAlertFailure(char *title, char *messageLine1, char *messageLine2)
             return;
         }
         gspWaitForVBlank();
-        
+
     }
 }
 
@@ -491,7 +493,7 @@ void S9xAlertFailure(char *title, char *messageLine1, char *messageLine2)
 bool S9xConfirm(char *title, char *messageLine1, char *messageLine2)
 {
     S9xShowTitleAndMessage(
-        0xffffff, 0x00897B, 
+        0xffffff, 0x00897B,
         0x333333, 0xffffff,
         title, messageLine1, messageLine2, "", "START - Yes      B - No");
 
@@ -516,7 +518,7 @@ bool S9xConfirm(char *title, char *messageLine1, char *messageLine2)
             return false;
         }
         gspWaitForVBlank();
-        
+
     }
     return false;
 
@@ -599,16 +601,16 @@ int S9xGetGaugeValueItemByID(SMenuItem *menuItems, int itemCount, int id)
 bool S9xTakeScreenshot(char* path)
 {
     int x, y;
-    
+
     FILE *pFile = fopen(path, "wb");
     if (pFile == NULL) return false;
-    
+
     // Modified this to take only the top screen
     //
     u32 bitmapsize = 400*240*2;
     u8* tempbuf = (u8*)linearAlloc(0x8A + 400*240*2);
     memset(tempbuf, 0, 0x8A + bitmapsize);
-    
+
     *(u16*)&tempbuf[0x0] = 0x4D42;
     *(u32*)&tempbuf[0x2] = 0x8A + bitmapsize;
     *(u32*)&tempbuf[0xA] = 0x8A;
@@ -623,7 +625,7 @@ bool S9xTakeScreenshot(char* path)
     *(u32*)&tempbuf[0x3A] = 0x000007E0;
     *(u32*)&tempbuf[0x3E] = 0x0000001F;
     *(u32*)&tempbuf[0x42] = 0x00000000;
-    
+
     u8* framebuf = (u8*)gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
     for (y = 0; y < 240; y++)
     {
@@ -631,13 +633,13 @@ bool S9xTakeScreenshot(char* path)
         {
             int si = 1 + (((239 - y) + (x * 240)) * 4);
             int di = 0x8A + (x + ((239 - y) * 400)) * 2;
-            
+
             u16 word = RGB8_to_565(framebuf[si++], framebuf[si++], framebuf[si++]);
             tempbuf[di++] = word & 0xFF;
             tempbuf[di++] = word >> 8;
         }
     }
-    
+
     /*
     framebuf = (u8*)gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
     for (y = 0; y < 240; y++)
@@ -646,16 +648,16 @@ bool S9xTakeScreenshot(char* path)
         {
             int si = ((239 - y) + (x * 240)) * 2;
             int di = 0x8A + ((x+40) + ((239 - y) * 400)) * 2;
-            
+
             tempbuf[di++] = framebuf[si++];
             tempbuf[di++] = framebuf[si++];
         }
     }
     */
-    
+
     fwrite(tempbuf, sizeof(char), 0x8A + bitmapsize, pFile);
     fclose(pFile);
-    
+
     linearFree(tempbuf);
     return true;
-} 
+}

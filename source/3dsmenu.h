@@ -10,9 +10,9 @@ typedef struct
                                 // 0, unchecked
                                 // 1, checked
 
-    int     GaugeMinValue;      
-    int     GaugeMaxValue;      // Set MinValue < MaxValue to make the gauge visible. 
-    int     GaugeValue;         // 
+    int     GaugeMinValue;
+    int     GaugeMaxValue;      // Set MinValue < MaxValue to make the gauge visible.
+    int     GaugeValue;         //
 } SMenuItem;
 
 
