@@ -1681,8 +1681,8 @@ bool snesInitialize()
     Settings.Stereo = TRUE;
     Settings.SoundBufferSize = 0;
     Settings.APUEnabled = Settings.NextAPUEnabled = TRUE;
-    Settings.InterpolatedSound = FALSE;
-    Settings.AltSampleDecode = 1;
+    Settings.InterpolatedSound = TRUE;
+    Settings.AltSampleDecode = 0;
     Settings.SoundEnvelopeHeightReading = 1;
 
     if(!Memory.Init())
@@ -2046,10 +2046,11 @@ void snesEmulatorLoop()
             //printf ("---\n");
         }*/
 
-
+        /*
         // Debugging only
-        /*snd3dsMixSamples();
+        snd3dsMixSamples();
         printf ("\n");
+
         S9xPrintAPUState ();
         printf ("----\n");*/
 

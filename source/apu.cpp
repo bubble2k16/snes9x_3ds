@@ -346,6 +346,7 @@ void S9xSetAPUDSP (uint8 byte, uint8 reg)
 	static uint8 KeyOn;
 	static uint8 KeyOnPrev;
     int i;
+	int pitch;
 
 	spc_dump_dsp[reg] = byte;
 
@@ -631,7 +632,9 @@ void S9xSetAPUDSP (uint8 byte, uint8 reg)
 			S9xTraceSoundDSP ("[%d] %d freq low: %d\n",
 			ICPU.Scanline, reg>>4, byte);
 #endif
-		S9xSetSoundHertz (reg >> 4, ((byte + (APU.DSP [reg + 1] << 8)) & FREQUENCY_MASK) * 8);
+		pitch = (((int)byte + ((int)APU.DSP [reg + 1] << 8)) & FREQUENCY_MASK);
+		S9xSetSoundHertz (reg >> 4, pitch * 8);
+		//S9xSetSoundHertz (reg >> 4, ((byte + (APU.DSP [reg + 1] << 8)) & FREQUENCY_MASK) * 8);
 		break;
 
     case APU_P_HIGH + 0x00:
@@ -647,8 +650,9 @@ void S9xSetAPUDSP (uint8 byte, uint8 reg)
 			S9xTraceSoundDSP ("[%d] %d freq high: %d\n",
 			ICPU.Scanline, reg>>4, byte);
 #endif
-		S9xSetSoundHertz (reg >> 4,
-			(((byte << 8) + APU.DSP [reg - 1]) & FREQUENCY_MASK) * 8);
+		pitch = ((((int)byte << 8) + (int)APU.DSP [reg - 1]) & FREQUENCY_MASK);
+		S9xSetSoundHertz (reg >> 4, pitch * 8);
+		//S9xSetSoundHertz (reg >> 4, (((byte << 8) + APU.DSP [reg - 1]) & FREQUENCY_MASK) * 8);
 		break;
 
     case APU_SRCN + 0x00:

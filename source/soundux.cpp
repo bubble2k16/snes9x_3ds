@@ -244,10 +244,10 @@ static const int32 gauss[512] =
 //static const int32	*G1 = &gauss[256], *G2 = &gauss[512],
 //						*G3 = &gauss[255], *G4 = &gauss[-1];
 
-#define	G1(n)	gauss[256 + (n)]
-#define	G2(n)	gauss[512 + (n)]
-#define	G3(n)	gauss[255 + (n)]
-#define	G4(n)	gauss[ -1 + (n)]
+#define	G1(n)	gauss[256 + (n)]		// n = [-1, -256]
+#define	G2(n)	gauss[512 + (n)]		// n = [-1, -256]
+#define	G3(n)	gauss[255 + (n)]		// n = [1, 256]
+#define	G4(n)	gauss[ -1 + (n)]		// n = [1, 256]
 
 // envelope/noise table by libopenspc and SNEeSe
 int32 env_counter_table[32] =
@@ -424,8 +424,8 @@ void S9xSetMasterVolume (short volume_left, short volume_right)
 
 		SoundData.master_volume_left  = volume_left;
 		SoundData.master_volume_right = volume_right;
-		SoundData.master_volume[Settings.ReverseStereo]     = volume_left;
-		SoundData.master_volume[1 ^ Settings.ReverseStereo] = volume_right;
+		SoundData.master_volume[0 /*Settings.ReverseStereo*/]     = volume_left;
+		SoundData.master_volume[1 /*^ Settings.ReverseStereo*/] = volume_right;
 	}
 }
 
@@ -436,8 +436,8 @@ void S9xSetEchoVolume (short volume_left, short volume_right)
 
 	SoundData.echo_volume_left  = volume_left;
 	SoundData.echo_volume_right = volume_right;
-	SoundData.echo_volume[Settings.ReverseStereo]     = volume_left;
-	SoundData.echo_volume[1 ^ Settings.ReverseStereo] = volume_right;
+	SoundData.echo_volume[0 /*Settings.ReverseStereo*/]     = volume_left;
+	SoundData.echo_volume[1 /*^ Settings.ReverseStereo*/] = volume_right;
 }
 
 void S9xSetEchoEnable (uint8 byte)
@@ -458,7 +458,7 @@ void S9xSetEchoEnable (uint8 byte)
 		if (byte & (1 << i))
 			SoundData.channels[i].echo_buf_ptr = EchoBuffer;
 		else
-			SoundData.channels[i].echo_buf_ptr = DummyEchoBuffer;
+			SoundData.channels[i].echo_buf_ptr = 0;
 	}
 }
 
@@ -751,6 +751,8 @@ bool8 S9xSetSoundMute (bool8 mute)
 	return (old);
 }
 
+int16 silentBlock[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0};
+
 static void AltDecodeBlock (Channel *ch)
 {
 	if (ch->block_pointer > 0x10000 - 9)
@@ -758,6 +760,7 @@ static void AltDecodeBlock (Channel *ch)
 		ch->last_block = TRUE;
 		ch->loop = FALSE;
 		ch->block = ch->decoded;
+		//ch->block = silentBlock;
 		memset ((void *) ch->decoded, 0, sizeof (int16) * 16);
 		return;
 	}
@@ -1011,6 +1014,7 @@ static void AltDecodeBlock2 (Channel *ch)
 	ch->block_pointer += 9;
 }
 
+
 static void DecodeBlock (Channel *ch)
 {
 	int32 out;
@@ -1114,10 +1118,769 @@ static void DecodeBlock (Channel *ch)
 	ch->previous[0] = prev0;
 	ch->previous[1] = prev1;
 
+/*
+	if (ch->sample_number == 23)
+	{
+		printf ("Decoded @ %04x:\n", ch->block_pointer);
+		for (int s = 0; s < 16; s++)
+		{
+			if (s % 4 == 0)
+				printf ("    ");
+			printf ("%04x ", (uint16)ch->block[s]);
+			if (s % 4 == 3)
+				printf ("\n");
+		}
+	}
+	*/
+
 	ch->block_pointer += 9;
 }
 
+
+void __attribute__ ((noinline)) DecodeBlockFast (Channel *ch)
+{
+    if (ch->block_pointer >= 0x10000 - 9)
+    {
+		ch->last_block = TRUE;
+		ch->loop = FALSE;
+		ch->block = silentBlock;
+		return;
+    }
+
+    signed char *compressed = (signed char *) &IAPU.RAM [ch->block_pointer];
+	
+    unsigned char filter = *compressed;
+    if ((ch->last_block = filter & 1))
+		ch->loop = (filter & 2) != 0;
+
+	signed short *raw = ch->block = ch->decoded;
+    int32 out;
+    unsigned char shift;
+    signed char sample1, sample2;
+    unsigned int i;
+	
+    compressed++;
+    
+    shift = filter >> 4;
+
+    int32 prev0 = ch->previous [0];
+    int32 prev1 = ch->previous [1];
+
+	// Header validity check: if range(shift) is over 12, ignore
+	// all bits of the data for that block except for the sign bit of each
+	bool invalid_header = !(shift < 0xD);
+
+	if (!invalid_header)
+	{
+		switch ((filter >> 2) & 3)
+		{
+		case 0:
+
+			for (i = 8; i != 0; i--)
+			{
+				sample1 = *compressed++;
+				sample2 = sample1 << 4;
+				sample2 >>= 4;
+				sample1 >>= 4;
+				//if (invalid_header) { sample1>>=3; sample2>>=3; }
+
+				out = ((int32)sample1 << shift);
+				*raw++ = out;
+				
+				out = ((int32)sample2 << shift);
+				*raw++ = out;
+			}
+			prev1 = *(raw - 2);
+			prev0 = *(raw - 1);
+			
+
+			ch->previous [0] = prev0;
+			ch->previous [1] = prev1;
+			ch->block_pointer += 9;
+			return;
+		case 1:
+			for (i = 8; i != 0; i--)
+			{
+				sample1 = *compressed++;
+				sample2 = sample1 << 4;
+				sample2 >>= 4;
+				sample1 >>= 4;
+				//if (invalid_header) { sample1>>=3; sample2>>=3; }
+				
+				out = (((int32)sample1 << shift) >> 1) + (prev0 >> 1) + ((-prev0) >> 5);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev1 = out;
+
+				out = (((int32)sample2 << shift) >> 1) + (prev1 >> 1) + ((-prev1) >> 5);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev0 = out;
+			}
+			
+			ch->previous [0] = prev0;
+			ch->previous [1] = prev1;
+			ch->block_pointer += 9;
+			return;
+		case 2:
+			
+			for (i = 8; i != 0; i--)
+			{
+				sample1 = *compressed++;
+				sample2 = sample1 << 4;
+				sample2 >>= 4;
+				sample1 >>= 4;
+				//if (invalid_header) { sample1>>=3; sample2>>=3; }
+				
+				out = (((int32)sample1 << shift) >> 1) + (prev0)+((-(prev0 +(prev0>>1)))>>5)-(prev1>>1)+(prev1>>5);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev1 = out;
+
+				out = (((int32)sample2 << shift) >> 1) + (prev1)+((-(prev1 +(prev1>>1)))>>5)-(prev0>>1)+(prev0>>5);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev0 = out;
+			}
+			
+			ch->previous [0] = prev0;
+			ch->previous [1] = prev1;
+			ch->block_pointer += 9;
+			return;
+		case 3:
+
+			for (i = 8; i != 0; i--)
+			{
+				sample1 = *compressed++;
+				sample2 = sample1 << 4;
+				sample2 >>= 4;
+				sample1 >>= 4;
+				//if (invalid_header) { sample1>>=3; sample2>>=3; }
+				
+				out = (((int32)sample1 << shift) >> 1) + (prev0)+((-(prev0 + (prev0<<2) + (prev0<<3)))>>7)-(prev1>>1)+((prev1+(prev1>>1))>>4);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev1 = out;
+
+				out = (((int32)sample2 << shift) >> 1) + (prev1)+((-(prev1 + (prev1<<2) + (prev1<<3)))>>7)-(prev0>>1)+((prev0+(prev0>>1))>>4);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev0 = out;
+			}
+			
+			ch->previous [0] = prev0;
+			ch->previous [1] = prev1;
+			ch->block_pointer += 9;
+			return;
+
+		}
+	}
+	else
+	{
+		switch ((filter >> 2) & 3)
+		{
+		case 0:
+
+			for (i = 8; i != 0; i--)
+			{
+				sample1 = *compressed++;
+				sample2 = sample1 << 4;
+				sample2 >>= 4;
+				sample1 >>= 4;
+				/*if (invalid_header)*/ { sample1>>=3; sample2>>=3; }
+
+				out = ((int32)sample1 << shift);
+				*raw++ = out;
+				
+				out = ((int32)sample2 << shift);
+				*raw++ = out;
+			}
+			prev1 = *(raw - 2);
+			prev0 = *(raw - 1);
+			
+
+			ch->previous [0] = prev0;
+			ch->previous [1] = prev1;
+			ch->block_pointer += 9;
+			return;
+		case 1:
+			for (i = 8; i != 0; i--)
+			{
+				sample1 = *compressed++;
+				sample2 = sample1 << 4;
+				sample2 >>= 4;
+				sample1 >>= 4;
+				/*if (invalid_header)*/ { sample1>>=3; sample2>>=3; }
+				
+				out = (((int32)sample1 << shift) >> 1) + (prev0 >> 1) + ((-prev0) >> 5);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev1 = out;
+
+				out = (((int32)sample2 << shift) >> 1) + (prev1 >> 1) + ((-prev1) >> 5);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev0 = out;
+			}
+			
+			ch->previous [0] = prev0;
+			ch->previous [1] = prev1;
+			ch->block_pointer += 9;
+			return;
+		case 2:
+			
+			for (i = 8; i != 0; i--)
+			{
+				sample1 = *compressed++;
+				sample2 = sample1 << 4;
+				sample2 >>= 4;
+				sample1 >>= 4;
+				/*if (invalid_header)*/ { sample1>>=3; sample2>>=3; }
+				
+				out = (((int32)sample1 << shift) >> 1) + (prev0)+((-(prev0 +(prev0>>1)))>>5)-(prev1>>1)+(prev1>>5);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev1 = out;
+
+				out = (((int32)sample2 << shift) >> 1) + (prev1)+((-(prev1 +(prev1>>1)))>>5)-(prev0>>1)+(prev0>>5);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev0 = out;
+			}
+			
+			ch->previous [0] = prev0;
+			ch->previous [1] = prev1;
+			ch->block_pointer += 9;
+			return;
+		case 3:
+
+			for (i = 8; i != 0; i--)
+			{
+				sample1 = *compressed++;
+				sample2 = sample1 << 4;
+				sample2 >>= 4;
+				sample1 >>= 4;
+				/*if (invalid_header)*/ { sample1>>=3; sample2>>=3; }
+				
+				out = (((int32)sample1 << shift) >> 1) + (prev0)+((-(prev0 + (prev0<<2) + (prev0<<3)))>>7)-(prev1>>1)+((prev1+(prev1>>1))>>4);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev1 = out;
+
+				out = (((int32)sample2 << shift) >> 1) + (prev1)+((-(prev1 + (prev1<<2) + (prev1<<3)))>>7)-(prev0>>1)+((prev0+(prev0>>1))>>4);
+				CLIP16(out);
+				out = (signed short) (out << 1);
+				*raw++ = prev0 = out;
+			}
+			
+			ch->previous [0] = prev0;
+			ch->previous [1] = prev1;
+			ch->block_pointer += 9;
+			return;
+
+		}
+	}	
+}
+
+
+
+int32 noise_cache[256];
+int32 wave[SOUND_BUFFER_SIZE];
+int32 noise_index = 0;
+int32 noise_count = 0;
+
+inline void __attribute__((always_inline)) MixComputeEnvelopeAndSample(
+	int J, Channel *ch, int32 freq,
+	bool echo, bool env, bool mod1, bool mod2)
+{
+	if (ch->needs_decode)
+	{
+		DecodeBlockFast (ch);
+		ch->needs_decode = FALSE;
+		ch->sample = ch->block[0];
+		ch->sample_pointer = 0;
+	}
+
+	for (uint32 I = 0; I < (uint32) 512; I += 2)
+	{
+		if (env)
+		{
+		switch (ch->state)
+		{
+			case SOUND_ATTACK:
+				if (ch->xenv_rate == env_counter_max_master)
+					ch->xenvx += (ENV_RANGE >> 1); // FIXME
+				else
+				{
+					ch->xenv_count -= ch->xenv_rate;
+					while (ch->xenv_count <= 0)
+					{
+						ch->xenvx += (ENV_RANGE >> 6); // 1/64
+						ch->xenv_count += env_counter_max;
+					}
+				}
+
+				if (ch->xenvx > ENV_MAX)
+				{
+					ch->xenvx = ENV_MAX;
+
+					if (ch->xsustain_level != ENV_RANGE)
+					{
+						ch->state = SOUND_DECAY;
+						S9xSetEnvRate (ch, ch->xdecay_rate, ch->xsustain_level);
+					}
+					else
+					{
+						ch->state = SOUND_SUSTAIN;
+						S9xSetEnvRate (ch, ch->xsustain_rate, 0);
+					}
+				}
+
+				break;
+
+			case SOUND_DECAY:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx <= ch->xenvx_target)
+				{
+					if (ch->xenvx <= 0)
+					{
+						S9xAPUSetEndOfSample (J, ch);
+						goto stereo_exit;
+					}
+					else
+					{
+						ch->state = SOUND_SUSTAIN;
+						S9xSetEnvRate (ch, ch->xsustain_rate, 0);
+					}
+				}
+
+				break;
+
+			case SOUND_SUSTAIN:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1;  // 1 - 1/256
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx <= 0)
+				{
+					S9xAPUSetEndOfSample (J, ch);
+					goto stereo_exit;
+				}
+
+				break;
+
+			case SOUND_RELEASE:
+				ch->xenv_count -= env_counter_max;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= (ENV_RANGE >> 8); // 1/256
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx <= 0)
+				{
+					S9xAPUSetEndOfSample (J, ch);
+					goto stereo_exit;
+				}
+
+				break;
+
+			case SOUND_INCREASE_LINEAR:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx += (ENV_RANGE >> 6); // 1/64
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx > ENV_MAX)
+				{
+					ch->xenvx = ENV_MAX;
+					ch->state = SOUND_GAIN;
+					ch->mode  = MODE_GAIN;
+					S9xSetEnvRate (ch, 0, 0);
+				}
+
+				break;
+
+			case SOUND_INCREASE_BENT_LINE:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					if (ch->xenvx >= ((ENV_RANGE * 3) >> 2)) // 0x600
+						ch->xenvx += (ENV_RANGE >> 8); // 1/256
+					else
+						ch->xenvx += (ENV_RANGE >> 6); // 1/64
+
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx > ENV_MAX)
+				{
+					ch->xenvx = ENV_MAX;
+					ch->state = SOUND_GAIN;
+					ch->mode  = MODE_GAIN;
+					S9xSetEnvRate (ch, 0, 0);
+				}
+
+				break;
+
+			case SOUND_DECREASE_LINEAR:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= (ENV_RANGE >> 6); // 1/64
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx <= 0)
+				{
+					S9xAPUSetEndOfSample (J, ch);
+					goto stereo_exit;
+				}
+
+				break;
+
+			case SOUND_DECREASE_EXPONENTIAL:
+				ch->xenv_count -= ch->xenv_rate;
+				while (ch->xenv_count <= 0)
+				{
+					ch->xenvx -= ((ch->xenvx - 1) >> 8) + 1; // 1 - 1/256
+					ch->xenv_count += env_counter_max;
+				}
+
+				if (ch->xenvx <= 0)
+				{
+					S9xAPUSetEndOfSample (J, ch);
+					goto stereo_exit;
+				}
+
+				break;
+
+			case SOUND_GAIN:
+				S9xSetEnvRate (ch, 0, 0);
+
+				break;
+		}
+		}
+
+		ch->xsmp_count += mod1 ? (((int64) freq * (32768 + wave[I >> 1])) >> 15) : freq;
+
+		while (ch->xsmp_count >= 0)
+		{
+			ch->xsmp_count -= FIXED_POINT;
+			ch->nb_sample[ch->nb_index] = ch->sample;
+			ch->nb_index = (ch->nb_index + 1) & 3;
+
+			ch->sample_pointer++;
+			if (ch->sample_pointer == SOUND_DECODE_LENGTH)
+			{
+				ch->sample_pointer = 0;
+
+				if (ch->last_block)
+				{
+					S9xAPUSetEndX (J);
+					if (!ch->loop)
+					{
+						ch->xenvx = 0;
+						//last_block = TRUE;
+						S9xAPUSetEndOfSample (J, ch);
+						while (ch->xsmp_count >= 0)
+						{
+							ch->xsmp_count -= FIXED_POINT;
+							ch->nb_sample[ch->nb_index] = 0;
+							ch->nb_index = (ch->nb_index + 1) & 3;
+						}
+
+						break;
+					}
+					else
+					{
+						ch->last_block = FALSE;
+						uint8 *dir = S9xGetSampleAddress (ch->sample_number);
+						ch->block_pointer = READ_WORD(dir + 2); // loop pointer
+					}
+				}
+
+				DecodeBlockFast (ch);
+			}
+
+			ch->sample = ch->block[ch->sample_pointer];
+		}
+
+		int32 outx, d;
+
+		if (ch->type == SOUND_SAMPLE)
+		{
+			//if (Settings.InterpolatedSound)
+			{
+				// 4-point gaussian interpolation
+				d = ch->xsmp_count >> (FIXED_POINT_SHIFT - 8);
+				outx  = ((G4(-d) * ch->nb_sample[ ch->nb_index         ]) >> 11) & ~1;
+				outx += ((G3(-d) * ch->nb_sample[(ch->nb_index + 1) & 3]) >> 11) & ~1;
+				outx += ((G2( d) * ch->nb_sample[(ch->nb_index + 2) & 3]) >> 11) & ~1;
+				outx = ((outx & 0xFFFF) ^ 0x8000) - 0x8000;
+				outx += ((G1( d) * ch->nb_sample[(ch->nb_index + 3) & 3]) >> 11) & ~1;
+				CLIP16(outx);
+			}
+			//else
+			//	outx = ch->sample;
+		}
+		else // SAMPLE_NOISE
+		{
+			noise_count -= SoundData.noise_rate;
+			while (noise_count <= 0)
+			{
+				noise_count += env_counter_max;
+				noise_index = (noise_index + 1) & 0xFF;
+			}
+
+			outx = noise_cache[noise_index] >> 16;
+		}
+
+		outx = ((outx * ch->xenvx) >> 11) & ~1;
+		ch->out_sample = outx;
+
+		if (mod2)
+			wave[I >> 1] = outx;
+
+		int32 VL, VR;
+
+		VL = (outx * ch->volume_left ) >> 7;
+		VR = (outx * ch->volume_right) >> 7;
+
+		MixBuffer[I] += VL;
+		MixBuffer[I + 1] += VR;
+		if (echo)
+		{
+			ch->echo_buf_ptr[I] += VL;
+			ch->echo_buf_ptr[I + 1] += VR;
+		}
+	}
+
+stereo_exit: ;
+
+}
+
+
+
+#define MIXCOMPUTEENVSAMPLE(x) \
+void M_ ##x (int J, Channel *ch, int32 freq) \
+{ \
+	 MixComputeEnvelopeAndSample (J, ch, freq, (x&1) != 0, (x&2) != 0, (x&4) != 0, (x&8) != 0);\
+} \
+
+
+MIXCOMPUTEENVSAMPLE(0)
+MIXCOMPUTEENVSAMPLE(1)
+MIXCOMPUTEENVSAMPLE(2)
+MIXCOMPUTEENVSAMPLE(3)
+MIXCOMPUTEENVSAMPLE(4)
+MIXCOMPUTEENVSAMPLE(5)
+MIXCOMPUTEENVSAMPLE(6)
+MIXCOMPUTEENVSAMPLE(7)
+MIXCOMPUTEENVSAMPLE(8)
+MIXCOMPUTEENVSAMPLE(9)
+MIXCOMPUTEENVSAMPLE(10)
+MIXCOMPUTEENVSAMPLE(11)
+MIXCOMPUTEENVSAMPLE(12)
+MIXCOMPUTEENVSAMPLE(13)
+MIXCOMPUTEENVSAMPLE(14)
+MIXCOMPUTEENVSAMPLE(15)
+
+void (*MixComputeFuncPtr []) (int, Channel *, int32) = {
+	M_0,  M_1,  M_2,  M_3,  M_4,  M_5,  M_6,  M_7,  M_8,  M_9, 
+	M_10, M_11, M_12, M_13, M_14, M_15 };
+
+
+
 void MixStereo (int sample_count)
+{
+	DoFakeMute=Settings.FakeMuteFix;
+
+	int pitch_mod = SoundData.pitch_mod & ~APU.DSP[APU_NON];
+
+	// Must initialize this, otherwise the noise
+	// samples will sound off!
+	noise_index = 0;
+	noise_count = 0;
+	
+	if (APU.DSP[APU_NON])
+	{
+		noise_count = SoundData.noise_count;
+
+		for (uint32 I = 0; I < (uint32) sample_count; I += 2)
+		{
+			noise_count -= SoundData.noise_rate;
+			while (noise_count <= 0)
+			{
+				rand_seed = rand_seed * 48828125 + 1;
+				noise_cache[noise_index] = rand_seed;
+				noise_index = (noise_index + 1) & 0xFF;
+				noise_count += env_counter_max;
+			}
+		}
+	}
+
+	for (uint32 J = 0; J < NUM_CHANNELS; J++)
+	{
+		Channel *ch = &SoundData.channels[J];
+		int32 freq = ch->frequency;
+
+		//bool8 last_block = FALSE;
+
+		if (ch->type == SOUND_NOISE)
+		{
+			noise_index = 0;
+			noise_count = SoundData.noise_count;
+		}
+
+		if (ch->state == SOUND_SILENT || /*last_block ||*/ !(so.sound_switch & (1 << J)))
+			continue;
+
+		bool mod1 = pitch_mod & (1 << J);
+		bool mod2 = pitch_mod & (1 << (J + 1));
+		bool env = !(
+			(ch->state == SOUND_SUSTAIN || ch->state == SOUND_GAIN ||
+			ch->state == SOUND_DECREASE_EXPONENTIAL || ch->state == SOUND_DECREASE_LINEAR) 
+			&& ch->xenv_rate == 0);
+		bool echo = ch->echo_buf_ptr != 0;
+
+		int functionNumber = 
+			(echo ? 1 : 0) + 
+			(env  ? 2 : 0) + 
+			(mod1 ? 4 : 0) + 
+			(mod2 ? 8 : 0);
+
+		MixComputeFuncPtr[functionNumber](J, ch, freq);
+		//MixComputeEnvelopeAndSample (J, ch, freq, echo, env, mod1, mod2);
+
+		/*
+		if (ch->needs_decode)
+		{
+			DecodeBlockFast (ch);
+			ch->needs_decode = FALSE;
+			ch->sample = ch->block[0];
+			ch->sample_pointer = 0;
+		}
+
+		int32 VL = 0, VR = 0, outx = 0, mfreq = 0;
+		mixch = ch; 
+		mixJ = J; 
+
+		#define COMPUTE_SAMPLEx01(chstate, computeEnv) \
+			if (computeEnv && MixComputeEnvelope(ch, chstate, J)) goto stereo_exit; \
+			mfreq = mod1 ? (((int64) freq * (32768 + wave[I >> 1])) >> 15) : freq; \
+			ch->xsmp_count += mfreq; \
+			if (MixComputeSample(mfreq, &outx)) goto stereo_exit; \
+			if (mod2) \
+				wave[I >> 1] = outx; \
+			VL = ((outx * ch->volume_left ) >> 7); \
+			VR = ((outx * ch->volume_right) >> 7); \
+			MixBuffer[I] += VL; \
+			MixBuffer[I + 1] += VR; \
+			if (ch->echo_buf_ptr) \
+			{ \
+				ch->echo_buf_ptr[I] += VL; \
+				ch->echo_buf_ptr[I + 1] += VR; \
+			} \
+			I += 2;
+
+
+		#define COMPUTE_SAMPLES(chstate, computeEnv) \
+			{ \
+				for (uint32 I = 0; I < (uint32) sample_count; ) \
+				{ \
+					COMPUTE_SAMPLEx01(chstate, computeEnv); \
+					COMPUTE_SAMPLEx01(chstate, computeEnv); \
+					COMPUTE_SAMPLEx01(chstate, computeEnv); \
+					COMPUTE_SAMPLEx01(chstate, computeEnv); \
+				} \
+			}
+		
+
+		#define COMPUTE_SAMPLES_FOR_ENV(chstate, computeEnv) \
+			{ \
+				if (mod1) \
+				{ \
+					if (mod2) 	COMPUTE_SAMPLES(chstate, computeEnv) \
+					else	 	COMPUTE_SAMPLES(chstate, computeEnv) \
+				} \
+				else \
+				{ \
+					if (mod2) 	COMPUTE_SAMPLES(chstate, computeEnv) \
+					else	 	COMPUTE_SAMPLES(chstate, computeEnv) \
+				} \
+			}
+
+
+		switch (ch->state)
+		{
+			case SOUND_ATTACK:
+				COMPUTE_SAMPLES_FOR_ENV(ch->state, true);
+				break;
+
+			case SOUND_DECAY:
+				COMPUTE_SAMPLES_FOR_ENV(ch->state, true);
+				break;
+
+			case SOUND_SUSTAIN:
+				// no change of state, avoid switch checks
+				if (ch->xenv_rate == 0)
+					COMPUTE_SAMPLES_FOR_ENV(SOUND_SUSTAIN, false)	
+				else
+					COMPUTE_SAMPLES_FOR_ENV(SOUND_SUSTAIN, true)	
+				break;
+
+			case SOUND_RELEASE:
+				// no change of state, avoid switch checks
+				COMPUTE_SAMPLES_FOR_ENV(SOUND_RELEASE, true);		
+				break;
+
+			case SOUND_GAIN:
+				// no change of state, avoid switch checks
+				COMPUTE_SAMPLES_FOR_ENV(SOUND_GAIN, true);	
+				break;
+
+			case SOUND_INCREASE_LINEAR:
+				COMPUTE_SAMPLES_FOR_ENV(ch->state, true);
+				break;
+
+			case SOUND_INCREASE_BENT_LINE:
+				COMPUTE_SAMPLES_FOR_ENV(ch->state, true);
+				break;
+
+			case SOUND_DECREASE_LINEAR:
+				// no change of state, avoid switch checks
+				COMPUTE_SAMPLES_FOR_ENV(SOUND_DECREASE_LINEAR, true);
+				break;
+
+			case SOUND_DECREASE_EXPONENTIAL:
+				// no change of state, avoid switch checks
+				COMPUTE_SAMPLES_FOR_ENV(SOUND_DECREASE_EXPONENTIAL, true);
+				break;
+
+		}
+
+	stereo_exit: ;*/
+	}
+	DoFakeMute=FALSE;
+
+	if (APU.DSP[APU_NON])
+		SoundData.noise_count = noise_count;
+}
+
+
+void MixStereoOld (int sample_count)
 {
 	DoFakeMute=Settings.FakeMuteFix;
 
@@ -1167,7 +1930,7 @@ void MixStereo (int sample_count)
 
 		if (ch->needs_decode)
 		{
-			DecodeBlock(ch);
+			DecodeBlockFast (ch);
 			ch->needs_decode = FALSE;
 			ch->sample = ch->block[0];
 			ch->sample_pointer = 0;
@@ -1380,7 +2143,7 @@ void MixStereo (int sample_count)
 						}
 					}
 
-					DecodeBlock (ch);
+					DecodeBlockFast (ch);
 				}
 
 				ch->sample = ch->block[ch->sample_pointer];
@@ -1444,7 +2207,7 @@ void MixStereo (int sample_count)
 #ifdef __DJGPP
 END_OF_FUNCTION(MixStereo);
 #endif
-
+/*
 void MixMono (int sample_count)
 {
 	DoFakeMute=Settings.FakeMuteFix;
@@ -1765,7 +2528,7 @@ void MixMono (int sample_count)
 	if (APU.DSP[APU_NON])
 		SoundData.noise_count = noise_count;
 }
-
+*/
 #ifdef __DJGPP
 END_OF_FUNCTION(MixMono);
 #endif
@@ -1794,10 +2557,10 @@ void S9xMixSamples (uint8 *buffer, int sample_count)
 		if (!Settings.DisableSoundEcho)
 			memset (EchoBuffer, 0, sample_count * sizeof (EchoBuffer[0]));
 
-		if (so.stereo)
+		//if (so.stereo)
 			MixStereo (sample_count);
-		else
-			MixMono (sample_count);
+		//else
+		//	MixMono (sample_count);
 	}
 
 	/* Mix and convert waveforms */
@@ -2347,6 +3110,15 @@ void S9xPlaySample (int channel)
 {
 	Channel *ch = &SoundData.channels[channel];
 
+	if (ch->state == SOUND_SILENT)
+	{
+		ch->nb_sample[0] = 0;
+		ch->nb_sample[1] = 0;
+		ch->nb_sample[2] = 0;
+		ch->nb_sample[3] = 0;
+		ch->nb_index = 0;
+	}
+
 	ch->state = SOUND_SILENT;
 	ch->mode = MODE_NONE;
 	ch->xenvx = 0;
@@ -2371,12 +3143,16 @@ void S9xPlaySample (int channel)
 	ch->block_pointer = READ_WORD (dir);
 	ch->sample_pointer = 0;
 	ch->xenv_count = env_counter_max;
-	ch->xsmp_count = 3 * FIXED_POINT; // since gaussian interpolation uses 4 points
-	ch->nb_sample[0] = 0;
+	//ch->xsmp_count = 3 * FIXED_POINT; // since gaussian interpolation uses 4 points
+	ch->xsmp_count = 0;
+	/*ch->nb_sample[0] = 0;
 	ch->nb_sample[1] = 0;
 	ch->nb_sample[2] = 0;
 	ch->nb_sample[3] = 0;
-	ch->nb_index = 0;
+	ch->nb_index = 0;*/
+	ch->prev_sample = ch->sample;
+	ch->sample = 0;
+	ch->diff = 0;
 
 	switch (ch->mode)
 	{
@@ -2449,13 +3225,13 @@ void S9xMixSamplesIntoTempBuffer(int sample_count)
 	if (!so.mute_sound)
 	{
 		memset (MixBuffer, 0, sample_count * sizeof (MixBuffer[0]));
-		if (!Settings.DisableSoundEcho)
+		//if (!Settings.DisableSoundEcho)
 			memset (EchoBuffer, 0, sample_count * sizeof (EchoBuffer[0]));
 
-		if (so.stereo)
+		//if (so.stereo)
 			MixStereo (sample_count);
-		else
-			MixMono (sample_count);
+		//else
+		//	MixMono (sample_count);
 	}
 
 	t3dsEndTiming(34);
@@ -2467,6 +3243,7 @@ void S9xGenerateSilenceIntoTempBuffer(int sample_count)
     if (!so.mute_sound)
     {
 		memset (MixBuffer, 0, sample_count * sizeof (MixBuffer [0]));
+		memset (EchoBuffer, 0, sample_count * sizeof (EchoBuffer[0]));
     }
 	t3dsEndTiming(34);
 }
@@ -2489,6 +3266,13 @@ void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuff
 		}
 		else
 		{
+			int finalMasterVolume[2] = {0, 0};
+			int finalEchoVolume[2] = {0, 0};
+			finalMasterVolume[0] = SoundData.master_volume[0] * Settings.VolumeMultiplyMul4 / 4;
+			finalMasterVolume[1] = SoundData.master_volume[1] * Settings.VolumeMultiplyMul4 / 4;
+			finalEchoVolume[0] = SoundData.echo_volume[0] * Settings.VolumeMultiplyMul4 / 4;
+			finalEchoVolume[1] = SoundData.echo_volume[1] * Settings.VolumeMultiplyMul4 / 4;
+						
 			if (!Settings.DisableSoundEcho)
 			{
 				if (so.stereo)
@@ -2497,8 +3281,9 @@ void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuff
 					if (SoundData.no_filter)
 					{
 						// ... but no filter defined.
-						for (J = 0; J < sample_count; J++)
+						for (J = 0; J < sample_count; )
 						{
+							// Left
 							int E = Echo[SoundData.echo_ptr];
 
 							Loop[FIRIndex & 15] = E;
@@ -2517,21 +3302,44 @@ void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuff
 							if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
 								SoundData.echo_ptr = 0;
 
-							I = (MixBuffer[J] * SoundData.master_volume[J & 1] +
-								E * SoundData.echo_volume[J & 1]) >> 7;
+							I = (MixBuffer[J] * finalMasterVolume[0] + E * finalEchoVolume[0]) >> 7;
 							CLIP16(I);
 
-							if (J % 2 == 0)
-								((int16 *) leftBuffer) [J >> 1] = I;
-							else
-								((int16 *) rightBuffer) [J >> 1] = I;
+							((int16 *) leftBuffer) [J >> 1] = I;
+							J++;
+
+							// Right
+							E = Echo[SoundData.echo_ptr];
+
+							Loop[FIRIndex & 15] = E;
+							E = (E * 127) >> 7;
+							FIRIndex++;
+
+							if (SoundData.echo_write_enabled)
+							{
+								I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
+								CLIP16(I);
+								Echo[SoundData.echo_ptr] = I;
+							}
+							else // FIXME: Snes9x's echo buffer is not in APU_RAM
+								Echo[SoundData.echo_ptr] = 0;
+
+							if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
+								SoundData.echo_ptr = 0;
+
+							I = (MixBuffer[J] * finalMasterVolume[1] + E * finalEchoVolume[1]) >> 7;
+							CLIP16(I);
+
+							((int16 *) rightBuffer) [J >> 1] = I;
+							J++;
 						}
 					}
 					else
 					{
 						// ... with filter defined.
-						for (J = 0; J < sample_count; J++)
+						for (J = 0; J < sample_count; )
 						{
+							// Left
 							int E = Echo[SoundData.echo_ptr];
 
 							Loop[FIRIndex & 15] = E;
@@ -2558,69 +3366,24 @@ void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuff
 							if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
 								SoundData.echo_ptr = 0;
 
-							I = (MixBuffer[J] * SoundData.master_volume[J & 1] +
-								E * SoundData.echo_volume[J & 1]) >> 7;
+							I = (MixBuffer[J] * finalMasterVolume[0] + E * finalEchoVolume[0]) >> 7;
 							CLIP16(I);
 
-							if (J % 2 == 0)
-								((int16 *) leftBuffer) [J >> 1] = I;
-							else
-								((int16 *) rightBuffer) [J >> 1] = I;
-						}
-					}
-				}
-				else
-				{
-					// 16-bit mono sound with echo enabled...
-					if (SoundData.no_filter)
-					{
-						// ... no filter defined
-						for (J = 0; J < sample_count; J++)
-						{
-							int E = Echo[SoundData.echo_ptr];
+							((int16 *) leftBuffer) [J >> 1] = I;
+							J++;
 
-							Loop[FIRIndex & 7] = E;
-							E = (E * 127) >> 7;
-							FIRIndex++;
+							// Right
+							E = Echo[SoundData.echo_ptr];
 
-							if (SoundData.echo_write_enabled)
-							{
-								I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
-								CLIP16(I);
-								Echo[SoundData.echo_ptr] = I;
-							}
-							else // FIXME: Snes9x's echo buffer is not in APU_RAM
-								Echo[SoundData.echo_ptr] = 0;
-
-							if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
-								SoundData.echo_ptr = 0;
-
-							I = (MixBuffer[J] * SoundData.master_volume[0] +
-								E * SoundData.echo_volume[0]) >> 7;
-							CLIP16(I);
-
-							if (J % 2 == 0)
-								((int16 *) leftBuffer) [J >> 1] = I;
-							else
-								((int16 *) rightBuffer) [J >> 1] = I;
-						}
-					}
-					else
-					{
-						// ... with filter defined
-						for (J = 0; J < sample_count; J++)
-						{
-							int E = Echo[SoundData.echo_ptr];
-
-							Loop[FIRIndex & 7] = E;
-							E  = E                        * FilterTaps[0];
-							E += Loop[(FIRIndex - 1) & 7] * FilterTaps[1];
-							E += Loop[(FIRIndex - 2) & 7] * FilterTaps[2];
-							E += Loop[(FIRIndex - 3) & 7] * FilterTaps[3];
-							E += Loop[(FIRIndex - 4) & 7] * FilterTaps[4];
-							E += Loop[(FIRIndex - 5) & 7] * FilterTaps[5];
-							E += Loop[(FIRIndex - 6) & 7] * FilterTaps[6];
-							E += Loop[(FIRIndex - 7) & 7] * FilterTaps[7];
+							Loop[FIRIndex & 15] = E;
+							E  = E                          * FilterTaps[0];
+							E += Loop[(FIRIndex -  2) & 15] * FilterTaps[1];
+							E += Loop[(FIRIndex -  4) & 15] * FilterTaps[2];
+							E += Loop[(FIRIndex -  6) & 15] * FilterTaps[3];
+							E += Loop[(FIRIndex -  8) & 15] * FilterTaps[4];
+							E += Loop[(FIRIndex - 10) & 15] * FilterTaps[5];
+							E += Loop[(FIRIndex - 12) & 15] * FilterTaps[6];
+							E += Loop[(FIRIndex - 14) & 15] * FilterTaps[7];
 							E >>= 7;
 							FIRIndex++;
 
@@ -2636,32 +3399,18 @@ void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuff
 							if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
 								SoundData.echo_ptr = 0;
 
-							I = (MixBuffer[J] * SoundData.master_volume[0] +
-								E * SoundData.echo_volume[0]) >> 7;
+							I = (MixBuffer[J] * finalMasterVolume[1] + E * finalEchoVolume[1]) >> 7;
 							CLIP16(I);
 
-							if (J % 2 == 0)
-								((int16 *) leftBuffer) [J >> 1] = I;
-							else
-								((int16 *) rightBuffer) [J >> 1] = I;
+							((int16 *) rightBuffer) [J >> 1] = I;
+							J++;
+							
 						}
 					}
 				}
-			}
-			else
-			{
-				// 16-bit mono or stereo sound, no echo
-				for (J = 0; J < sample_count; J++)
-				{
-					I = (MixBuffer[J] * SoundData.master_volume[J & 1]) >> 7;
-					CLIP16(I);
 
-					if (J % 2 == 0)
-						((int16 *) leftBuffer) [J >> 1] = I;
-					else
-						((int16 *) rightBuffer) [J >> 1] = I;
-				}
 			}
+
 		}
 	}
 	t3dsEndTiming(33);

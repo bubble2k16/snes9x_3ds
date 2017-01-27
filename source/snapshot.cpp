@@ -550,8 +550,12 @@ bool8 S9xFreezeGame (const char *filename)
 	
     if (S9xOpenSnapshotFile (filename, FALSE, &stream))
     {
+		S9xPrepareSoundForSnapshotSave (FALSE);
+		
 		S9xFreezeToStream (stream);
 		S9xCloseSnapshotFile (stream);
+
+		S9xPrepareSoundForSnapshotSave (TRUE);
 
 		/*if(S9xMovieActive())
 		{
