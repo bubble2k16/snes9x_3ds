@@ -134,6 +134,7 @@ typedef struct
 
     float               projectionTopScreen[16];
     float               projectionBottomScreen[16];
+    float               textureOffset[4];
 
     SVertexList         quadVertexes;
     SVertexList         tileVertexes;
@@ -239,7 +240,6 @@ inline int cacheGetMode7TexturePositionFast(int tileNumber);
 
 void gpu3dsCacheToTexturePosition(uint8 *snesTilePixels, uint16 *snesPalette, uint16 texturePosition);
 void gpu3dsCacheToMode7TexturePosition(uint8 *snesTilePixels, uint16 *snesPalette, uint16 texturePosition, uint32 *paletteMask);
-void gpu3dsCacheToMode7Tile0TexturePosition(uint8 *snesTilePixels, uint16 *snesPalette, uint16 texturePosition, uint32 *paletteMask);
 
 bool gpu3dsInitialize();
 void gpu3dsInitializeMode7Vertexes();
@@ -321,6 +321,8 @@ void gpu3dsEnableAdditiveDiv2Blending();
 void gpu3dsEnableSubtractiveDiv2Blending();
 void gpu3dsDisableAlphaBlending();
 void gpu3dsDisableAlphaBlendingKeepDestAlpha();
+
+void gpu3dsSetTextureOffset(float u, float v);
 
 inline void __attribute__((always_inline)) gpu3dsAddQuadVertexes(
     int x0, int y0, int x1, int y1,

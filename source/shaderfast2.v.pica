@@ -20,14 +20,13 @@
 .out 		outcol 		color
 
 ; Uniforms
-.fvec 		projection[4]		; r0 - r3
-.fvec 		textureScale		; r4
-.fvec		uPadding5			; r5
-.fvec		uPadding6			; r6
-.fvec		uPadding7			; r7
-.fvec		uPadding8			; r8
-.fvec		uPadding9			; r9
-
+.fvec 		projection[4]		; #0 - 3
+.fvec 		textureScale		; #4
+.fvec		updateFrame			; #5
+.fvec		textureOffset		; #6 - Use this for Hi-res flipping
+.fvec		uPadding6			; #7
+.fvec		uPadding7			; #8
+.fvec		uPadding8			; #9
 
 ; Constants
 ;.constf RGBA8_TO_FLOAT4	(0.00392156862, 0, 0, 0)
@@ -47,6 +46,8 @@
 .proc main
 	mov		r0, inpos0
 	mov		r10, intex
+
+	add		r10, textureOffset, r10
 
 	mov		r1, NEGATIVE_ONE		; r1 = -1
 	cmp		r0.z, eq, eq, r1.z		; is r0.z (flip+texbase) == -1 

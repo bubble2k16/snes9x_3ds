@@ -628,7 +628,6 @@ bool8 S9xGraphicsInit ()
     }
 	
 	
-
     return (TRUE);
 }
 

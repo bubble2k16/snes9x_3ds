@@ -159,6 +159,8 @@ struct SGFX{
     //
     uint16 ScreenColors128[256];
 
+    uint16 ScreenRGB555toRGBA4[0x10000];
+
     // Tracks when the palette was last modified.
     //
     uint32 PaletteFrame256[1] = { 1 };    

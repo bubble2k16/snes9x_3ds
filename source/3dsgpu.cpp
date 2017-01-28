@@ -725,9 +725,6 @@ bool gpu3dsInitialize()
 	matrix_init_orthographic(GPU3DS.projectionBottomScreen,
         0.0f, 320.0f, 0.0f, 240.0f, 0.0f, 1.0f);
 
-    //sf2d_init(true);
-    //sf2d_set_vblank_wait(false);
-
 	// Load up and initialize any shaders
 	//
     if (GPU3DS.isReal3DS)
@@ -744,6 +741,10 @@ bool gpu3dsInitialize()
         gpu3dsLoadShader(2, (u32 *)shaderslow2_shbin, shaderslow2_shbin_size, 0);   // draw tiles
         gpu3dsLoadShader(3, (u32 *)shaderslowm7_shbin, shaderslowm7_shbin_size, 0); // mode 7 shader
     }
+
+    // Initialize texture offsets for hi-res
+    //
+    gpu3dsSetTextureOffset(0, 0);
 
     // Create all the necessary textures
     //
@@ -1377,6 +1378,7 @@ void gpu3dsUseShader(int shaderIndex)
             GPU_SetFloatUniform(GPU_VERTEX_SHADER, 4, (u32 *)GPU3DS.currentTexture->TextureScale, 1);
             GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, 14, (u32 *)GPU3DS.currentTexture->TextureScale, 1);
         }
+        GPU_SetFloatUniform(GPU_VERTEX_SHADER, 6, (u32 *)GPU3DS.textureOffset, 1);
 
     }
 }
@@ -1641,6 +1643,43 @@ void gpu3dsSetRenderTargetToMode7Tile0Texture()
     gpu3dsSetRenderTargetToTexture(snesMode7Tile0Texture, snesDepthForOtherTextures);
 }
 
+
+extern Handle gspEvents[GSPGPU_EVENT_MAX];
+
+bool gpu3dsCheckEvent(GSPGPU_Event id)
+{
+	Result res = svcWaitSynchronization(gspEvents[id], 0);
+	if (!res)
+	{
+		svcClearEvent(gspEvents[id]);
+		return true;
+	}
+	
+	return false;
+}
+
+
+bool gpu3dsWaitEvent(GSPGPU_Event id, u64 timeInMilliseconds)
+{
+    //if (GPU3DS.enableDebug)
+    //    printf("  gpu3dsWaitEvent\n");
+    
+	Result res = svcWaitSynchronization(gspEvents[id], timeInMilliseconds * 1000000);
+	if (!res)
+	{
+        //if (GPU3DS.enableDebug)
+        //    printf("  gpu3dsWaitEvent complete\n");
+            
+		svcClearEvent(gspEvents[id]);
+		return true;
+	}
+	
+    //if (GPU3DS.enableDebug)
+    //    printf("  gpu3dsWaitEvent timeout\n");
+        
+	return false;
+}
+
 void gpu3dsFlush()
 {
     u32 offset;
@@ -1661,7 +1700,8 @@ void gpu3dsWaitForPreviousFlush()
 {
     if (somethingWasFlushed)
     {
-        gspWaitForP3D();
+        if (GPU3DS.isReal3DS)   // Don't bother waiting in the Citra emulator (it can freeze sometimes!)
+            gspWaitForP3D();
         somethingWasFlushed = false;
     }
 
@@ -2031,4 +2071,12 @@ void gpu3dsDrawMode7LineVertexes(bool repeatLastDraw, int storeIndex)
         gpu3dsDrawVertexList(&GPU3DS.mode7LineVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw, 3, storeIndex);
     else
         gpu3dsDrawVertexList(&GPU3DS.mode7LineVertexes, GPU_TRIANGLES, repeatLastDraw, 3, storeIndex);
+}
+
+
+void gpu3dsSetTextureOffset(float u, float v)
+{
+    GPU3DS.textureOffset[3] = u;
+    GPU3DS.textureOffset[2] = v;
+    GPU_SetFloatUniform(GPU_VERTEX_SHADER, 6, (u32 *)GPU3DS.textureOffset, 1);    
 }

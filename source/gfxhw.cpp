@@ -144,6 +144,10 @@ extern uint8  Mode7Depths [2];
  (GFX.r212d & (1 << N)) && \
  !(PPU.BG_Forced & (1 << (N))))
 
+#define ON_SUB_HIRES(N) \
+((GFX.r212d & (1 << N)) && \
+ !(PPU.BG_Forced & (1 << (N))))
+
 #define ANYTHING_ON_SUB \
 ((GFX.r2130 & 0x30) != 0x30 && \
  (GFX.r2130 & 2) && \
@@ -559,6 +563,18 @@ inline bool S9xComputeAndEnableStencilFunction(int layer, int subscreen)
 	if (!IPPU.WindowingEnabled)
 	{
 		//printf ("  ES: 2130: %x\n", GFX.r2130);
+
+		// For modes 5 and 6 (hi-res) mode, 
+		// we will always blend the two screens regardless of
+		// the color math because in a real TV, it's not the
+		// SNES doing color math, but the TV blending the 
+		// hi-res screen making it look like color math.
+		//
+		if (PPU.BGMode == 5 || PPU.BGMode == 6)
+		{
+			gpu3dsDisableStencilTest();
+			return true;			
+		}
 
 		// Can we do this outside? 
 		if (layer == 5 && subscreen == 0)
@@ -1065,9 +1081,31 @@ inline void __attribute__((always_inline)) S9xDrawHiresBGFullTileHardwareInline 
 		}
     }
 	
+	int x0 = screenX >> 1;
+	int y0 = screenY;
+	if (prio == 0)
+		y0 += depth0;
+	else
+		y0 += depth1;
+	
+	int x1 = x0 + 4;
+	int y1 = y0 + height;
 
+	int tx0 = 0;
+	int ty0 = startLine >> 3;
+	int tx1 = 7;
+	int ty1 = ty0 + height;
+
+	if (IPPU.Interlace)
+		ty1 = ty1 + height - 1;
+
+	gpu3dsAddTileVertexes(
+		x0, y0, x1, y1,
+		tx0, ty0,
+		tx1, ty1, (snesTile & (H_FLIP | V_FLIP)) + texturePos);
 	// Render tile
 	//
+	/*
 	if (!IPPU.Interlace)
 	{
 		int x0 = screenX >> 1;
@@ -1111,6 +1149,7 @@ inline void __attribute__((always_inline)) S9xDrawHiresBGFullTileHardwareInline 
 			tx1, ty1, (snesTile & (H_FLIP | V_FLIP)) + texturePos);
 		
 	}
+	*/
 }
 
 
@@ -1853,7 +1892,7 @@ inline void __attribute__((always_inline)) S9xDrawBackgroundHardwarePriority0Inl
 
 
 			//uint32 s = Left * GFX.PixSize + Y * GFX.PPL;
-			uint32 s = Left * GFX.PixSize + Y * 256;		// Once hardcoded, Hires mode no longer supported.
+			uint32 s = Left * GFX.PixSize + Y * 256;	
 			//printf ("s = %d, Lines = %d\n", s, Lines);
 			uint32 HPos = (HOffset + Left) & OffsetMask;
 
@@ -2234,15 +2273,15 @@ inline void __attribute__((always_inline)) S9xDrawHiresBackgroundHardwarePriorit
 	// So if the subscreen has already been drawn, and we are drawing the main screen,
 	// we simply just redraw the same vertices that we have saved.
 	//
-	/*if (layerDrawn[bg])
+	if (layerDrawn[bg])
 	{
-		gpu3dsBindTextureSnesTileCache(GPU_TEXUNIT0);
+		gpu3dsBindTextureSnesTileCacheForHires(GPU_TEXUNIT0);
 		gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
 		gpu3dsEnableAlphaTestNotEqualsZero();
-		gpu3dsDisableDepthTest();
+		gpu3dsEnableDepthTest();
 		gpu3dsDrawVertexes(true, bg);
 		return;		
-	}*/
+	}
 
 	//printf ("BG%d Y=%d-%d W1:%d-%d W2:%d-%d\n", bg, GFX.StartY, GFX.EndY, PPU.Window1Left, PPU.Window1Right, PPU.Window2Left, PPU.Window2Right);
 
@@ -2526,7 +2565,7 @@ inline void __attribute__((always_inline)) S9xDrawHiresBackgroundHardwarePriorit
 	gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
 	gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsEnableDepthTest();
-	gpu3dsDrawVertexes();
+	gpu3dsDrawVertexes(false, bg);
 	layerDrawn[bg] = true;
 }
 
@@ -3569,9 +3608,46 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 
 		//printf ("Main Y:%d BGEnable:%d%d%d%d%d\n", GFX.StartY, BG0, BG1, BG2, BG3, OB);
 
-		int alpha = ALPHA_1_0;	 	// for Add or Sub   (translates to 1.0 alpha on main screen)
+    }
+    else
+    {
+		// Sub Screen
+		GFX.pCurrentClip = &IPPU.Clip [1];
+
+		if (PPU.BGMode != 5 && PPU.BGMode != 6)
+		{
+			BG0 = ON_SUB (0);
+			BG1 = ON_SUB (1);
+			BG2 = ON_SUB (2);
+			BG3 = ON_SUB (3);
+			OB  = ON_SUB (4);
+		}
+		else
+		{
+			BG0 = ON_SUB_HIRES (0);
+			BG1 = ON_SUB_HIRES (1);
+			BG2 = ON_SUB_HIRES (2);
+			BG3 = ON_SUB_HIRES (3);
+			OB  = ON_SUB_HIRES (4);
+		}
+    }
+
+	// We are going to use the same alphas as we do
+	// for the main screen. This is because we are
+	// going to create the same set of vertex data for
+	// the given background in the sub screen as the
+	// set we use for the main screen. This improves
+	// performance of games that render the same BG to
+	// main and sub screens.
+	// 
+	// Anyway the sub screen's alpha do not factor into
+	// color math. So this is fine.
+	//
+	if (PPU.BGMode != 5 && PPU.BGMode != 6)
+	{
+		int alpha = ALPHA_1_0;	 	// for Add or Sub   
 		if (GFX.r2131 & 0x40)	
-			alpha = ALPHA_0_5;		// for Add / 2 or Sub / 2 (translates to 0.5 alpha on main screen)
+			alpha = ALPHA_0_5;		// for Add / 2 or Sub / 2
 
 		BGAlpha0 = SUB_OR_ADD (0) ? alpha : ALPHA_ZERO;
 		BGAlpha1 = SUB_OR_ADD (1) ? alpha : ALPHA_ZERO;
@@ -3580,67 +3656,17 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 
 		OBAlpha = SUB_OR_ADD (4) ? alpha : ALPHA_ZERO;
 		BackAlpha = SUB_OR_ADD (5) ? alpha : ALPHA_ZERO;
+	}
+	else
+	{
+		BGAlpha0 = ALPHA_0_5;
+		BGAlpha1 = ALPHA_0_5;
+		BGAlpha2 = ALPHA_0_5;
+		BGAlpha3 = ALPHA_0_5;
 
-		// debugging
-		/*printf ("Main Y:%d-%d BGE:%d%d%d%d%d MATH:%d%d%d%d%d%d A:%4x\n", GFX.StartY, GFX.EndY,
-			ON_MAIN (0) ? 1 : 0, 
-			ON_MAIN (1) ? 1 : 0, 
-			ON_MAIN (2) ? 1 : 0, 
-			ON_MAIN (3) ? 1 : 0, 
-			ON_MAIN (4) ? 1 : 0, 
-			SUB_OR_ADD (0) ? 1 : 0,
-			SUB_OR_ADD (1) ? 1 : 0,
-			SUB_OR_ADD (2) ? 1 : 0,
-			SUB_OR_ADD (3) ? 1 : 0,
-			SUB_OR_ADD (4) ? 1 : 0,
-			SUB_OR_ADD (5) ? 1 : 0, alpha);*/
-    }
-    else
-    {
-		// Sub Screen
-		GFX.pCurrentClip = &IPPU.Clip [1];
-		BG0 = ON_SUB (0);
-		BG1 = ON_SUB (1);
-		BG2 = ON_SUB (2);
-		BG3 = ON_SUB (3);
-		OB  = ON_SUB (4);
-
-		// We are going to use the same alphas as we do
-		// for the main screen. This is because we are
-		// going to create the same set of vertex data for
-		// the given background in the sub screen as the
-		// set we use for the main screen. This improves
-		// performance of games that render the same BG to
-		// main and sub screens.
-		// 
-		// Anyway the sub screen's alpha do not factor into
-		// color math. So this is fine.
-		//
-		int alpha = ALPHA_1_0;	 	// for Add or Sub   (translates to 1.0 alpha on main screen)
-		if (GFX.r2131 & 0x40)	
-			alpha = ALPHA_0_5;		// for Add / 2 or Sub / 2 (translates to 0.5 alpha on main screen)
-
-		BGAlpha0 = SUB_OR_ADD (0) ? alpha : ALPHA_ZERO;
-		BGAlpha1 = SUB_OR_ADD (1) ? alpha : ALPHA_ZERO;
-		BGAlpha2 = SUB_OR_ADD (2) ? alpha : ALPHA_ZERO;
-		BGAlpha3 = SUB_OR_ADD (3) ? alpha : ALPHA_ZERO;
-
-		OBAlpha = SUB_OR_ADD (4) ? alpha : ALPHA_ZERO;
-
-		// For Background, we will set alpha to 1.0
-		//
-		BackAlpha = ALPHA_1_0;
-		
-
-		// debugging
-		/*printf ("Sub  Y:%3d BGE:%d%d%d%d%d\n", GFX.StartY, 
-			ON_SUB (0) ? 1 : 0,
-			ON_SUB (1) ? 1 : 0,
-			ON_SUB (2) ? 1 : 0,
-			ON_SUB (3) ? 1 : 0,
-			ON_SUB (4) ? 1 : 0);
-		*/
-    }
+		OBAlpha = ALPHA_0_5;
+		BackAlpha = ALPHA_0_5;
+	}
 
     sub |= force_no_add;
 
@@ -3746,7 +3772,7 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 		}
 
 
-	//printf ("BG Enable %d%d%d%d\n", BG0, BG1, BG2, BG3);
+	//printf ("BG Enable %d%d%d%d%d (%s)\n", BG0, BG1, BG2, BG3, OB, sub ? "S" : "M");
 	
 	//if (GFX.StartY == 0)
 	//	printf("BG Mode: %d\n", PPU.BGMode);
@@ -3801,17 +3827,29 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 
 			break;
 		case 5:
-			S9xDrawBackdropHardware(sub, BackAlpha);
+			S9xDrawBackdropHardware(false, BackAlpha);
 
 			DRAW_OBJS(0);
+
+			if (sub)
+				gpu3dsSetTextureOffset(0, 0);		// even pixels on sub-screen
+			else
+				gpu3dsSetTextureOffset(1, 0);
+			
 			DRAW_16COLOR_HIRES_BG_INLINE(0, 0, 5, 11);
 			DRAW_4COLOR_HIRES_BG_INLINE(1, 0, 2, 8);
 
 			break;
 		case 6:
-			S9xDrawBackdropHardware(sub, BackAlpha);
+			S9xDrawBackdropHardware(false, BackAlpha);
 
 			DRAW_OBJS(0);
+
+			if (sub)
+				gpu3dsSetTextureOffset(0, 0);		// even pixels on sub-screen
+			else
+				gpu3dsSetTextureOffset(1, 0);
+			
 			DRAW_16COLOR_OFFSET_BG_INLINE(0, 0, 5, 11);
 
 			break;
@@ -3877,7 +3915,31 @@ inline void S9xRenderColorMath()
 {
 	gpu3dsEnableAlphaTestNotEqualsZero();
 	
-	if (GFX.r2130 & 2)
+	if (PPU.BGMode == 5 || PPU.BGMode == 6)
+	{
+		// For hi-res modes, we will always do add / 2 blending
+		// NOTE: This is not the SNES doing any blending, but
+		// we are actually emulating the TV doing the blending 
+		// of both main/sub screens!
+
+		//gpu3dsEnableDepthTest();
+		gpu3dsDisableDepthTest();
+
+		// Subscreen math
+		//
+		gpu3dsBindTextureSubScreen(GPU_TEXUNIT0);
+		gpu3dsSetTextureEnvironmentReplaceTexture0();
+		gpu3dsSetRenderTargetToMainScreenTexture();
+
+		gpu3dsEnableAdditiveDiv2Blending();	// div 2
+
+		gpu3dsAddTileVertexes(0, GFX.StartY, 256, GFX.EndY + 1,
+			0, GFX.StartY, 256, GFX.EndY + 1, 0);
+		gpu3dsDrawVertexes();
+		gpu3dsDisableDepthTest();
+
+	}
+	else if (GFX.r2130 & 2)
 	{
 		// Bug fix: We have to render the subscreen as long either of the
 		//          212D and 2131 registers are set for any BGs.
@@ -4020,7 +4082,7 @@ inline void S9xRenderClipToBlackAndColorMath()
 		}
 	}
 
-	if ((GFX.r2130 & 0x30) != 0x30)
+	if ((GFX.r2130 & 0x30) != 0x30 || PPU.BGMode == 5 || PPU.BGMode == 6)
 	{
 		// Do actual color math
 		//
@@ -4204,7 +4266,7 @@ void S9xUpdateScreenHardware ()
     uint32 starty = GFX.StartY;
     uint32 endy = GFX.EndY;
 
-
+	gpu3dsSetTextureOffset(0, 0); 
 	gpu3dsDisableDepthTest();
 	gpu3dsDisableAlphaBlending();
 
@@ -4232,7 +4294,7 @@ void S9xUpdateScreenHardware ()
 	//
 	//printf ("Render Y:%d-%d M%d\n", GFX.StartY, GFX.EndY, PPU.BGMode);
 
-	if (ANYTHING_ON_SUB || (GFX.r2130 & 2))
+	if (ANYTHING_ON_SUB || (GFX.r2130 & 2) || PPU.BGMode == 5 || PPU.BGMode == 6)
 	{
 		// debugging only
 		//printf ("SS Y:%d-%d M%d\n", GFX.StartY, GFX.EndY, PPU.BGMode);
@@ -4294,6 +4356,21 @@ void S9xUpdateScreenHardware ()
 	gpu3dsDrawVertexes();
 	*/
 
+	/*
+	// For debugging only	
+	// (displays the mode 7 full texture)
+	// 
+	gpu3dsDisableStencilTest();
+	gpu3dsDisableDepthTest();
+	gpu3dsDisableAlphaTest();
+	gpu3dsDisableAlphaBlending();
+	gpu3dsSetTextureEnvironmentReplaceTexture0();
+	gpu3dsSetRenderTargetToMainScreenTexture();
+	gpu3dsBindTextureSnesMode7Full(GPU_TEXUNIT0);
+	gpu3dsAddTileVertexes(0, 0, 200, 200, 0, 0, 1024, 1024, 0);
+	gpu3dsDrawVertexes();
+	*/
+	
 	S9xResetVerticalSection(&IPPU.BrightnessSections);
 	S9xResetVerticalSection(&IPPU.BackdropColorSections);
 	S9xResetVerticalSection(&IPPU.FixedColorSections);

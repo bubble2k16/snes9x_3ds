@@ -8,8 +8,13 @@
 .out outcol  color
 
 ; Uniforms
-.fvec 			projection[4]
-.fvec 			textureScale
+.fvec 		projection[4]		; #0 - 3
+.fvec 		textureScale		; #4
+.fvec		updateFrame			; #5
+.fvec		textureOffset		; #6 - Use this for Hi-res flipping
+.fvec		uPadding6			; #7
+.fvec		uPadding7			; #8
+.fvec		uPadding8			; #9
 
 .constf 		one (1, 1, 1, 1)
 

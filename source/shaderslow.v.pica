@@ -8,8 +8,13 @@
 .alias inarg v1
 
 ; Uniforms
-.fvec projection[4]
-.fvec textureScale
+.fvec 		projection[4]		; #0 - 3
+.fvec 		textureScale		; #4
+.fvec		updateFrame			; #5
+.fvec		textureOffset		; #6 - Use this for Hi-res flipping
+.fvec		uPadding6			; #7
+.fvec		uPadding7			; #8
+.fvec		uPadding8			; #9
 
 ; Constants
 ;.constf RGBA8_TO_FLOAT4	(0.00392156862, 0, 0, 0)
