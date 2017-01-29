@@ -628,6 +628,19 @@ bool8 S9xGraphicsInit ()
     }
 	
 	
+	// Form the RGB5551 to RGBA4 (16-bit) colour lookup table
+	//
+	for (int i = 0; i < 0x10000; i++)
+	{
+		int R = (i >> 12) & 0xf;
+		int G = (i >> 7) & 0xf;
+		int B = (i >> 2) & 0xf;
+		int A = 0xf;
+
+		GFX.ScreenRGB555toRGBA4[i] = (R << 12) | (G << 8) | (B << 4) | A;
+	}
+	
+
     return (TRUE);
 }
 

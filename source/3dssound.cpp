@@ -40,7 +40,7 @@ void snd3dsMixSamples()
     #define MIN_FORWARD_BLOCKS          8
     #define MAX_FORWARD_BLOCKS          16
 
-    t3dsStartTiming(44, "Mix-S9xMix");
+    t3dsStartTiming(44, "Mix-Replay+S9xMix");
     bool generateSound = false;
     if (snd3DS.isPlaying && !snd3DS.generateSilence)
     {
@@ -92,7 +92,7 @@ void snd3dsMixSamples()
 
 
 
-    t3dsStartTiming(42, "Mix-Copy+Vol");
+    t3dsStartTiming(42, "Mix-ApplyMstVol");
     int p = generateAtSamplePosition % BUFFER_SIZE;
 
     if (snd3DS.audioType==1)

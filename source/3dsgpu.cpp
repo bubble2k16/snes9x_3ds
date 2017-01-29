@@ -749,17 +749,15 @@ bool gpu3dsInitialize()
     // Create all the necessary textures
     //
     snesTileCacheTexture = gpu3dsCreateTextureInLinearMemory(1024, 1024, GPU_RGBA5551);
-    snesMode7TileCacheTexture = gpu3dsCreateTextureInLinearMemory(128, 128, GPU_RGBA5551);
+    snesMode7TileCacheTexture = gpu3dsCreateTextureInLinearMemory(128, 128, GPU_RGBA4);
 
     // This requires 16x16 texture as a minimum
-    snesMode7Tile0Texture = gpu3dsCreateTextureInVRAM(16, 16, GPU_RGBA5551);    //
-    snesMode7FullTexture = gpu3dsCreateTextureInVRAM(1024, 1024, GPU_RGBA5551); // 2.000 MB
+    snesMode7Tile0Texture = gpu3dsCreateTextureInVRAM(16, 16, GPU_RGBA4);    //
+    snesMode7FullTexture = gpu3dsCreateTextureInVRAM(1024, 1024, GPU_RGBA4); // 2.000 MB
 
     // Main screen requires 8-bit alpha, otherwise alpha blending will not work well
     snesMainScreenTarget = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);      // 0.250 MB
     snesSubScreenTarget = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);       // 0.250 MB
-    //snesOBJLayerTarget = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);        // 0.250 MB
-    //snesOBJDepth = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);              // 0.250 MB
 
     // Depth texture for the sub / main screens.
     // Performance: Create depth buffers in VRAM improves GPU performance!
@@ -868,6 +866,10 @@ void gpu3dsFinalize()
     //
     gpu3dsDestroyTextureFromVRAM(snesDepthForOtherTextures);
     gpu3dsDestroyTextureFromVRAM(snesDepthForScreens);
+
+    // Bug fix: free the frame buffers!
+    if (GPU3DS.frameBuffer) vramFree(GPU3DS.frameBuffer);
+    if (GPU3DS.frameDepthBuffer) vramFree(GPU3DS.frameDepthBuffer);
 
     //gpu3dsDestroyTextureFromVRAM(snesOBJLayerTarget);
     //gpu3dsDestroyTextureFromVRAM(snesOBJDepth);
@@ -1541,7 +1543,7 @@ supports only the following frame buffer format types:
   GPU_RGB565 = 0x3,
   GPU_RGBA4 = 0x4
 */
-const uint32 GPUREG_COLORBUFFER_FORMAT_VALUES[5] = { 0x0002, 0x00010001, 0x00020000, 0x00030000, 0x00040002 };
+const uint32 GPUREG_COLORBUFFER_FORMAT_VALUES[5] = { 0x0002, 0x00010001, 0x00020000, 0x00030000, 0x00040000 };
 
 
 void gpu3dsSetRenderTargetToTopFrameBuffer()

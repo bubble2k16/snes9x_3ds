@@ -3036,7 +3036,7 @@ void S9xPrepareMode7UpdateCharTile(int tileNumber)
 {
 	uint8 *charMap = &Memory.VRAM[1];	
 	gpu3dsCacheToMode7TexturePosition( 
-		&charMap[tileNumber * 128], GFX.ScreenColors, tileNumber, &IPPU.Mode7CharPaletteMask[tileNumber]); 
+		&charMap[tileNumber * 128], IPPU.Mode7ScreenColors, tileNumber, &IPPU.Mode7CharPaletteMask[tileNumber]); 
 }
 
 
@@ -3048,7 +3048,7 @@ void S9xPrepareMode7ExtBGUpdateCharTile(int tileNumber)
 {
 	uint8 *charMap = &Memory.VRAM[1];	
 	gpu3dsCacheToMode7TexturePosition( \
-		&charMap[tileNumber * 128], GFX.ScreenColors128, tileNumber, &IPPU.Mode7CharPaletteMask[tileNumber]); \
+		&charMap[tileNumber * 128], IPPU.Mode7ScreenColors128, tileNumber, &IPPU.Mode7CharPaletteMask[tileNumber]); \
 }
 
 //---------------------------------------------------------------------------
@@ -3177,9 +3177,9 @@ void S9xPrepareMode7CheckAndUpdateCharTiles()
 		// Prepare the 128 color palette by duplicate colors from 0-127 to 128-255
 		//
 		for (int i = 0; i < 128; i++)
-			GFX.ScreenColors128[i] = GFX.ScreenColors[i];
+			IPPU.Mode7ScreenColors128[i] = IPPU.Mode7ScreenColors[i] & 0xfff7;	// Low priority 
 		for (int i = 0; i < 128; i++)
-			GFX.ScreenColors128[i + 128] = GFX.ScreenColors[i];
+			IPPU.Mode7ScreenColors128[i + 128] = IPPU.Mode7ScreenColors[i]; 	// High priority 
 
 		// Ext BG with 128 colours
 		//
@@ -3358,9 +3358,25 @@ void S9xPrepareMode7(bool sub)
 //---------------------------------------------------------------------------
 // Draws the Mode 7 background.
 //---------------------------------------------------------------------------
-void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth)
+void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth, int alphaTest)
 {
 	t3dsStartTiming(27, "DrawBG0_M7");
+	//printf ("M7BG alphatest=%d\n", alphaTest);
+
+	if (layerDrawn[bg])
+	{
+		gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
+
+		if (alphaTest == 0)
+			gpu3dsEnableAlphaTestNotEqualsZero();
+		else
+			gpu3dsEnableAlphaTestEquals(0xff);
+
+		gpu3dsEnableDepthTest();
+
+		gpu3dsDrawMode7LineVertexes();
+		gpu3dsDrawVertexes(true, 4);
+	}
 
 	S9xComputeAndEnableStencilFunction(bg, sub);
 
@@ -3449,12 +3465,17 @@ void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth)
 	}
 
 	gpu3dsSetTextureEnvironmentReplaceTexture0WithColorAlpha();
-	gpu3dsEnableAlphaTestNotEqualsZero();
+
+	if (alphaTest == 0)
+		gpu3dsEnableAlphaTestNotEqualsZero();
+	else
+		gpu3dsEnableAlphaTestEquals(0xff);
+
 	gpu3dsEnableDepthTest();
 
-	//gpu3dsEnableAlphaTestNotEqualsZero();
 	gpu3dsDrawMode7LineVertexes();
-	gpu3dsDrawVertexes(false, 5);
+	gpu3dsDrawVertexes(false, 4);
+	layerDrawn[bg] = true;
 	t3dsEndTiming(27);
 }
 
@@ -3861,33 +3882,37 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 			gpu3dsSetTextureEnvironmentReplaceTexture0();
 			S9xPrepareMode7(sub);
 
-			#define DRAW_M7BG(bg, d) \
+			#define DRAW_M7BG(bg, d, alphaTest) \
 				if (BG##bg) \
 				{ \
 					if (PPU.Mode7Repeat == 0) \
 					{ \
 						gpu3dsBindTextureSnesMode7FullRepeat(GPU_TEXUNIT0); \
-						S9xDrawBackgroundMode7Hardware(bg, sub, BGAlpha##bg + d*256); \
+						S9xDrawBackgroundMode7Hardware(bg, sub, BGAlpha##bg + d*256, alphaTest); \
 					} \
 					else if (PPU.Mode7Repeat == 2) \
 					{ \
 						gpu3dsBindTextureSnesMode7Full(GPU_TEXUNIT0); \
-						S9xDrawBackgroundMode7Hardware(bg, sub, BGAlpha##bg + d*256); \
+						S9xDrawBackgroundMode7Hardware(bg, sub, BGAlpha##bg + d*256, alphaTest); \
 					} \
 					else \ 
 					{ \
 						gpu3dsBindTextureSnesMode7Tile0CacheRepeat(GPU_TEXUNIT0); \
 						S9xDrawBackgroundMode7HardwareRepeatTile0(bg, sub, BGAlpha##bg + d*256); \
 						gpu3dsBindTextureSnesMode7Full(GPU_TEXUNIT0); \
-						S9xDrawBackgroundMode7Hardware(bg, sub, BGAlpha##bg + d*256); \
+						S9xDrawBackgroundMode7Hardware(bg, sub, BGAlpha##bg + d*256, alphaTest); \
 					} \
 				}
 
 				
 			DRAW_OBJS(0);
-			if ((Memory.FillRAM [0x2133] & 0x40) && !BG0)  
-				DRAW_M7BG(1, 2);
-			DRAW_M7BG(0, 5);
+			//printf ("$2133 = %x\n", Memory.FillRAM [0x2133]);
+			if ((Memory.FillRAM [0x2133] & 0x40))
+			{
+				DRAW_M7BG(1, 2, 0);
+				DRAW_M7BG(1, 8, 1);
+			}
+			DRAW_M7BG(0, 5, 0);
 
 			// debugging only
 			//
@@ -4370,7 +4395,7 @@ void S9xUpdateScreenHardware ()
 	gpu3dsAddTileVertexes(0, 0, 200, 200, 0, 0, 1024, 1024, 0);
 	gpu3dsDrawVertexes();
 	*/
-	
+
 	S9xResetVerticalSection(&IPPU.BrightnessSections);
 	S9xResetVerticalSection(&IPPU.BackdropColorSections);
 	S9xResetVerticalSection(&IPPU.FixedColorSections);

@@ -3220,8 +3220,6 @@ void S9xPlaySample (int channel)
 
 void S9xMixSamplesIntoTempBuffer(int sample_count)
 {
-	t3dsStartTiming(34, "Mix");
-
 	if (!so.mute_sound)
 	{
 		memset (MixBuffer, 0, sample_count * sizeof (MixBuffer[0]));
@@ -3233,26 +3231,152 @@ void S9xMixSamplesIntoTempBuffer(int sample_count)
 		//else
 		//	MixMono (sample_count);
 	}
-
-	t3dsEndTiming(34);
 }
 
 void S9xGenerateSilenceIntoTempBuffer(int sample_count)
 {
-	t3dsStartTiming(34, "Mix");
     if (!so.mute_sound)
     {
 		memset (MixBuffer, 0, sample_count * sizeof (MixBuffer [0]));
 		memset (EchoBuffer, 0, sample_count * sizeof (EchoBuffer[0]));
     }
-	t3dsEndTiming(34);
 }
 
 
+inline void __attribute__((always_inline)) S9xApplyMasterAndEchoWithNoFilter(
+	bool echo_write_enabled, int *pJ, signed short *leftBuffer, signed short *rightBuffer, int *finalMasterVolume, int *finalEchoVolume)
+{
+	// Left
+	int I;
+	int J = *pJ;
+	int E = Echo[SoundData.echo_ptr];
+
+	Loop[FIRIndex & 15] = E;
+	E = (E * 127) >> 7;
+	FIRIndex++;
+
+	if (echo_write_enabled)
+	{
+		I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
+		CLIP16(I);
+		Echo[SoundData.echo_ptr] = I;
+	}
+	else // FIXME: Snes9x's echo buffer is not in APU_RAM
+		Echo[SoundData.echo_ptr] = 0;
+
+	if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
+		SoundData.echo_ptr = 0;
+
+	I = (MixBuffer[J] * finalMasterVolume[0] + E * finalEchoVolume[0]) >> 7;
+	CLIP16(I);
+
+	((int16 *) leftBuffer) [J >> 1] = I;
+	J++;
+
+	// Right
+	E = Echo[SoundData.echo_ptr];
+
+	Loop[FIRIndex & 15] = E;
+	E = (E * 127) >> 7;
+	FIRIndex++;
+
+	if (echo_write_enabled)
+	{
+		I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
+		CLIP16(I);
+		Echo[SoundData.echo_ptr] = I;
+	}
+	else // FIXME: Snes9x's echo buffer is not in APU_RAM
+		Echo[SoundData.echo_ptr] = 0;
+
+	if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
+		SoundData.echo_ptr = 0;
+
+	I = (MixBuffer[J] * finalMasterVolume[1] + E * finalEchoVolume[1]) >> 7;
+	CLIP16(I);
+
+	((int16 *) rightBuffer) [J >> 1] = I;
+	J++;	
+
+	*pJ = J;
+}
+
+
+inline void __attribute__((always_inline)) S9xApplyMasterAndEchoWithFilter(
+	bool echo_write_enabled, int *pJ, signed short *leftBuffer, signed short *rightBuffer, int *finalMasterVolume, int *finalEchoVolume)
+{
+	int I;
+	int J = *pJ;
+	int E = Echo[SoundData.echo_ptr];
+
+	Loop[FIRIndex & 15] = E;
+	E  = E                          * FilterTaps[0];
+	E += Loop[(FIRIndex -  2) & 15] * FilterTaps[1];
+	E += Loop[(FIRIndex -  4) & 15] * FilterTaps[2];
+	E += Loop[(FIRIndex -  6) & 15] * FilterTaps[3];
+	E += Loop[(FIRIndex -  8) & 15] * FilterTaps[4];
+	E += Loop[(FIRIndex - 10) & 15] * FilterTaps[5];
+	E += Loop[(FIRIndex - 12) & 15] * FilterTaps[6];
+	E += Loop[(FIRIndex - 14) & 15] * FilterTaps[7];
+	E >>= 7;
+	FIRIndex++;
+
+	if (echo_write_enabled)
+	{
+		I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
+		CLIP16(I);
+		Echo[SoundData.echo_ptr] = I;
+	}
+	else // FIXME: Snes9x's echo buffer is not in APU_RAM
+		Echo[SoundData.echo_ptr] = 0;
+
+	if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
+		SoundData.echo_ptr = 0;
+
+	I = (MixBuffer[J] * finalMasterVolume[0] + E * finalEchoVolume[0]) >> 7;
+	CLIP16(I);
+
+	((int16 *) leftBuffer) [J >> 1] = I;
+	J++;
+
+	// Right
+	E = Echo[SoundData.echo_ptr];
+
+	Loop[FIRIndex & 15] = E;
+	E  = E                          * FilterTaps[0];
+	E += Loop[(FIRIndex -  2) & 15] * FilterTaps[1];
+	E += Loop[(FIRIndex -  4) & 15] * FilterTaps[2];
+	E += Loop[(FIRIndex -  6) & 15] * FilterTaps[3];
+	E += Loop[(FIRIndex -  8) & 15] * FilterTaps[4];
+	E += Loop[(FIRIndex - 10) & 15] * FilterTaps[5];
+	E += Loop[(FIRIndex - 12) & 15] * FilterTaps[6];
+	E += Loop[(FIRIndex - 14) & 15] * FilterTaps[7];
+	E >>= 7;
+	FIRIndex++;
+
+	if (echo_write_enabled)
+	{
+		I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
+		CLIP16(I);
+		Echo[SoundData.echo_ptr] = I;
+	}
+	else // FIXME: Snes9x's echo buffer is not in APU_RAM
+		Echo[SoundData.echo_ptr] = 0;
+
+	if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
+		SoundData.echo_ptr = 0;
+
+	I = (MixBuffer[J] * finalMasterVolume[1] + E * finalEchoVolume[1]) >> 7;
+	CLIP16(I);
+
+	((int16 *) rightBuffer) [J >> 1] = I;
+	J++;	
+
+	*pJ = J;
+}
+
 void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuffer, signed short *rightBuffer, int sample_count)
 {
-	t3dsStartTiming(33, "Master+Echo Vol");
-	
 	int I, J;
 
 	/* Mix and convert waveforms */
@@ -3273,139 +3397,56 @@ void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuff
 			finalEchoVolume[0] = SoundData.echo_volume[0] * Settings.VolumeMultiplyMul4 / 4;
 			finalEchoVolume[1] = SoundData.echo_volume[1] * Settings.VolumeMultiplyMul4 / 4;
 						
-			if (!Settings.DisableSoundEcho)
+			//if (!Settings.DisableSoundEcho)
 			{
-				if (so.stereo)
+				//if (so.stereo)
 				{
-					// 16-bit stereo sound with echo enabled ...
-					if (SoundData.no_filter)
+					if (SoundData.echo_write_enabled)
 					{
-						// ... but no filter defined.
-						for (J = 0; J < sample_count; )
+						// 16-bit stereo sound with echo enabled ...
+						if (SoundData.no_filter)
 						{
-							// Left
-							int E = Echo[SoundData.echo_ptr];
-
-							Loop[FIRIndex & 15] = E;
-							E = (E * 127) >> 7;
-							FIRIndex++;
-
-							if (SoundData.echo_write_enabled)
+							// ... but no filter defined.
+							for (J = 0; J < sample_count; )
 							{
-								I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
-								CLIP16(I);
-								Echo[SoundData.echo_ptr] = I;
+								S9xApplyMasterAndEchoWithNoFilter(true, &J, leftBuffer, rightBuffer, finalMasterVolume, finalEchoVolume);
+								S9xApplyMasterAndEchoWithNoFilter(true, &J, leftBuffer, rightBuffer, finalMasterVolume, finalEchoVolume);
 							}
-							else // FIXME: Snes9x's echo buffer is not in APU_RAM
-								Echo[SoundData.echo_ptr] = 0;
-
-							if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
-								SoundData.echo_ptr = 0;
-
-							I = (MixBuffer[J] * finalMasterVolume[0] + E * finalEchoVolume[0]) >> 7;
-							CLIP16(I);
-
-							((int16 *) leftBuffer) [J >> 1] = I;
-							J++;
-
-							// Right
-							E = Echo[SoundData.echo_ptr];
-
-							Loop[FIRIndex & 15] = E;
-							E = (E * 127) >> 7;
-							FIRIndex++;
-
-							if (SoundData.echo_write_enabled)
+						}
+						else
+						{
+							// ... with filter defined.
+							for (J = 0; J < sample_count; )
 							{
-								I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
-								CLIP16(I);
-								Echo[SoundData.echo_ptr] = I;
+								S9xApplyMasterAndEchoWithFilter(true, &J, leftBuffer, rightBuffer, finalMasterVolume, finalEchoVolume);
+								S9xApplyMasterAndEchoWithFilter(true, &J, leftBuffer, rightBuffer, finalMasterVolume, finalEchoVolume);
 							}
-							else // FIXME: Snes9x's echo buffer is not in APU_RAM
-								Echo[SoundData.echo_ptr] = 0;
-
-							if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
-								SoundData.echo_ptr = 0;
-
-							I = (MixBuffer[J] * finalMasterVolume[1] + E * finalEchoVolume[1]) >> 7;
-							CLIP16(I);
-
-							((int16 *) rightBuffer) [J >> 1] = I;
-							J++;
 						}
 					}
 					else
 					{
-						// ... with filter defined.
-						for (J = 0; J < sample_count; )
+					{
+						// No echo
+						if (SoundData.no_filter)
 						{
-							// Left
-							int E = Echo[SoundData.echo_ptr];
-
-							Loop[FIRIndex & 15] = E;
-							E  = E                          * FilterTaps[0];
-							E += Loop[(FIRIndex -  2) & 15] * FilterTaps[1];
-							E += Loop[(FIRIndex -  4) & 15] * FilterTaps[2];
-							E += Loop[(FIRIndex -  6) & 15] * FilterTaps[3];
-							E += Loop[(FIRIndex -  8) & 15] * FilterTaps[4];
-							E += Loop[(FIRIndex - 10) & 15] * FilterTaps[5];
-							E += Loop[(FIRIndex - 12) & 15] * FilterTaps[6];
-							E += Loop[(FIRIndex - 14) & 15] * FilterTaps[7];
-							E >>= 7;
-							FIRIndex++;
-
-							if (SoundData.echo_write_enabled)
+							// ... but no filter defined.
+							for (J = 0; J < sample_count; )
 							{
-								I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
-								CLIP16(I);
-								Echo[SoundData.echo_ptr] = I;
+								S9xApplyMasterAndEchoWithNoFilter(false, &J, leftBuffer, rightBuffer, finalMasterVolume, finalEchoVolume);
+								S9xApplyMasterAndEchoWithNoFilter(false, &J, leftBuffer, rightBuffer, finalMasterVolume, finalEchoVolume);
 							}
-							else // FIXME: Snes9x's echo buffer is not in APU_RAM
-								Echo[SoundData.echo_ptr] = 0;
-
-							if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
-								SoundData.echo_ptr = 0;
-
-							I = (MixBuffer[J] * finalMasterVolume[0] + E * finalEchoVolume[0]) >> 7;
-							CLIP16(I);
-
-							((int16 *) leftBuffer) [J >> 1] = I;
-							J++;
-
-							// Right
-							E = Echo[SoundData.echo_ptr];
-
-							Loop[FIRIndex & 15] = E;
-							E  = E                          * FilterTaps[0];
-							E += Loop[(FIRIndex -  2) & 15] * FilterTaps[1];
-							E += Loop[(FIRIndex -  4) & 15] * FilterTaps[2];
-							E += Loop[(FIRIndex -  6) & 15] * FilterTaps[3];
-							E += Loop[(FIRIndex -  8) & 15] * FilterTaps[4];
-							E += Loop[(FIRIndex - 10) & 15] * FilterTaps[5];
-							E += Loop[(FIRIndex - 12) & 15] * FilterTaps[6];
-							E += Loop[(FIRIndex - 14) & 15] * FilterTaps[7];
-							E >>= 7;
-							FIRIndex++;
-
-							if (SoundData.echo_write_enabled)
-							{
-								I = EchoBuffer[J] + ((E * SoundData.echo_feedback) >> 7);
-								CLIP16(I);
-								Echo[SoundData.echo_ptr] = I;
-							}
-							else // FIXME: Snes9x's echo buffer is not in APU_RAM
-								Echo[SoundData.echo_ptr] = 0;
-
-							if (++SoundData.echo_ptr >= SoundData.echo_buffer_size)
-								SoundData.echo_ptr = 0;
-
-							I = (MixBuffer[J] * finalMasterVolume[1] + E * finalEchoVolume[1]) >> 7;
-							CLIP16(I);
-
-							((int16 *) rightBuffer) [J >> 1] = I;
-							J++;
-							
 						}
+						else
+						{
+							// ... with filter defined.
+							for (J = 0; J < sample_count; )
+							{
+								S9xApplyMasterAndEchoWithFilter(false, &J, leftBuffer, rightBuffer, finalMasterVolume, finalEchoVolume);
+								S9xApplyMasterAndEchoWithFilter(false, &J, leftBuffer, rightBuffer, finalMasterVolume, finalEchoVolume);
+							}
+						}
+					}
+						
 					}
 				}
 
@@ -3413,7 +3454,6 @@ void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuff
 
 		}
 	}
-	t3dsEndTiming(33);
 }
 
 

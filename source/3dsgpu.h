@@ -278,6 +278,7 @@ void gpu3dsTransferToScreenBuffer();
 void gpu3dsSwapScreenBuffers();
 
 void gpu3dsEnableAlphaTestNotEqualsZero();
+void gpu3dsEnableAlphaTestEqualsOne();
 void gpu3dsEnableAlphaTestEquals(uint8 alpha);
 void gpu3dsDisableAlphaTest();
 
