@@ -51,6 +51,7 @@ typedef struct
     int     ForceFrameRate = 0;             // 0 - Use ROM's Region, 1 - Force 50 fps, 2 - Force 60 fps
 
     int     ScreenX0, ScreenX1, ScreenY0, ScreenY1;
+    int     CropPixels;
 
     int     Turbo[6] = {0, 0, 0, 0, 0, 0};  // Turbo buttons: 0 - No turbo, 1 - Release/Press every alt frame.
                                             // Indexes: 0 - A, 1 - B, 2 - X, 3 - Y, 4 - L, 5 - R
@@ -610,6 +611,8 @@ SMenuItem optionMenu[] = {
     { 11000, "  No stretch                  ",   1, 0, 0, 0 },
     { 11001, "  Stretch to 4:3              ",   0, 0, 0, 0 },
     { 11002, "  Stretch to fullscreen       ",   0, 0, 0, 0 },
+    { 11003, "  Stretch to cropped 4:3      ",   0, 0, 0, 0 },
+    { 11004, "  Stretch to cropped fullscreen",  0, 0, 0, 0 },
     { -1,    NULL,                              -1, 0, 0, 0 },
     { 15001, "  Hide FPS and unnecessary text in bottom screen", 0, 0, 0, 0 },
     { -1,    NULL,                              -1, 0, 0, 0 },
@@ -702,6 +705,7 @@ bool settingsUpdateAllSettings()
         settings3DS.ScreenX1 = 72 + 256;
         settings3DS.ScreenY0 = 0;
         settings3DS.ScreenY1 = PPU.ScreenHeight;
+        settings3DS.CropPixels = 0;
     }
     else if (settings3DS.ScreenStretch == 1)
     {
@@ -710,6 +714,7 @@ bool settingsUpdateAllSettings()
         settings3DS.ScreenX1 = 360;
         settings3DS.ScreenY0 = 0;
         settings3DS.ScreenY1 = 240;
+        settings3DS.CropPixels = 0;
     }
     else if (settings3DS.ScreenStretch == 2)
     {
@@ -717,6 +722,23 @@ bool settingsUpdateAllSettings()
         settings3DS.ScreenX1 = 400;
         settings3DS.ScreenY0 = 0;
         settings3DS.ScreenY1 = 240;
+        settings3DS.CropPixels = 0;
+    }
+    else if (settings3DS.ScreenStretch == 3)
+    {
+        settings3DS.ScreenX0 = 40;
+        settings3DS.ScreenX1 = 360;
+        settings3DS.ScreenY0 = 0;
+        settings3DS.ScreenY1 = 240;
+        settings3DS.CropPixels = 8;
+    }
+    else if (settings3DS.ScreenStretch == 4)
+    {
+        settings3DS.ScreenX0 = 0;
+        settings3DS.ScreenX1 = 400;
+        settings3DS.ScreenY0 = 0;
+        settings3DS.ScreenY1 = 240;
+        settings3DS.CropPixels = 8;
     }
 
     // update global volume
@@ -891,7 +913,7 @@ void settingsReadWriteFullListGlobal(FILE *fp)
     settingsReadWrite(fp, "#v1\n", NULL, 0, 0);
     settingsReadWrite(fp, "# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
 
-    settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 2);
+    settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 4);
     settingsReadWrite(fp, "HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
 
     // Fixes the bug where we have spaces in the directory name
@@ -2006,7 +2028,8 @@ void snesEmulatorLoop()
         gpu3dsDisableStencilTest();
         gpu3dsAddQuadVertexes(
             settings3DS.ScreenX0, settings3DS.ScreenY0, settings3DS.ScreenX1, settings3DS.ScreenY1,
-            0, 0, 256, PPU.ScreenHeight, 0.1f);
+            settings3DS.CropPixels, settings3DS.CropPixels, 256 - settings3DS.CropPixels, PPU.ScreenHeight - settings3DS.CropPixels, 
+            0.1f);
         gpu3dsDrawVertexes();
         t3dsEndTiming(3);
 
