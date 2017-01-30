@@ -256,17 +256,17 @@ void gpu3dsEnableDepthTest()
 
 void gpu3dsDisableDepthTestAndWriteColorAlphaOnly()
 {
-	GPU_SetDepthTestAndWriteMask(false, GPU_ALWAYS, (GPU_WRITEMASK)(GPU_WRITE_COLOR | GPU_WRITE_ALPHA));
+	GPU_SetDepthTestAndWriteMask(false, GPU_NEVER, (GPU_WRITEMASK)(GPU_WRITE_COLOR | GPU_WRITE_ALPHA));
 }
 
 void gpu3dsDisableDepthTestAndWriteColorOnly()
 {
-	GPU_SetDepthTestAndWriteMask(false, GPU_ALWAYS, (GPU_WRITEMASK)(GPU_WRITE_COLOR));
+	GPU_SetDepthTestAndWriteMask(false, GPU_NEVER, (GPU_WRITEMASK)(GPU_WRITE_COLOR));
 }
 
 void gpu3dsDisableDepthTestAndWriteRedOnly()
 {
-	GPU_SetDepthTestAndWriteMask(false, GPU_ALWAYS, (GPU_WRITEMASK)(GPU_WRITE_RED));
+	GPU_SetDepthTestAndWriteMask(false, GPU_NEVER, (GPU_WRITEMASK)(GPU_WRITE_RED));
 }
 
 void gpu3dsDisableDepthTest()
@@ -770,7 +770,7 @@ bool gpu3dsInitialize()
         snesMode7TileCacheTexture == NULL || snesMode7Tile0Texture == NULL ||
         snesMainScreenTarget == NULL || snesSubScreenTarget == NULL ||
         //snesOBJLayerTarget == NULL || snesOBJDepth == NULL ||
-        snesDepthForScreens == NULL || snesDepthForOtherTextures == NULL)
+        snesDepthForScreens == NULL  || snesDepthForOtherTextures == NULL)
     {
         printf ("Unable to allocate textures\n");
         return false;
@@ -1290,6 +1290,24 @@ void gpu3dsDestroyTextureFromVRAM(SGPUTexture *texture)
 }
 
 
+// Changes the texture pixel format (but it must be the same 
+// size as the original pixel format). No errors will be thrown
+// if the format is incorrect.
+//
+void gpu3dsSetMode7TexturesPixelFormatToRGB5551()
+{
+	snesMode7FullTexture->PixelFormat = GPU_RGBA5551;
+    snesMode7Tile0Texture->PixelFormat = GPU_RGBA5551;
+    snesMode7TileCacheTexture->PixelFormat = GPU_RGBA5551;
+}
+
+void gpu3dsSetMode7TexturesPixelFormatToRGB4444()
+{
+	snesMode7FullTexture->PixelFormat = GPU_RGBA4;
+    snesMode7Tile0Texture->PixelFormat = GPU_RGBA4;
+    snesMode7TileCacheTexture->PixelFormat = GPU_RGBA4;
+}
+
 // Clear the render targets by drawing black to them.
 //
 void gpu3dsClearAllRenderTargets()
@@ -1556,7 +1574,8 @@ void gpu3dsSetRenderTargetToTopFrameBuffer()
         GPU3DS.currentRenderTarget = NULL;
 
         GPU_SetViewport(
-            (u32 *)osConvertVirtToPhys(GPU3DS.frameDepthBuffer),
+            //(u32 *)osConvertVirtToPhys(GPU3DS.frameDepthBuffer),
+            GPU3DS.frameDepthBuffer == NULL ? NULL : (u32 *)osConvertVirtToPhys(GPU3DS.frameDepthBuffer),
             (u32 *)osConvertVirtToPhys(GPU3DS.frameBuffer),
             0, 0, 240, 400);
 
@@ -1586,7 +1605,7 @@ void gpu3dsSetRenderTargetToTexture(SGPUTexture *texture, SGPUTexture *depthText
         if (vpHeight > 512) vpHeight = 512;
 
         GPU_SetViewport(
-            (u32 *)osConvertVirtToPhys(depthTexture->PixelData),
+            depthTexture == NULL ? NULL : (u32 *)osConvertVirtToPhys(depthTexture->PixelData),
             (u32 *)osConvertVirtToPhys(texture->PixelData),
             0, 0, vpWidth, vpHeight);
 
@@ -1606,7 +1625,7 @@ void gpu3dsSetRenderTargetToTextureSpecific(SGPUTexture *texture, SGPUTexture *d
     GPU3DS.currentRenderTargetDepth = depthTexture;
 
     GPU_SetViewport(
-        (u32 *)osConvertVirtToPhys(depthTexture->PixelData),
+        depthTexture == NULL ? NULL : (u32 *)osConvertVirtToPhys(depthTexture->PixelData),
         (u32 *)osConvertVirtToPhys((void *)((int)texture->PixelData + addressOffset)),
         0, 0, width, height);
 

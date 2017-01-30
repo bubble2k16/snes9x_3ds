@@ -3036,7 +3036,7 @@ void S9xPrepareMode7UpdateCharTile(int tileNumber)
 {
 	uint8 *charMap = &Memory.VRAM[1];	
 	gpu3dsCacheToMode7TexturePosition( 
-		&charMap[tileNumber * 128], IPPU.Mode7ScreenColors, tileNumber, &IPPU.Mode7CharPaletteMask[tileNumber]); 
+		&charMap[tileNumber * 128], GFX.ScreenColors, tileNumber, &IPPU.Mode7CharPaletteMask[tileNumber]); 
 }
 
 
@@ -3048,7 +3048,7 @@ void S9xPrepareMode7ExtBGUpdateCharTile(int tileNumber)
 {
 	uint8 *charMap = &Memory.VRAM[1];	
 	gpu3dsCacheToMode7TexturePosition( \
-		&charMap[tileNumber * 128], IPPU.Mode7ScreenColors128, tileNumber, &IPPU.Mode7CharPaletteMask[tileNumber]); \
+		&charMap[tileNumber * 128], GFX.ScreenColors128, tileNumber, &IPPU.Mode7CharPaletteMask[tileNumber]); \
 }
 
 //---------------------------------------------------------------------------
@@ -3176,10 +3176,12 @@ void S9xPrepareMode7CheckAndUpdateCharTiles()
 		
 		// Prepare the 128 color palette by duplicate colors from 0-127 to 128-255
 		//
+		// Low priority 
 		for (int i = 0; i < 128; i++)
-			IPPU.Mode7ScreenColors128[i] = IPPU.Mode7ScreenColors[i] & 0xfff7;	// Low priority 
+			GFX.ScreenColors128[i] = GFX.ScreenRGB555toRGBA4[GFX.ScreenColors[i]] & 0xfff7;		
+		// High priority 	
 		for (int i = 0; i < 128; i++)
-			IPPU.Mode7ScreenColors128[i + 128] = IPPU.Mode7ScreenColors[i]; 	// High priority 
+			GFX.ScreenColors128[i + 128] = GFX.ScreenRGB555toRGBA4[GFX.ScreenColors[i]];		
 
 		// Ext BG with 128 colours
 		//
@@ -3283,6 +3285,15 @@ void S9xPrepareMode7(bool sub)
 	} 
 
 	t3dsStartTiming(71, "PrepM7-Palette");
+
+	if (!(Memory.FillRAM [0x2133] & 0x40))
+	{
+		gpu3dsSetMode7TexturesPixelFormatToRGB5551();
+	}
+	else
+	{
+		gpu3dsSetMode7TexturesPixelFormatToRGB4444();
+	}
 
 	// If any of the palette colours in a palette group have changed, 
 	// then we must refresh all tiles having those colours in that group.

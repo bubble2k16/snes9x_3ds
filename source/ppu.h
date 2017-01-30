@@ -851,7 +851,6 @@ STATIC inline void REGISTER_2122(uint8 Byte)
             IPPU.ScreenColors [PPU.CGADD] = (uint16) BUILD_PIXEL (IPPU.Red [PPU.CGADD],
                                     IPPU.Green [PPU.CGADD],
                                     IPPU.Blue [PPU.CGADD]);
-            IPPU.Mode7ScreenColors [PPU.CGADD] = GFX.ScreenRGB555toRGBA4[IPPU.ScreenColors [PPU.CGADD]];
             GFX.PaletteFrame256[0] ++;
             GFX.PaletteFrame[PPU.CGADD / 16] ++;
             GFX.PaletteFrame4[(PPU.CGADD & 0x1f) / 4] ++;
@@ -902,7 +901,6 @@ STATIC inline void REGISTER_2122(uint8 Byte)
                 IPPU.ScreenColors [PPU.CGADD] = (uint16) BUILD_PIXEL (IPPU.Red [PPU.CGADD],
                                         IPPU.Green [PPU.CGADD],
                                         IPPU.Blue [PPU.CGADD]);
-                IPPU.Mode7ScreenColors [PPU.CGADD] = GFX.ScreenRGB555toRGBA4[IPPU.ScreenColors [PPU.CGADD]];
 
                 GFX.PaletteFrame256[0] ++;
                 GFX.PaletteFrame[PPU.CGADD / 16] ++;

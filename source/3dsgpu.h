@@ -249,6 +249,8 @@ SGPUTexture *gpu3dsCreateTextureInLinearMemory(int width, int height, GPU_TEXCOL
 SGPUTexture *gpu3dsCreateTextureInVRAM(int width, int height, GPU_TEXCOLOR pixelFormat);
 void gpu3dsDestroyTextureFromLinearMemory(SGPUTexture *texture);
 void gpu3dsDestroyTextureFromVRAM(SGPUTexture *texture);
+void gpu3dsSetMode7TexturesPixelFormatToRGB5551();
+void gpu3dsSetMode7TexturesPixelFormatToRGB4444();
 
 void gpu3dsStartNewFrame();
 

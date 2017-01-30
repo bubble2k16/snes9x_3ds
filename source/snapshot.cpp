@@ -965,11 +965,6 @@ int S9xUnfreezeFromStream (STREAM stream)
 
 	S9xInitializeVerticalSections();
 
-	// Initialize the Mode 7 screen colours.
-	//
-	for (int i = 0; i < 256; i++)
-		IPPU.Mode7ScreenColors[i] = GFX.ScreenRGB555toRGBA4[IPPU.ScreenColors[i]];
-
 	return (result);
 }
 
