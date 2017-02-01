@@ -128,8 +128,8 @@ int cacheGetMode7TexturePosition(int tileNumber)
 
 //------------------------------------------------------------------------
 // Increased buffer size to 1MB for screens with heavy effects (multiple wavy backgrounds and line-by-line windows).
-// Memory Usage = 1.00 MB   for GPU command buffer
-#define COMMAND_BUFFER_SIZE             0x100000
+// Memory Usage = 2.00 MB   for GPU command buffer
+#define COMMAND_BUFFER_SIZE             0x200000
 
 // Memory Usage = 0.26 MB   for 4-point rectangle (triangle strip) vertex buffer
 #define RECTANGLE_BUFFER_SIZE           0x40000
@@ -699,8 +699,8 @@ bool gpu3dsInitialize()
     // Create the command buffers
     //
     gpuCommandBufferSize = COMMAND_BUFFER_SIZE;
-    gpuCommandBuffer1 = (u32 *)linearAlloc(COMMAND_BUFFER_SIZE);
-    gpuCommandBuffer2 = (u32 *)linearAlloc(COMMAND_BUFFER_SIZE);
+    gpuCommandBuffer1 = (u32 *)linearAlloc(COMMAND_BUFFER_SIZE / 2);
+    gpuCommandBuffer2 = (u32 *)linearAlloc(COMMAND_BUFFER_SIZE / 2);
     if (gpuCommandBuffer1 == NULL || gpuCommandBuffer2 == NULL)
         return false;
 	GPU_Reset(NULL, gpuCommandBuffer1, gpuCommandBufferSize);

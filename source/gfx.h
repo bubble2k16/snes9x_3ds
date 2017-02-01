@@ -166,9 +166,9 @@ struct SGFX{
     uint32 PaletteFrame[16] = { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 };    // 16-color BGs / OBJs
     uint32 PaletteFrame4[16] = { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 };   // 4-color BGs
     
-    // Memory Usage = 4.0 MB    for the frame the palette was changed for the given Tile.
+    // Memory Usage = 0.50 MB    for the frame the palette was changed for the given Tile.
     //
-    uint32 VRAMPaletteFrame[65536][16];
+    uint32 VRAMPaletteFrame[8192][16];
     bool   Use3DSHardware = true;
 
 };
@@ -207,9 +207,9 @@ struct SBG
     
     int    Depth;
     
-    bool8 TileFull[4096];
+    //bool8 TileFull[4096];
     
-    uint16 BufferTile16Bit[1][1];
+    //uint16 BufferTile16Bit[1][1];
     
     /*
     // Memory Usage = 0.5 MB for background parameters

@@ -683,155 +683,6 @@ inline bool S9xComputeAndEnableStencilFunction(int layer, int subscreen)
 
 int curBG = 0;
 
-//-------------------------------------------------------------------
-// Draw a clipped BG tile using 3D hardware.
-//-------------------------------------------------------------------
-/*
-inline void __attribute__((always_inline)) S9xDrawBGClippedTileHardwareInline (
-    int tileSize, int tileShift, int paletteShift, int paletteMask, int startPalette, bool directColourMode,
-	int prio, int depth0, int depth1,
-	int32 snesTile, int32 screenOffset,
-	int32 startX, int32 width,
-	int32 startLine, int32 height)
-{
-	int texturePos = 0;
-
-	// Prepare tile for rendering
-	//
-    uint8 *pCache;
-    uint16 *pCache16;
-
-    uint32 TileAddr = BG.TileAddress + ((snesTile & 0x3ff) << tileShift);
-
-	// Bug fix: overflow in Dragon Ball Budoten 3 
-	// (this was accidentally removed while optimizing for this 3DS port)
-	TileAddr &= 0xff00ffff;		// hope the compiler generates a BIC instruction.
-
-    uint32 TileNumber;
-    pCache = &BG.Buffer[(TileNumber = (TileAddr >> tileShift)) << 6];
-
-	//if (screenOffset == 0)
-	//	printf ("  tile: %d\n", TileNumber);
-
-	//if ((snesTile & 0x3ff) == 0 && curBG == 2)
-	//	printf ("* %d,%d BG%d TileAddr=%4x Buf=%d\n", screenOffset & 0xff, screenOffset >> 8, curBG, TileAddr, BG.Buffered[TileNumber]);
-
-    if (!BG.Buffered [TileNumber])
-    {
-	    BG.Buffered[TileNumber] = S9xConvertTileTo8Bit (pCache, TileAddr);
-        if (BG.Buffered [TileNumber] == BLANK_TILE)
-            return;
-
-        GFX.VRAMPaletteFrame[TileAddr][0] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][1] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][2] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][3] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][4] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][5] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][6] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][7] = 0;
-    }
-
-	//if (screenOffset == 0)
-	//	printf ("  buffered: %d\n", BG.Buffered [TileNumber]);
-
-    if (BG.Buffered [TileNumber] == BLANK_TILE)
-	    return;
-
-
-
-    uint32 l;
-    uint8 pal;
-    if (directColourMode)
-    {
-        if (IPPU.DirectColourMapsNeedRebuild)
-            S9xBuildDirectColourMaps ();
-        pal = (snesTile >> 10) & paletteMask;
-		GFX.ScreenColors = DirectColourMaps [pal];
-		texturePos = cacheGetTexturePositionFast(TileAddr, pal);
-
-		//printf ("  TIDM addr:%x pal:%d %d\n", TileAddr, pal, texturePos);
-
-        if (GFX.VRAMPaletteFrame[TileAddr][pal] != GFX.PaletteFrame[pal + startPalette / 16])
-        {
-			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-            GFX.VRAMPaletteFrame[TileAddr][pal] = GFX.PaletteFrame[pal + startPalette / 16];
-
-			gpu3dsCacheToTexturePosition(pCache, GFX.ScreenColors, texturePos);
-        }
-    }
-    else
-    {
-
-        pal = (snesTile >> 10) & paletteMask;
-        GFX.ScreenColors = &IPPU.ScreenColors [(pal << paletteShift) + startPalette];
-		texturePos = cacheGetTexturePositionFast(TileAddr, pal);
-		//printf ("%d\n", texturePos);
-
-		uint32 *paletteFrame = GFX.PaletteFrame;
-		if (paletteShift == 2)
-			paletteFrame = GFX.PaletteFrame4;
-		else if (paletteShift == 0)
-		{
-			paletteFrame = GFX.PaletteFrame4;
-			pal = 0;
-		}
-
-		//printf ("  TILE addr:%x pal:%d %d\n", TileAddr, pal, texturePos);
-		//if (screenOffset == 0)
-		//	printf ("  %d %d %d %d\n", startPalette, pal, paletteFrame[pal + startPalette / 16], GFX.VRAMPaletteFrame[TileAddr][pal]);
-
-		if (GFX.VRAMPaletteFrame[TileAddr][pal] != paletteFrame[pal + startPalette / 16])
-		{
-			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-			GFX.VRAMPaletteFrame[TileAddr][pal] = paletteFrame[pal + startPalette / 16];
-
-			//if (screenOffset == 0)
-			//	printf ("cache %d\n", texturePos);
-			gpu3dsCacheToTexturePosition(pCache, GFX.ScreenColors, texturePos);
-		}
-    }
-	
-
-	// Render tile
-	//
-	screenOffset += startX;
-	int x0 = screenOffset & 0xFF;
-	int y0 = (screenOffset >> 8);
-	if (prio == 0)
-		y0 += depth0;
-	else
-		y0 += depth1;
-	int x1 = x0 + width;
-	int y1 = y0 + height;
-
-	int tx0 = startX;
-	int ty0 = startLine >> 3;
-	int tx1 = tx0 + width;
-	int ty1 = ty0 + height;
-
-	gpu3dsAddTileVertexes(
-		x0, y0, x1, y1,
-		tx0, ty0,
-		tx1, ty1, (snesTile & (H_FLIP | V_FLIP)) + texturePos);
-		
-}
-*/
-
-
-//-------------------------------------------------------------------
-// Draw tile using 3D hardware
-//-------------------------------------------------------------------
-/*
-inline void __attribute__((always_inline)) S9xDrawBGTileHardwareInline (
-    int tileSize, int tileShift, int paletteShift, int paletteMask, int startPalette, bool directColourMode,
-    uint32 snesTile, uint32 screenOffset, uint32 startLine, uint32 height)
-{
-	S9xDrawBGClippedTileHardwareInline (
-        tileSize, tileShift, paletteShift, paletteMask, startPalette, directColourMode,
-        snesTile, screenOffset, 0, 8, startLine, height);
-}
-*/
 
 
 //-------------------------------------------------------------------
@@ -871,14 +722,14 @@ inline void __attribute__((always_inline)) S9xDrawBGFullTileHardwareInline (
         if (BG.Buffered [TileNumber] == BLANK_TILE)
             return;
 
-        GFX.VRAMPaletteFrame[TileAddr][0] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][1] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][2] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][3] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][4] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][5] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][6] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][7] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][0] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][1] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][2] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][3] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][4] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][5] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][6] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][7] = 0;
     }
 
 	//if (screenOffset == 0)
@@ -906,10 +757,10 @@ inline void __attribute__((always_inline)) S9xDrawBGFullTileHardwareInline (
         pal = (snesTile >> 10) & paletteMask;
 		texturePos = cacheGetTexturePositionFast(TileAddr, pal);
 
-        if (GFX.VRAMPaletteFrame[TileAddr][pal] != GFX.PaletteFrame[pal + startPalette / 16])
+        if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != GFX.PaletteFrame[pal + startPalette / 16])
         {
 			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-            GFX.VRAMPaletteFrame[TileAddr][pal] = GFX.PaletteFrame[pal + startPalette / 16];
+            GFX.VRAMPaletteFrame[TileAddr / 8][pal] = GFX.PaletteFrame[pal + startPalette / 16];
 
 			uint16 *screenColors = DirectColourMaps [pal];
 			gpu3dsCacheToTexturePosition(pCache, screenColors, texturePos);
@@ -931,12 +782,12 @@ inline void __attribute__((always_inline)) S9xDrawBGFullTileHardwareInline (
 		}
 
 		//if (screenOffset == 0)
-		//	printf ("  %d %d %d %d\n", startPalette, pal, paletteFrame[pal + startPalette / 16], GFX.VRAMPaletteFrame[TileAddr][pal]);
+		//	printf ("  %d %d %d %d\n", startPalette, pal, paletteFrame[pal + startPalette / 16], GFX.VRAMPaletteFrame[TileAddr / 8][pal]);
 
-		if (GFX.VRAMPaletteFrame[TileAddr][pal] != paletteFrame[pal + startPalette / 16])
+		if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != paletteFrame[pal + startPalette / 16])
 		{
 			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-			GFX.VRAMPaletteFrame[TileAddr][pal] = paletteFrame[pal + startPalette / 16];
+			GFX.VRAMPaletteFrame[TileAddr / 8][pal] = paletteFrame[pal + startPalette / 16];
 
 			//if (screenOffset == 0)
 			//	printf ("cache %d\n", texturePos);
@@ -1007,14 +858,14 @@ inline void __attribute__((always_inline)) S9xDrawHiresBGFullTileHardwareInline 
         if (BG.Buffered [TileNumber] == BLANK_TILE)
             return;
 
-        GFX.VRAMPaletteFrame[TileAddr][0] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][1] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][2] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][3] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][4] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][5] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][6] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][7] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][0] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][1] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][2] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][3] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][4] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][5] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][6] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][7] = 0;
     }
 
 	//if (screenOffset == 0)
@@ -1043,10 +894,10 @@ inline void __attribute__((always_inline)) S9xDrawHiresBGFullTileHardwareInline 
 		GFX.ScreenColors = DirectColourMaps [pal];
 		texturePos = cacheGetTexturePositionFast(TileAddr, pal);
 
-        if (GFX.VRAMPaletteFrame[TileAddr][pal] != GFX.PaletteFrame[pal + startPalette / 16])
+        if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != GFX.PaletteFrame[pal + startPalette / 16])
         {
 			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-            GFX.VRAMPaletteFrame[TileAddr][pal] = GFX.PaletteFrame[pal + startPalette / 16];
+            GFX.VRAMPaletteFrame[TileAddr / 8][pal] = GFX.PaletteFrame[pal + startPalette / 16];
 
 			gpu3dsCacheToTexturePosition(pCache, GFX.ScreenColors, texturePos);
         }
@@ -1068,12 +919,12 @@ inline void __attribute__((always_inline)) S9xDrawHiresBGFullTileHardwareInline 
 		}
 
 		//if (screenOffset == 0)
-		//	printf ("  %d %d %d %d\n", startPalette, pal, paletteFrame[pal + startPalette / 16], GFX.VRAMPaletteFrame[TileAddr][pal]);
+		//	printf ("  %d %d %d %d\n", startPalette, pal, paletteFrame[pal + startPalette / 16], GFX.VRAMPaletteFrame[TileAddr / 8][pal]);
 
-		if (GFX.VRAMPaletteFrame[TileAddr][pal] != paletteFrame[pal + startPalette / 16])
+		if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != paletteFrame[pal + startPalette / 16])
 		{
 			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-			GFX.VRAMPaletteFrame[TileAddr][pal] = paletteFrame[pal + startPalette / 16];
+			GFX.VRAMPaletteFrame[TileAddr / 8][pal] = paletteFrame[pal + startPalette / 16];
 
 			//if (screenOffset == 0)
 			//	printf ("cache %d\n", texturePos);
@@ -2734,14 +2585,14 @@ inline void __attribute__((always_inline)) S9xDrawOBJTileHardware2 (
         if (BG.Buffered [TileNumber] == BLANK_TILE)
             return;
 
-        GFX.VRAMPaletteFrame[TileAddr][8] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][9] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][10] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][11] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][12] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][13] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][14] = 0;
-        GFX.VRAMPaletteFrame[TileAddr][15] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][8] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][9] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][10] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][11] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][12] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][13] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][14] = 0;
+        GFX.VRAMPaletteFrame[TileAddr / 8][15] = 0;
     }
 
     if (BG.Buffered [TileNumber] == BLANK_TILE)
@@ -2756,10 +2607,10 @@ inline void __attribute__((always_inline)) S9xDrawOBJTileHardware2 (
         pal = (snesTile >> 10) & 7;
 		texturePos = cacheGetTexturePositionFast(TileAddr, pal + 8);
 		//printf ("%d\n", texturePos);
-        if (GFX.VRAMPaletteFrame[TileAddr][pal + 8] != GFX.PaletteFrame[pal + 8])
+        if (GFX.VRAMPaletteFrame[TileAddr / 8][pal + 8] != GFX.PaletteFrame[pal + 8])
         {
 			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal + 8);
-            GFX.VRAMPaletteFrame[TileAddr][pal + 8] = GFX.PaletteFrame[pal + 8];
+            GFX.VRAMPaletteFrame[TileAddr / 8][pal + 8] = GFX.PaletteFrame[pal + 8];
 
 			//printf ("cache %d\n", texturePos);
 	        uint16 *screenColors = &IPPU.ScreenColors [(pal << 4) + 128];

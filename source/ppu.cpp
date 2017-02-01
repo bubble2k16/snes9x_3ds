@@ -2704,7 +2704,7 @@ void S9xResetPPU ()
 		GFX.PaletteFrame4[i] = 1;
 	}
 	GFX.PaletteFrame256[0] = 1;
-	ZeroMemory (GFX.VRAMPaletteFrame, 65536 * 16 * 4);
+	ZeroMemory (GFX.VRAMPaletteFrame, 8192 * 16 * 4);
 	IPPU.HiresFlip = 0;
 
 #ifdef CORRECT_VRAM_READS
@@ -2927,7 +2927,7 @@ void S9xSoftResetPPU ()
 		GFX.PaletteFrame4[i] = 1;
 	}
 	GFX.PaletteFrame256[0] = 1;
-	ZeroMemory (GFX.VRAMPaletteFrame, 65536 * 16 * 4);
+	ZeroMemory (GFX.VRAMPaletteFrame, 8192 * 16 * 4);
 	IPPU.HiresFlip = 0;
 
 #ifdef CORRECT_VRAM_READS

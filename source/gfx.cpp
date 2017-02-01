@@ -471,6 +471,7 @@ bool8 S9xGraphicsInit ()
     }
     S9xFixColourBrightness ();
 
+/*
     if (Settings.SixteenBit)
     {
 	if (!(GFX.X2 = (uint16 *) malloc (sizeof (uint16) * 0x10000)))
@@ -620,7 +621,7 @@ bool8 S9xGraphicsInit ()
 	    }
 	}
     }
-    else
+    else */
     {
 		GFX.X2 = NULL;
 		GFX.ZERO_OR_X2 = NULL;

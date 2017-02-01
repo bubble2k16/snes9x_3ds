@@ -69,7 +69,7 @@ struct SVertexColor {
 
 
 #define MAX_TEXTURE_POSITIONS		16383
-#define MAX_HASH					(65536 * 16)
+#define MAX_HASH					(65536 * 16 / 8)
 
 
 typedef struct
@@ -161,7 +161,7 @@ typedef struct
     float               mode7UpdateFrameCount[4];
     int                 currentShader = -1;
 
-    // Memory Usage = 2.00 MB (for hashing of the texture position)
+    // Memory Usage = 0.25 MB (for hashing of the texture position)
     uint16  vramCacheHashToTexturePosition[MAX_HASH + 1];
 
     // Memory Usage = 0.06 MB
@@ -195,6 +195,7 @@ int cacheGetTexturePosition(int hash);
 
 inline int cacheGetTexturePositionFast(int tileAddr, int pal)
 {
+    tileAddr = tileAddr / 8;
     int hash = COMPOSE_HASH(tileAddr, pal);
     int pos = GPU3DS.vramCacheHashToTexturePosition[hash];
 
@@ -230,6 +231,7 @@ inline int cacheGetTexturePositionFast(int tileAddr, int pal)
 //
 inline int cacheGetSwapTexturePositionForAltFrameFast(int tileAddr, int pal)
 {
+    tileAddr = tileAddr / 8;
     int hash = COMPOSE_HASH(tileAddr, pal);
     int pos = GPU3DS.vramCacheHashToTexturePosition[hash] ^ 1;
     GPU3DS.vramCacheHashToTexturePosition[hash] = pos;

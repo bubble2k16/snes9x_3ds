@@ -98,7 +98,6 @@
 #endif
  
 
-#define DEBUGGER
 #if defined(DEBUGGER) || defined(DEBUG_APU)
 extern int NoiseFreq [32];
 

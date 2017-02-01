@@ -189,7 +189,7 @@
         if (IPPU.DirectColourMapsNeedRebuild) \
             S9xBuildDirectColourMaps (); \
         pal = (Tile >> 10) & BG.PaletteMask; \
-        pCache16 = &BG.BufferTile16Bit[pal][TileNumber << 6]; \
+        pCache16 = 0; \
         GFX.ScreenColors = DirectColourMaps [pal]; \
         if (GFX.VRAMPaletteFrame[TileAddr][pal] != GFX.PaletteFrame[pal + BG.StartPalette / 16]) \
         { \
@@ -200,7 +200,7 @@
     else \
     { \
         pal = (Tile >> 10) & BG.PaletteMask; \
-        pCache16 = &BG.BufferTile16Bit[pal + BG.StartPalette / 16][TileNumber << 6]; \
+        pCache16 = 0; \
         GFX.ScreenColors = &IPPU.ScreenColors [(pal << BG.PaletteShift) + BG.StartPalette]; \
         if (GFX.VRAMPaletteFrame[TileAddr][pal] != GFX.PaletteFrame[pal + BG.StartPalette / 16]) \
         { \
@@ -499,7 +499,7 @@
         if (IPPU.DirectColourMapsNeedRebuild) \
             S9xBuildDirectColourMaps (); \
         pal = (Tile >> 10) & BG.PaletteMask; \
-        pCache16 = &BG.BufferTile16Bit[pal][TileNumber << 6]; \
+        pCache16 = 0; \
         GFX.ScreenColors = DirectColourMaps [pal]; \
         if (GFX.VRAMPaletteFrame[TileAddr][pal] != GFX.PaletteFrame[pal + BG.StartPalette / 16]) \
         { \
@@ -510,7 +510,7 @@
     else \
     { \
         pal = (Tile >> 10) & BG.PaletteMask; \
-        pCache16 = &BG.BufferTile16Bit[pal + BG.StartPalette / 16][TileNumber << 6]; \
+        pCache16 = 0; \
         GFX.ScreenColors = &IPPU.ScreenColors [(pal << BG.PaletteShift) + BG.StartPalette]; \
         if (GFX.VRAMPaletteFrame[TileAddr][pal] != GFX.PaletteFrame[pal + BG.StartPalette / 16]) \
         { \
@@ -523,7 +523,7 @@
     if (!(Tile & (V_FLIP | H_FLIP))) \
     { \
         bp = (uint8 *)(pCache16 + StartLine); \
-        if (!BG.TileFull[TileNumber] || Offset & 1) \
+        if (Offset & 1) \
             for (l = LineCount; l != 0; l--, bp += 16, Offset += GFX.PPL) NORMAL (Offset, bp); \
         else \
             for (l = LineCount; l != 0; l--, bp += 16, Offset += GFX.PPL) FULL_NORMAL (Offset, bp); \
@@ -532,7 +532,7 @@
     if (!(Tile & V_FLIP)) \
     { \
         bp = (uint8 *)(pCache16 + StartLine); \
-        if (!BG.TileFull[TileNumber] || Offset & 1) \
+        if (Offset & 1) \
             for (l = LineCount; l != 0; l--, bp += 16, Offset += GFX.PPL) FLIPPED (Offset, bp); \
         else \
             for (l = LineCount; l != 0; l--, bp += 16, Offset += GFX.PPL) FULL_FLIPPED (Offset, bp); \
@@ -541,7 +541,7 @@
     if (Tile & H_FLIP) \
     { \
         bp = (uint8 *)(pCache16 + 56 - StartLine); \
-        if (!BG.TileFull[TileNumber] || Offset & 1) \
+        if (Offset & 1) \
             for (l = LineCount; l != 0; l--, bp -= 16, Offset += GFX.PPL) FLIPPED (Offset, bp); \
         else \
             for (l = LineCount; l != 0; l--, bp -= 16, Offset += GFX.PPL) FULL_FLIPPED (Offset, bp); \
@@ -549,7 +549,7 @@
     else \
     { \
         bp = (uint8 *)(pCache16 + 56 - StartLine); \
-        if (!BG.TileFull[TileNumber] || Offset & 1) \
+        if (Offset & 1) \
             for (l = LineCount; l != 0; l--, bp -= 16, Offset += GFX.PPL) NORMAL (Offset, bp); \
         else \
             for (l = LineCount; l != 0; l--, bp -= 16, Offset += GFX.PPL) FULL_NORMAL (Offset, bp); \
