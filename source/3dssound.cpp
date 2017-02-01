@@ -326,7 +326,13 @@ bool snd3dsInitialize()
 
     if (GPU3DS.isReal3DS)
     {
+#ifdef LIBCTRU_1_0_0
+        aptOpenSession();
         APT_SetAppCpuTimeLimit(30); // enables syscore usage
+        aptCloseSession();   
+#else
+        APT_SetAppCpuTimeLimit(30); // enables syscore usage
+#endif
 
         printf ("snd3dsInit - DSP Stack: %x\n", snd3DS.dspThreadStack);
         printf ("snd3dsInit - DSP ThreadFunc: %x\n", &snd3dsDSPThread);
@@ -337,9 +343,10 @@ bool snd3dsInitialize()
             (u32*)(snd3DS.dspThreadStack+0x4000), 0x18, 1);
         if (ret)
         {
-            printf("Unable to start DSP thread:\n");
+            printf("Unable to start DSP thread: %x\n", ret);
             snd3DS.dspThreadHandle = NULL;
             snd3dsFinalize();
+            DEBUG_WAIT_L_KEY
             return false;
         }
         printf ("snd3dsInit - Create DSP thread %x\n", snd3DS.dspThreadHandle);

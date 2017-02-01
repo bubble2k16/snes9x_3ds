@@ -31,8 +31,6 @@
 
 #include "lodepng.h"
 
-#define S9X3DS_VERSION	        "0.3"
-
 
 typedef struct
 {
@@ -1758,6 +1756,7 @@ void emulatorInitialize()
         exit(0);
     }
 
+
     cacheInit();
     if (!snesInitialize())
     {
@@ -1771,6 +1770,8 @@ void emulatorInitialize()
         exit (0);
     }
 
+    ui3dsInitialize();
+
     /*if (romfsInit()!=0)
     {
         printf ("Unable to initialize romfs\n");
@@ -1779,7 +1780,6 @@ void emulatorInitialize()
     */
     printf ("Initialization complete\n");
 
-    ptmSysmInit ();
     osSetSpeedupEnable(1);    // Performance: use the higher clock speed for new 3DS.
 
     enableExitHook();

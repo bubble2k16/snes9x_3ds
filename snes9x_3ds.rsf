@@ -181,6 +181,7 @@ AccessControlInfo:
   - ir:USER
   - ir:u
   - csnd:SND
+  - ptm:sysm
  
  
 SystemControlInfo:

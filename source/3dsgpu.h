@@ -362,7 +362,7 @@ inline void __attribute__((always_inline)) gpu3dsAddTileVertexes(
     int tx0, int ty0, int tx1, int ty1,
     int data)
 {
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     if (GPU3DS.isReal3DS)
     {
 #endif
@@ -378,7 +378,7 @@ inline void __attribute__((always_inline)) gpu3dsAddTileVertexes(
         //GPU3DS.tileCount += 2;
         GPU3DS.tileVertexes.Count += 2;
 
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     }
     else
     {
@@ -416,7 +416,7 @@ inline void __attribute__((always_inline)) gpu3dsAddMode7LineVertexes(
     int x0, int y0, int x1, int y1,
     float tx0, float ty0, float tx1, float ty1)
 {
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     if (GPU3DS.isReal3DS)
     {
 #endif
@@ -431,7 +431,7 @@ inline void __attribute__((always_inline)) gpu3dsAddMode7LineVertexes(
 
         GPU3DS.mode7LineVertexes.Count += 2;
 
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     }
     else
     {
@@ -470,7 +470,7 @@ inline void __attribute__((always_inline)) gpu3dsAddMode7LineVertexes(
 
 inline void __attribute__((always_inline)) gpu3dsSetMode7TileTexturePos(int idx, int data)
 {
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     if (GPU3DS.isReal3DS)
     {
 #endif
@@ -478,7 +478,7 @@ inline void __attribute__((always_inline)) gpu3dsSetMode7TileTexturePos(int idx,
 
         m7vertices[0].Position.z = data;
         //m7vertices[1].Position.z = data;
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     }
     else
     {
@@ -503,7 +503,7 @@ inline void __attribute__((always_inline)) gpu3dsSetMode7TileModifiedFlag(int id
 {
     int updateFrame = GPU3DS.mode7FrameCount;
 
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     if (GPU3DS.isReal3DS)
     {
 #endif
@@ -511,7 +511,7 @@ inline void __attribute__((always_inline)) gpu3dsSetMode7TileModifiedFlag(int id
 
         m7vertices[0].Position.w = updateFrame;
         //m7vertices[1].Position.w = updateFrame;
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     }
     else
     {
@@ -533,7 +533,7 @@ inline void __attribute__((always_inline)) gpu3dsSetMode7TileModifiedFlag(int id
 
 inline void __attribute__((always_inline)) gpu3dsSetMode7TileModifiedFlag(int idx, int updateFrame)
 {
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     if (GPU3DS.isReal3DS)
     {
 #endif
@@ -541,7 +541,7 @@ inline void __attribute__((always_inline)) gpu3dsSetMode7TileModifiedFlag(int id
 
         m7vertices[0].Position.w = updateFrame;
         //m7vertices[1].Position.w = updateFrame;
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     }
     else
     {
@@ -565,7 +565,7 @@ inline void __attribute__((always_inline)) gpu3dsAddMode7ScanlineVertexes(
     int tx0, int ty0, int tx1, int ty1,
     int data)
 {
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     if (GPU3DS.isReal3DS)
     {
 #endif
@@ -581,7 +581,7 @@ inline void __attribute__((always_inline)) gpu3dsAddMode7ScanlineVertexes(
         //GPU3DS.tileCount += 2;
         GPU3DS.tileVertexes.Count += 2;
 
-#ifndef RELEASE_SHADER
+#ifndef RELEASE
     }
     else
     {

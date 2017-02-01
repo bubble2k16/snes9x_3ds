@@ -5,8 +5,11 @@
 #include <string.h>
 #include <3ds.h>
 
+#include "3dssnes9x.h"
+
 #include "gpulib.h"
 
+#ifndef LIBCTRU_1_0_0
 
 void GPU_Init(Handle *gsphandle)
 {
@@ -302,3 +305,5 @@ void GPU_FinishDrawing()
 	GPUCMD_AddWrite(GPUREG_FRAMEBUFFER_INVALIDATE, 0x00000001);
 	GPUCMD_AddWrite(GPUREG_EARLYDEPTH_CLEAR, 0x00000001);
 }
+
+#endif
