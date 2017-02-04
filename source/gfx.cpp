@@ -437,7 +437,7 @@ bool8 S9xGraphicsInit ()
     if (Settings.SixteenBit)
 	GFX.ZPitch >>= 1;
     GFX.Delta = (GFX.SubScreen - GFX.Screen) >> 1;
-	printf ("GFX.Delta = %d\n", GFX.Delta);
+	//printf ("GFX.Delta = %d\n", GFX.Delta);
     GFX.DepthDelta = GFX.SubZBuffer - GFX.ZBuffer;
     //GFX.InfoStringTimeout = 0;
     //GFX.InfoString = NULL;

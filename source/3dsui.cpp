@@ -8,11 +8,11 @@
 #include <3ds.h>
 #include "snes9x.h"
 
+#include "3dsui.h"
 #include "3dsfont.h"
 
-int foreColor = 0xffff;
-int backColor = 0x0000;
-int midColor = 0x7bef;
+int foreColor = 0xffffff;
+int backColor = 0x000000;
 
 int translateX = 0;
 int translateY = 0;
@@ -21,14 +21,17 @@ int viewportY1 = 0;
 int viewportX2 = 320;
 int viewportY2 = 240;
 
+int fontHeight = 13;
+
 int viewportStackCount = 0;
 int viewportStack[20][4];
 
+#define MAX_ALPHA 8
 typedef struct
 {
-    int red[11][32];
-    int green[11][32];
-    int blue[11][32];
+    int red[MAX_ALPHA + 1][32];
+    int green[MAX_ALPHA + 1][32];
+    int blue[MAX_ALPHA + 1][32];
 } SAlpha;
 
 SAlpha alphas;
@@ -42,14 +45,33 @@ void ui3dsInitialize()
     //
     for (int i = 0; i < 32; i++)
     {
-        for (int a = 0; a <= 10; a++)
+        for (int a = 0; a <= MAX_ALPHA; a++)
         {
-            int f = i * 10 / a;
+            int f = i * a / MAX_ALPHA;
             alphas.red[a][i] = f << 11;
-            alphas.green[a][i] = f << 5;
+            alphas.green[a][i] = f << 6;
             alphas.blue[a][i] = f;
         }
     }
+
+    // Initialize fonts
+    //
+    for (int i = 0; i < 65536; i++)
+    {
+        uint8 c = fontBitmap[i];
+
+        if (c == ' ')
+            fontBitmap[i] = 0;
+        else
+            fontBitmap[i] = c - '0';
+    }
+    //for (int i = 0; i < 256; i++)
+    //    fontWidth[i] += 1;
+
+    viewportX1 = 0;
+    viewportY1 = 0;
+    viewportX2 = 320;
+    viewportY2 = 240;    
 }
 
 //---------------------------------------------------------------
@@ -61,6 +83,11 @@ void ui3dsSetViewport(int x1, int y1, int x2, int y2)
     viewportX2 = x2;
     viewportY1 = y1;
     viewportY2 = y2;
+
+    if (viewportX1 < 0) viewportX1 = 0;
+    if (viewportX2 > 320) viewportX2 = 320;
+    if (viewportY1 < 0) viewportY1 = 0;
+    if (viewportY2 > 240) viewportY2 = 240;
 }
 
 //---------------------------------------------------------------
@@ -76,25 +103,22 @@ void ui3dsPushViewport(int x1, int y1, int x2, int y2)
         viewportStack[viewportStackCount][3] = viewportY2;
         viewportStackCount++;
 
-        viewportX1 = x1;
-        viewportX2 = x2;
-        viewportY1 = y1;
-        viewportY2 = y2;
+        ui3dsSetViewport(x1, y1, x2, y2);
     }
 }
 
 //---------------------------------------------------------------
 // Pop the global viewport 
 //---------------------------------------------------------------
-void ui3dsPopViewport(int x1, int y1, int x2, int y2)
+void ui3dsPopViewport()
 {
     if (viewportStackCount > 0)
     {
+        viewportStackCount--;
         viewportX1 = viewportStack[viewportStackCount][0];
         viewportX2 = viewportStack[viewportStackCount][1];
         viewportY1 = viewportStack[viewportStackCount][2];
         viewportY2 = viewportStack[viewportStackCount][3];
-        viewportStackCount--;
     }
 }
 
@@ -103,13 +127,30 @@ void ui3dsPopViewport(int x1, int y1, int x2, int y2)
 // Applies alpha to a given colour.
 // NOTE: Alpha is a value from 0 to 10. (0 = transparent, 10 = opaque)
 //---------------------------------------------------------------
-inline uint16 __attribute__((always_inline)) ui3dsApplyAlphaToColour(uint16 color, int alpha)
+inline uint16 __attribute__((always_inline)) ui3dsApplyAlphaToColour565(int color565, int alpha)
 {
-    int red = (color >> 11) & 0x1f;
-    int blue = (color >> 6) & 0x1f; // drop the LSB of the blue colour
-    int green = (color) & 0x1f;
+    int red = (color565 >> 11) & 0x1f;
+    int green = (color565 >> 6) & 0x1f; // drop the LSB of the green colour
+    int blue = (color565) & 0x1f;
 
-    return alphas.red[alpha][red] + alphas.blue[alpha][blue] + alphas.green[alpha][green];
+    int result = alphas.red[alpha][red] | alphas.blue[alpha][blue] | alphas.green[alpha][green];
+    //printf ("result %x * %d = (%x | %x | %x) = %x\n", color565, alpha, 
+    //   alphas.red[alpha][red], alphas.green[alpha][green], alphas.blue[alpha][blue], result);
+    return result;
+}
+
+
+int ui3dsApplyAlphaToColor(int color, float alpha)
+{
+    if (alpha < 0)      alpha = 0;
+    if (alpha > 1.0f)   alpha = 1.0f;
+
+    int a = (int)(alpha * 255);
+
+    return 
+        ((((color >> 16) & 0xff) * a / 255) << 16) |
+        ((((color >> 8) & 0xff) * a / 255) << 8) |
+        ((((color >> 0) & 0xff) * a / 255) << 0);
 }
 
 
@@ -134,14 +175,24 @@ inline int __attribute__((always_inline)) ui3dsComputeFrameBufferOffset(int x, i
 
 
 //---------------------------------------------------------------
+// Gets a pixel colour.
+//---------------------------------------------------------------
+inline uint16 __attribute__((always_inline)) ui3dsGetPixelInline(uint16 *frameBuffer, int x, int y)
+{
+    return frameBuffer[ui3dsComputeFrameBufferOffset((x), (y))];  
+}
+
+
+//---------------------------------------------------------------
 // Sets a pixel colour.
 //---------------------------------------------------------------
-inline void __attribute__((always_inline)) ui3dsSetPixelInline(uint16 *frameBuffer, int x, int y, int c)
+inline void __attribute__((always_inline)) ui3dsSetPixelInline(uint16 *frameBuffer, int x, int y, int color)
 {
-    if (c < 0) return;
-    if ((x) >= viewportX1 && (x) < viewportX2 && (y) >= viewportY1 && (y) < viewportY2) 
+    if (color < 0) return;
+    if ((x) >= viewportX1 && (x) < viewportX2 && 
+        (y) >= viewportY1 && (y) < viewportY2) 
     { 
-        frameBuffer[ui3dsComputeFrameBufferOffset((x), (y))] = c;  
+        frameBuffer[ui3dsComputeFrameBufferOffset((x), (y))] = color;  
     }
 }
 
@@ -149,43 +200,39 @@ inline void __attribute__((always_inline)) ui3dsSetPixelInline(uint16 *frameBuff
 //---------------------------------------------------------------
 // Draws a single character to the screen
 //---------------------------------------------------------------
-void ui3dsDrawChar(uint16 *frameBuffer, int x, int y, uint8 c)
+void ui3dsDrawChar(uint16 *frameBuffer, int x, int y, int color565, uint8 c)
 {
     // Draws a character to the screen at (x,y) 
     // (0,0) is at the top left of the screen.
     //
     int wid = fontWidth[c];
+    uint8 alpha;
     //printf ("d %c (%d)\n", c, bmofs);
-    
-    for (int x1 = 0; x1 < wid; x1++)
+
+    if ((y) >= viewportY1 && (y) < viewportY2)
     {
-        #define GETFONTBITMAP(c, x, y) fontBitmap[c * 256 + x + (y + 2)*16]
-
-        #define SETPIXELFROMBITMAP(y1) \
-            ui3dsSetPixelInline(frameBuffer, cx, cy + y1, \
-            GETFONTBITMAP(c,x1,y1) == 0xff ? foreColor : \
-            GETFONTBITMAP(c,x1,y1) == 0x00 ? -1 : \
-            ((foreColor & ~0x821) >> 1) + ((backColor & ~0x821) >> 1)); \
-    
-
-        int cx = (x + translateX + x1);
-        int cy = (y + translateY);
-        if (cx >= viewportX1 && cx < viewportX2)
+        for (int x1 = 0; x1 < wid; x1++)
         {
-            SETPIXELFROMBITMAP(0);
-            SETPIXELFROMBITMAP(1);
-            SETPIXELFROMBITMAP(2);
-            SETPIXELFROMBITMAP(3);
-            SETPIXELFROMBITMAP(4);
-            SETPIXELFROMBITMAP(5);
-            SETPIXELFROMBITMAP(6);
-            SETPIXELFROMBITMAP(7);
-            SETPIXELFROMBITMAP(8);
-            SETPIXELFROMBITMAP(9);
-            SETPIXELFROMBITMAP(10);
-            SETPIXELFROMBITMAP(11);
+            #define GETFONTBITMAP(c, x, y) fontBitmap[c * 256 + x + (y)*16]
+
+            #define SETPIXELFROMBITMAP(y1) \
+                alpha = GETFONTBITMAP(c,x1,y1); \
+                ui3dsSetPixelInline(frameBuffer, cx, cy + y1, \
+                alpha == MAX_ALPHA ? color565 : \
+                alpha == 0x0 ? -1 : \
+                    ui3dsApplyAlphaToColour565(color565, alpha) + \
+                    ui3dsApplyAlphaToColour565(ui3dsGetPixelInline(frameBuffer, cx, cy + y1), MAX_ALPHA - alpha));
+
+            int cx = (x + x1);
+            int cy = (y);
+            if (cx >= viewportX1 && cx < viewportX2)
+            {
+                for (int h = 0; h < fontHeight; h++)
+                {
+                    SETPIXELFROMBITMAP(h);
+                }
+            }
         }
-        //if (c >= 91 && c <= 93) printf ("\n");
     }
 }
 
@@ -193,30 +240,28 @@ void ui3dsDrawChar(uint16 *frameBuffer, int x, int y, uint8 c)
 //---------------------------------------------------------------
 // Computes width of the string
 //---------------------------------------------------------------
-int ui3dsGetStringWidth(char *s)
+int ui3dsGetStringWidth(char *s, int startPos = 0, int endPos = 0xffff)
 {
     int totalWidth = 0;
-    int len = strlen(s);
-    for (int i = 0; i < len; i++)
+    for (int i = startPos; i <= endPos; i++)
     {
         uint8 c = s[i];
+        if (c == 0)
+            break;
         totalWidth += fontWidth[c];
     }   
     return totalWidth;
 }
 
+#define CONVERT_TO_565(x)    (((x & 0xf8) >> 3) | (((x >> 8) & 0xf8) << 3) | (((x >> 16) & 0xf8) << 8))
 
 //---------------------------------------------------------------
 // Colors are in the 888 (RGB) format.
 //---------------------------------------------------------------
 void ui3dsSetColor(int newForeColor, int newBackColor)
 {
-    #define CONVERT_TO_565(x)    (((x & 0xf8) >> 3) | (((x >> 8) & 0xf8) << 3) | (((x >> 16) & 0xf8) << 8))
-
-    foreColor = CONVERT_TO_565(newForeColor);
-    backColor = CONVERT_TO_565(newBackColor);
-    
-    //midColor = ((foreColor & ~0x821) >> 1) + ((backColor & ~0x821) >> 1);
+    foreColor = newForeColor;
+    backColor = newBackColor;
 }
 
 
@@ -225,8 +270,13 @@ void ui3dsSetColor(int newForeColor, int newBackColor)
 // 
 // Note: x0,y0 are inclusive. x1,y1 are exclusive.
 //---------------------------------------------------------------
-void ui3dsDrawRect(int x0, int y0, int x1, int y1, int color, int alpha)
+void ui3dsDrawRect(int x0, int y0, int x1, int y1, int color, float alpha)
 {
+    if (color < 0)
+        return;
+
+    color = CONVERT_TO_565(color);
+
     uint16* fb = (uint16 *) gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
 
     x0 += translateX;
@@ -239,7 +289,10 @@ void ui3dsDrawRect(int x0, int y0, int x1, int y1, int color, int alpha)
     if (y0 < viewportY1) y0 = viewportY1;
     if (y1 > viewportY2) y1 = viewportY2;
     
-    if (alpha == 10)
+    if (alpha < 0) alpha = 0;
+    if (alpha > 1.0f) alpha = 1.0f;
+    
+    if (alpha == 1.0f)
     {
         for (int x = x0; x < x1; x++)
         {
@@ -248,18 +301,23 @@ void ui3dsDrawRect(int x0, int y0, int x1, int y1, int color, int alpha)
                 fb[fbofs--] = color;
         }
     }
+    else if (alpha == 0.0)
+    {
+        return;
+    }
     else
     {
-        if (alpha < 0) alpha = 0;
-        if (alpha > 10) alpha = 10;
-
+        int iAlpha = alpha * MAX_ALPHA;
         for (int x = x0; x < x1; x++)
         {
             int fbofs = (x) * 240 + (239 - y0);
             for (int y = y0; y < y1; y++)
-                fb[fbofs--] = 
-                    ui3dsApplyAlphaToColour(color, alpha) +
-                    ui3dsApplyAlphaToColour(fb[fbofs], 10 - alpha);
+            {
+                fb[fbofs] = 
+                    ui3dsApplyAlphaToColour565(color, iAlpha) +
+                    ui3dsApplyAlphaToColour565(fb[fbofs], MAX_ALPHA - iAlpha);
+                fbofs --;
+            }
         }
     }
 }
@@ -273,77 +331,189 @@ void ui3dsDrawRect(int x0, int y0, int x1, int y1, int color, int alpha)
 //---------------------------------------------------------------
 void ui3dsDrawRect(int x0, int y0, int x1, int y1)
 {
-    uint16* fb = (uint16 *) gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
-
-    x0 += translateX;
-    x1 += translateX;
-    y0 += translateY;
-    y1 += translateY;
-
-    if (x0 < viewportX1) x0 = viewportX1;
-    if (x1 > viewportX2) x1 = viewportX2;
-    if (y0 < viewportY1) y0 = viewportY1;
-    if (y1 > viewportY2) y1 = viewportY2;
-    
-    for (int x = x0; x < x1; x++)
-    {
-        int fbofs = (x) * 240 + (239 - y0);
-        for (int y = y0; y < y1; y++)
-            fb[fbofs--] = backColor;
-    }
+    ui3dsDrawRect(x0, y0, x1, y1, backColor, 1.0f);
 }
 
 
 //---------------------------------------------------------------
 // Draws a string at the given position without translation.
 //---------------------------------------------------------------
-void ui3dsDrawString(uint16 *fb, int absoluteX, int absoluteY, char *buffer)
+void ui3dsDrawStringOnly(uint16 *fb, int absoluteX, int absoluteY, int color, char *buffer, int startPos = 0, int endPos = 0xffff)
 {
     int x = absoluteX;
     int y = absoluteY;
-    int len = strlen(buffer);
-    int totalWidth = 0;
-    for (int i = 0; i < len; i++)
+
+    if (color < 0)
+        return;
+    if (y >= viewportY1 - 16 && y <= viewportY2)
     {
-        uint8 c = buffer[i];
-        ui3dsDrawChar(fb, x + totalWidth, y, c);
-        totalWidth += fontWidth[c];
+        color = CONVERT_TO_565(color);
+        for (int i = startPos; i <= endPos; i++)
+        {
+            uint8 c = buffer[i];
+            if (c == 0)
+                break;
+            ui3dsDrawChar(fb, x, y, color, c);
+            x += fontWidth[c];
+        }
     }
 }
 
 
 //---------------------------------------------------------------
-// Draws a string with the fore + back colour.
+// Draws a string with the forecolor, with wrapping
 //---------------------------------------------------------------
-void ui3dsDrawString(int x0, int y0, int x1, int y1, bool centreAligned, char *buffer)
+void ui3dsDrawStringWithWrapping(int x0, int y0, int x1, int y1, int color, int horizontalAlignment, char *buffer)
+{
+    int strLineCount = 0;
+    int strLineStart[30];
+    int strLineEnd[30];
+
+    x0 += translateX;
+    x1 += translateX;
+    y0 += translateY;
+    y1 += translateY;
+    
+    ui3dsPushViewport(x0, y0, x1, y1);
+    //ui3dsDrawRect(x0, y0, x1, y1, backColor);  // Draw the background color
+   
+    if (buffer != NULL)
+    {
+        int maxWidth = x1 - x0;
+        int slen = strlen(buffer);
+
+        int curStartPos = 0;
+        int curEndPos = slen - 1;
+        int lineWidth = 0;
+        for (int i = 0; i < slen; )
+        {
+            if (i != curStartPos)
+            {
+                if (buffer[i] == ' ' && i > 0 && buffer[i-1] != ' ')
+                    curEndPos = i - 1;
+                else if (buffer[i] == '-')  // use space or dash as line breaks
+                    curEndPos = i;
+                else if (buffer[i] == '\n')  // \n as line breaks.
+                {
+                    curEndPos = i - 1;
+                    lineWidth = 999999;     // force the line break.
+                }
+            }
+            lineWidth += fontWidth[buffer[i]];
+            if (lineWidth > maxWidth)
+            {
+                // Break the line here
+                strLineStart[strLineCount] = curStartPos;
+                strLineEnd[strLineCount] = curEndPos;
+                strLineCount++;
+
+                if (strLineCount >= 30) break; 
+
+                if (lineWidth != 999999)
+                {
+                    i = curEndPos + 1;
+                    while (buffer[i] == ' ')
+                        i++;
+                }
+                else
+                {
+                    i = curEndPos + 2;
+                }
+                curStartPos = i;
+                curEndPos = slen - 1;
+                lineWidth = 0;
+            }
+            else
+                i++;
+        }
+
+        // Output the last line.
+        curEndPos = slen - 1;
+        if (curStartPos <= curEndPos)
+        {
+            strLineStart[strLineCount] = curStartPos;
+            strLineEnd[strLineCount] = curEndPos;
+            strLineCount++;
+        }
+
+        uint16* fb = (uint16 *) gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
+        for (int i = 0; i < strLineCount; i++)
+        {
+            int x = x0;
+            if (horizontalAlignment >= 0)
+            {
+                int sWidth = ui3dsGetStringWidth(buffer, strLineStart[i], strLineEnd[i]);
+
+                if (horizontalAlignment == 0)   // center aligned
+                    x = (maxWidth - sWidth) / 2 + x0;
+                else                            // right aligned
+                    x = maxWidth - sWidth + x0;
+            }
+
+            ui3dsDrawStringOnly(fb, x, y0, color, buffer, strLineStart[i], strLineEnd[i]);
+            y0 += 12;
+        }
+    }
+
+    ui3dsPopViewport();
+}
+
+
+//---------------------------------------------------------------
+// Draws a string with the forecolor, with no wrapping
+//---------------------------------------------------------------
+void ui3dsDrawStringWithNoWrapping(int x0, int y0, int x1, int y1, int color, int horizontalAlignment, char *buffer)
 {
     x0 += translateX;
     x1 += translateX;
     y0 += translateY;
     y1 += translateY;
     
-    ui3dsDrawRect(x0, y0, x1, y1);  // Draw the background color
+    ui3dsPushViewport(x0, y0, x1, y1);
+    //ui3dsDrawRect(x0, y0, x1, y1, backColor);  // Draw the background color
    
     if (buffer != NULL)
     {
+        uint16* fb = (uint16 *) gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
         int maxWidth = x1 - x0;
         int x = x0;
-
-        if (centreAligned)
+        if (horizontalAlignment >= HALIGN_CENTER)
         {
             int sWidth = ui3dsGetStringWidth(buffer);
-            if (sWidth < maxWidth)
-                x = (maxWidth - sWidth) / 2 + x0;
-        }
 
-        uint16* fb = (uint16 *) gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
-        ui3dsDrawString(fb, x, y0, buffer);
+            if (horizontalAlignment == HALIGN_CENTER)   // center aligned
+                x = (maxWidth - sWidth) / 2 + x0;
+            else                                        // right aligned
+                x = maxWidth - sWidth + x0;
+        }
+        ui3dsDrawStringOnly(fb, x, y0, color, buffer);
     }
 
+    ui3dsPopViewport();
 }
 
 
-void ui3dsDrawString(int x0, int y, int x1, bool centreAligned, char *buffer)
+//---------------------------------------------------------------
+// Original draw string, for compatibility.
+//---------------------------------------------------------------
+void ui3dsDrawString(int x0, int y, int x1, bool centerAligned, char *buffer)
 {
-    ui3dsDrawString(x0, y, x1, y + 12, centreAligned, buffer);
+    if (centerAligned)
+        ui3dsDrawStringWithNoWrapping(x0, y, x1, y + fontHeight, foreColor, HALIGN_CENTER, buffer);
+    else
+        ui3dsDrawStringWithNoWrapping(x0, y, x1, y + fontHeight, foreColor, HALIGN_LEFT, buffer);
+}
+
+
+//---------------------------------------------------------------
+// Draw parallelogram
+//---------------------------------------------------------------
+void ui3dsDrawParallelogram(int x0, int y0, int x1, int y1, int dx, int color, float alpha)
+{
+    for (int y = y0; y < y1; y++)
+    {
+        ui3dsDrawRect(x0, y, x1, y + 1, color, alpha);
+        x0 += dx;
+        x1 += dx;
+    }
 }

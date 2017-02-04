@@ -245,11 +245,17 @@ bool snd3dsInitialize()
     snd3DS.audioType = 0;
     Result ret = 0;
     ret = csndInit();
+
+#ifndef RELEASE
     printf ("Trying to initialize CSND, ret = %x\n", ret);
+#endif
+
 	if (!R_FAILED(ret))
     {
         snd3DS.audioType = 1;
+#ifndef RELEASE
         printf ("CSND Initialized\n");
+#endif
     }
     else
     {
@@ -287,13 +293,17 @@ bool snd3dsInitialize()
         snd3dsFinalize();
         return false;
     }
-    printf ("snd3dsInit - Allocate L/R buffers\n");
 
+#ifndef RELEASE
+    printf ("snd3dsInit - Allocate L/R buffers\n");
+#endif
 
     if (snd3DS.audioType == 1)
     {
         snd3dsStartPlaying();
+#ifndef RELEASE
         printf ("snd3dsInit - Start playing CSND buffers\n");
+#endif
     }
     else
     {
@@ -309,8 +319,9 @@ bool snd3dsInitialize()
         ndspChnSetRate(0, SAMPLE_RATE);
         ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16);
         ndspChnSetMix(0, stereoMix);
+#ifndef RELEASE
         printf ("snd3dsInit - Set channel state\n");
-
+#endif
         memset(&snd3DS.waveBuf, 0, sizeof(ndspWaveBuf));
         snd3DS.waveBuf.data_vaddr = (u32*)snd3DS.fullBuffers;
         snd3DS.waveBuf.nsamples = BUFFER_SIZE;
@@ -318,7 +329,9 @@ bool snd3dsInitialize()
         snd3DS.waveBuf.status = NDSP_WBUF_FREE;
 
         ndspChnWaveBufAdd(0, &snd3DS.waveBuf);
+#ifndef RELEASE
         printf ("snd3dsInit - Start playing NDSP buffers\n");
+#endif
     }
 
     // SNES DSP thread
@@ -334,9 +347,10 @@ bool snd3dsInitialize()
         APT_SetAppCpuTimeLimit(30); // enables syscore usage
 #endif
 
+#ifndef RELEASE
         printf ("snd3dsInit - DSP Stack: %x\n", snd3DS.dspThreadStack);
         printf ("snd3dsInit - DSP ThreadFunc: %x\n", &snd3dsDSPThread);
-
+#endif
         IAPU.DSPReplayIndex = 0;
         IAPU.DSPWriteIndex = 0;
         ret = svcCreateThread(&snd3DS.dspThreadHandle, snd3dsDSPThread, 0,
@@ -344,15 +358,18 @@ bool snd3dsInitialize()
         if (ret)
         {
             printf("Unable to start DSP thread: %x\n", ret);
-            snd3DS.dspThreadHandle = NULL;
             snd3dsFinalize();
             DEBUG_WAIT_L_KEY
             return false;
         }
+#ifndef RELEASE
         printf ("snd3dsInit - Create DSP thread %x\n", snd3DS.dspThreadHandle);
+#endif
     }
 
+#ifndef RELEASE
     printf ("snd3DSInit complete\n");
+#endif
 
 	return true;
 }
@@ -366,7 +383,9 @@ void snd3dsFinalize()
      if (snd3DS.dspThreadHandle)
      {
          // Wait (at most 1 second) for the sound thread to finish,
+#ifndef RELEASE
          printf ("Join dspThreadHandle\n");
+#endif
          svcWaitSynchronization(snd3DS.dspThreadHandle, 1000 * 1000000);
          svcCloseHandle(snd3DS.dspThreadHandle);
      }

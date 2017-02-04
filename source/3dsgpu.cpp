@@ -706,7 +706,9 @@ bool gpu3dsInitialize()
 	GPU_Reset(NULL, gpuCommandBuffer1, gpuCommandBufferSize);
     gpuCurrentCommandBuffer = 0;
 
+#ifndef RELEASE
     printf ("Buffer: %8x\n", (u32) gpuCommandBuffer1);
+#endif
 
 #ifdef RELEASE
     GPU3DS.isReal3DS = true;
@@ -776,7 +778,9 @@ bool gpu3dsInitialize()
         return false;
     }
 
+#ifndef RELEASE
     printf ("gpu3dsInitialize - Allocate buffers\n");
+#endif
 
     if (GPU3DS.isReal3DS)
     {
@@ -807,7 +811,9 @@ bool gpu3dsInitialize()
 
     gpu3dsInitializeMode7Vertexes();
 
+#ifndef RELEASE
     printf ("gpu3dsInitialize - Set GPU statuses\n");
+#endif
 
 	//sf2d_pool_reset();
 	GPUCMD_SetBufferOffset(0);
@@ -877,7 +883,9 @@ void gpu3dsFinalize()
     LINEARFREE_SAFE(gpuCommandBuffer1);
     LINEARFREE_SAFE(gpuCommandBuffer2);
 
+#ifndef RELEASE
     printf("gfxExit:\n");
+#endif
 	gfxExit();
 
 }
@@ -1221,7 +1229,10 @@ SGPUTexture *gpu3dsCreateTextureInLinearMemory(int width, int height, GPU_TEXCOL
     texture->TextureScale[0] = 0;  // w
 
     memset(texture->PixelData, 0, size);
+
+#ifndef RELEASE
     printf ("Allocated %d x %d in linear mem (%d)\n", width, height, size);
+#endif
 
 	return texture;
 }
@@ -1276,10 +1287,11 @@ SGPUTexture *gpu3dsCreateTextureInVRAM(int width, int height, GPU_TEXCOLOR pixel
         GX_FILL_TRIGGER | GX_FILL_32BIT_DEPTH,
         NULL, 0x00000000, NULL, 0);
     gspWaitForPSC0();
+
+#ifndef RELEASE
     printf ("clear: %x %d\n", texture->PixelData, texture->BufferSize);
-
     printf ("Allocated %d x %d in VRAM (%d)\n", width, height, size);
-
+#endif
 	return texture;
 }
 
@@ -1408,39 +1420,53 @@ void gpu3dsLoadShader(int shaderIndex, u32 *shaderBinary,
     int size, int geometryShaderStride)
 {
 	GPU3DS.shaders[shaderIndex].dvlb = DVLB_ParseFile((u32 *)shaderBinary, size);
+#ifndef RELEASE
     printf ("Load DVLB %x size=%d shader=%d\n", GPU3DS.shaders[shaderIndex].dvlb, size, shaderIndex);
+#endif
 
 	shaderProgramInit(&GPU3DS.shaders[shaderIndex].shaderProgram);
 	shaderProgramSetVsh(&GPU3DS.shaders[shaderIndex].shaderProgram,
         &GPU3DS.shaders[shaderIndex].dvlb->DVLE[0]);
+#ifndef RELEASE
     printf ("  Vertex shader loaded: %x\n", GPU3DS.shaders[shaderIndex].shaderProgram.vertexShader);
+#endif
 
 	if (geometryShaderStride)
     {
 		shaderProgramSetGsh(&GPU3DS.shaders[shaderIndex].shaderProgram,
 			&GPU3DS.shaders[shaderIndex].dvlb->DVLE[1], geometryShaderStride);
+#ifndef RELEASE
         printf ("  Geometry shader loaded: %x\n", GPU3DS.shaders[shaderIndex].shaderProgram.geometryShader);
+#endif
     }
 
 	GPU3DS.shaders[shaderIndex].projectionRegister =
 		shaderInstanceGetUniformLocation(GPU3DS.shaders[shaderIndex].shaderProgram.vertexShader,
         "projection");
+#ifndef RELEASE
     printf ("  Uniform: projection: %d\n", GPU3DS.shaders[shaderIndex].projectionRegister);
+#endif
 
 	GPU3DS.shaders[shaderIndex].projectionRegister =
 		shaderInstanceGetUniformLocation(GPU3DS.shaders[shaderIndex].shaderProgram.geometryShader,
         "projection1");
+#ifndef RELEASE
     printf ("  Uniform (g): projection: %d\n", GPU3DS.shaders[shaderIndex].projectionRegister);
+#endif
 
 	int textureScaleRegister =
 		shaderInstanceGetUniformLocation(GPU3DS.shaders[shaderIndex].shaderProgram.vertexShader,
         "textureScale");
+#ifndef RELEASE
     printf ("  Uniform: textureScale: %d\n", textureScaleRegister);
+#endif
 
 	int textureScale1Register =
 		shaderInstanceGetUniformLocation(GPU3DS.shaders[shaderIndex].shaderProgram.geometryShader,
         "textureScale1");
+#ifndef RELEASE
     printf ("  Uniform (g): textureScale: %d\n", textureScale1Register);
+#endif
 }
 
 void gpu3dsEnableAlphaBlending()

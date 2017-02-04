@@ -29,10 +29,15 @@ void S9xShowTitleAndMessage(
     int titleForeColor, int titleBackColor,
     int mainForeColor, int mainBackColor,
     char *title, char *messageLine1, char *messageLine2, char *messageLine3, char *messageLine4);
+
 void S9xShowWaitingMessage(char *title, char *messageLine1, char *messageLine2);
 void S9xAlertSuccess(char *title, char *messageLine1, char *messageLine2);
 void S9xAlertFailure(char *title, char *messageLine1, char *messageLine2);
 bool S9xConfirm(char *title, char *messageLine1, char *messageLine2);
+
+void S9xDrawBlackScreen(float opacity = 1.0f);
+int S9xShowDialog(char *title, char *dialogText, int dialogBackColor, SMenuItem *menuItems, int itemCount);
+void S9xHideDialog();
 
 void S9xUncheckGroup(SMenuItem *menuItems, int itemCount, int group);
 void S9xCheckItemByID(SMenuItem *menuItems, int itemCount, int id);
@@ -41,5 +46,10 @@ void S9xSetGaugeValueItemByID(SMenuItem *menuItems, int itemCount, int id, int v
 int S9xGetGaugeValueItemByID(SMenuItem *menuItems, int itemCount, int id);
 
 bool S9xTakeScreenshot(char *path);
+
+
+#define DIALOGCOLOR_RED     0xEC407A
+#define DIALOGCOLOR_GREEN   0x4CAF50
+#define DIALOGCOLOR_CYAN    0x0097A7
 
 #endif

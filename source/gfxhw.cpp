@@ -144,6 +144,9 @@ extern uint8  Mode7Depths [2];
  (GFX.r212d & (1 << N)) && \
  !(PPU.BG_Forced & (1 << (N))))
 
+#define ON_SUB_PSEUDO(N) \
+ ((GFX.r212d & (1 << N)))
+
 #define ON_SUB_HIRES(N) \
 ((GFX.r212d & (1 << N)) && \
  !(PPU.BG_Forced & (1 << (N))))
@@ -3499,11 +3502,22 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 
 		if (PPU.BGMode != 5 && PPU.BGMode != 6)
 		{
-			BG0 = ON_SUB (0);
-			BG1 = ON_SUB (1);
-			BG2 = ON_SUB (2);
-			BG3 = ON_SUB (3);
-			OB  = ON_SUB (4);
+			if (!GFX.Pseudo)
+			{
+				BG0 = ON_SUB (0);
+				BG1 = ON_SUB (1);
+				BG2 = ON_SUB (2);
+				BG3 = ON_SUB (3);
+				OB  = ON_SUB (4);
+			}
+			else
+			{
+				BG0 = ON_SUB_PSEUDO (0);
+				BG1 = ON_SUB_PSEUDO (1);
+				BG2 = ON_SUB_PSEUDO (2);
+				BG3 = ON_SUB_PSEUDO (3);
+				OB  = ON_SUB_PSEUDO (4);
+			}
 		}
 		else
 		{
@@ -3526,7 +3540,7 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 	// Anyway the sub screen's alpha do not factor into
 	// color math. So this is fine.
 	//
-	if (PPU.BGMode != 5 && PPU.BGMode != 6)
+	if (PPU.BGMode != 5 && PPU.BGMode != 6 && !GFX.Pseudo)
 	{
 		int alpha = ALPHA_1_0;	 	// for Add or Sub   
 		if (GFX.r2131 & 0x40)	
@@ -3802,7 +3816,7 @@ inline void S9xRenderColorMath()
 {
 	gpu3dsEnableAlphaTestNotEqualsZero();
 	
-	if (PPU.BGMode == 5 || PPU.BGMode == 6)
+	if (PPU.BGMode == 5 || PPU.BGMode == 6 || GFX.Pseudo)
 	{
 		// For hi-res modes, we will always do add / 2 blending
 		// NOTE: This is not the SNES doing any blending, but
@@ -3969,7 +3983,7 @@ inline void S9xRenderClipToBlackAndColorMath()
 		}
 	}
 
-	if ((GFX.r2130 & 0x30) != 0x30 || PPU.BGMode == 5 || PPU.BGMode == 6)
+	if ((GFX.r2130 & 0x30) != 0x30 || PPU.BGMode == 5 || PPU.BGMode == 6 || GFX.Pseudo)
 	{
 		// Do actual color math
 		//
@@ -4107,6 +4121,7 @@ void S9xUpdateScreenHardware ()
     GFX.r212d = Memory.FillRAM [0x212d];
     GFX.r2130 = Memory.FillRAM [0x2130];
 
+/*
 #ifdef JP_FIX
 
     GFX.Pseudo = (Memory.FillRAM [0x2133] & 8) != 0 &&
@@ -4119,7 +4134,11 @@ void S9xUpdateScreenHardware ()
 		(GFX.r212c & 15) != (GFX.r212d & 15) &&
 		(GFX.r2131 & 0x3f) == 0;
 
-#endif
+#endif*/
+
+	// Fixed pseudo hi-res (Kirby Dreamland 3)
+    GFX.Pseudo = (Memory.FillRAM [0x2133] & 8) != 0 &&
+				 (GFX.r212c & 15) != (GFX.r212d & 15);
 
     if (IPPU.OBJChanged)
 		S9xSetupOBJ ();
@@ -4181,10 +4200,10 @@ void S9xUpdateScreenHardware ()
 	//
 	//printf ("Render Y:%d-%d M%d\n", GFX.StartY, GFX.EndY, PPU.BGMode);
 
-	if (ANYTHING_ON_SUB || (GFX.r2130 & 2) || PPU.BGMode == 5 || PPU.BGMode == 6)
+	if (ANYTHING_ON_SUB || (GFX.r2130 & 2) || PPU.BGMode == 5 || PPU.BGMode == 6 || GFX.Pseudo)
 	{
 		// debugging only
-		//printf ("SS Y:%d-%d M%d\n", GFX.StartY, GFX.EndY, PPU.BGMode);
+		//printf ("SS Y:%d-%d M%d TS:%x\n", GFX.StartY, GFX.EndY, PPU.BGMode, GFX.r212d & 0x1f);
 
 		// Render the subscreen
 		//
@@ -4194,7 +4213,7 @@ void S9xUpdateScreenHardware ()
 	}
 
 	// debugging only
-	//printf ("MS Y:%d-%d M%d\n", GFX.StartY, GFX.EndY, PPU.BGMode);
+	//printf ("MS Y:%d-%d M%d TM:%x\n", GFX.StartY, GFX.EndY, PPU.BGMode, GFX.r212c & 0x1f);
 
 	// Render the main screen.
 	//
@@ -4225,7 +4244,7 @@ void S9xUpdateScreenHardware ()
 	gpu3dsDrawVertexes();
 	*/
 	
-	/*
+	/*	
 	// For debugging only	
 	// (displays the final main screen/sub screen at the bottom right corner)
 	// 

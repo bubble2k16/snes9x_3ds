@@ -152,7 +152,7 @@ void _makepath (char *path, const char *, const char *dir, const char *fname, co
 
 void S9xMessage (int type, int number, const char *message)
 {
-	printf("%s\n", message);
+	//printf("%s\n", message);
 }
 
 bool8 S9xInitUpdate (void)
@@ -172,8 +172,8 @@ void S9xAutoSaveSRAM (void)
     //
     CPU.AccumulatedAutoSaveTimer = 0;
 
-    ui3dsSetColor(0x3f7fff, 0);
-    ui3dsDrawString(100, 140, 220, true, "Saving SRAM to SD card...");
+    ui3dsDrawRect(50, 140, 270, 154, 0x000000);
+    ui3dsDrawStringWithNoWrapping(50, 140, 270, 154, 0x3f7fff, HALIGN_CENTER, "Saving SRAM to SD card...");
 
     // Bug fix: Instead of stopping CSND, we generate silence
     // like we did prior to v0.61
@@ -185,8 +185,7 @@ void S9xAutoSaveSRAM (void)
 
 	Memory.SaveSRAM (S9xGetFilename (".srm"));
 
-    ui3dsSetColor(0x7f7f7f, 0);
-    ui3dsDrawString(100, 140, 220, true, "");
+    ui3dsDrawRect(50, 140, 270, 154, 0x000000);
 
     // Bug fix: Instead of starting CSND, we continue to mix
     // like we did prior to v0.61
@@ -595,12 +594,12 @@ SMenuItem emulatorMenu[] = {
     { -1,   NULL,                -1, 0, 0, 0 },
     { -1,   "Emulation        ", -1, 0, 0, 0 },
     { 4001, "  Take Screenshot", -1, 0, 0, 0 },
-    { 5001, "  Reset SNES     ", -1, 0, 0, 0 },
-    { 6001, "  Exit SNES9X    ", -1, 0, 0, 0 }
+    { 5001, "  Reset Console  ", -1, 0, 0, 0 },
+    { 6001, "  Exit           ", -1, 0, 0, 0 }
     };
 
 SMenuItem emulatorNewMenu[] = {
-    { 6001, "  Exit SNES9X", -1, 0, 0, 0 }
+    { 6001, "  Exit           ", -1, 0, 0, 0 }
     };
 
 SMenuItem optionMenu[] = {
@@ -624,7 +623,6 @@ SMenuItem optionMenu[] = {
     { -1,    NULL,                              -1, 0, 0, 0 },
     { -1,    "Audio                         ",  -1, 0, 0, 0 },
     { 14000, "  Amplification",                 -1, 0, 8, 0 },
-    { -1,    "  (press Y or A button to change)",-1, 0, 0, 0},
     { -1, NULL,                                 -1, 0, 0, 0 },
     { -1,    "Turbo Buttons                 ",  -1, 0, 0, 0 },
     { 13000, "  Button A                    ",   0, 0, 0, 0 },
@@ -673,6 +671,15 @@ int emulatorMenuCount = 0;
 int optionMenuCount = 0;
 int cheatMenuCount = 1;
 
+SMenuItem optionsForNoYes[] = {
+    { 0, "No", -1, 0, 0, 0 },
+    { 1, "Yes", -1, 0, 0, 0 }
+};
+
+SMenuItem optionsForOk[] = {
+    { 0, "OK", -1, 0, 0, 0 }
+};
+
 
 //----------------------------------------------------------------------
 // Update settings.
@@ -702,7 +709,7 @@ bool settingsUpdateAllSettings()
         settings3DS.ScreenX0 = 72;
         settings3DS.ScreenX1 = 72 + 256;
         settings3DS.ScreenY0 = 0;
-        settings3DS.ScreenY1 = PPU.ScreenHeight;
+        settings3DS.ScreenY1 = -1;
         settings3DS.CropPixels = 0;
     }
     else if (settings3DS.ScreenStretch == 1)
@@ -959,8 +966,8 @@ void settingsUpdateMenuCheckboxes()
 bool settingsSave(bool includeGameSettings = true)
 {
     consoleClear();
-    ui3dsSetColor(0x3f7fff, 0);
-    ui3dsDrawString(100, 140, 220, true, "Saving settings to SD card...");
+    ui3dsDrawRect(50, 140, 270, 154, 0x000000);
+    ui3dsDrawStringWithNoWrapping(50, 140, 270, 154, 0x3f7fff, HALIGN_CENTER, "Saving settings to SD card...");
 
     if (includeGameSettings)
     {
@@ -974,7 +981,7 @@ bool settingsSave(bool includeGameSettings = true)
         }
         else
         {
-            ui3dsDrawString(100, 140, 220, true, "");
+            ui3dsDrawRect(50, 140, 270, 154, 0x000000);
             return false;
         }
     }
@@ -989,10 +996,10 @@ bool settingsSave(bool includeGameSettings = true)
     }
     else
     {
-        ui3dsDrawString(100, 140, 220, true, "");
+        ui3dsDrawRect(50, 140, 270, 154, 0x000000);
         return false;
     }
-    ui3dsDrawString(100, 140, 220, true, "");
+    ui3dsDrawRect(50, 140, 270, 154, 0x000000);
 
     return true;
 }
@@ -1325,6 +1332,8 @@ bool menuHandleCheats(int selection)
 //----------------------------------------------------------------------
 void menuSelectFile(void)
 {
+    gfxSetDoubleBuffering(GFX_BOTTOM, true);
+    
     emulatorMenuCount = sizeof(emulatorNewMenu) / sizeof(SMenuItem);
     optionMenuCount = sizeof(optionMenu) / sizeof(SMenuItem);
 
@@ -1377,7 +1386,10 @@ void menuSelectFile(void)
         }
         else if (selection == 6001)
         {
-            if (S9xConfirm("Exit SNES9X", "Are you sure you want to exit?", ""))
+            int result = S9xShowDialog("Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            S9xHideDialog();
+
+            if (result == 1)
             {
                 GPU3DS.emulatorState = EMUSTATE_END;
                 return;
@@ -1402,6 +1414,8 @@ void menuSelectFile(void)
 
 void menuPause()
 {
+    gfxSetDoubleBuffering(GFX_BOTTOM, true);
+    
     emulatorMenuCount = sizeof(emulatorMenu) / sizeof(SMenuItem);
     optionMenuCount = sizeof(optionMenu) / sizeof(SMenuItem);
     bool settingsUpdated = false;
@@ -1415,13 +1429,13 @@ void menuPause()
     S9xAddTab("Cheats", cheatMenu, cheatMenuCount);
     S9xAddTab("Select ROM", fileMenu, totalRomFileCount);
     int previousFileID = fileFindLastSelectedFile();
-    if (previousFileID >= 0)
-        S9xSetSelectedItemIndexByID(3, previousFileID);
-    S9xSetCurrentMenuTab(0);
     S9xSetTabSubTitle(0, NULL);
     S9xSetTabSubTitle(1, NULL);
     S9xSetTabSubTitle(2, NULL);
     S9xSetTabSubTitle(3, cwd);
+    if (previousFileID >= 0)
+        S9xSetSelectedItemIndexByID(3, previousFileID);
+    S9xSetCurrentMenuTab(0);
     S9xSetTransferGameScreen(true);
     settingsUpdateMenuCheckboxes();
 
@@ -1474,14 +1488,18 @@ void menuPause()
         {
             int slot = selection - 2000;
             char s[_MAX_PATH];
-            sprintf(s, "Saving into slot %d.", slot);
-            S9xShowWaitingMessage("Save State", s, "This may take a while...");
-
+            char text[200];
+           
+            sprintf(text, "Saving into slot %d...\nThis may take a while", slot);
+            int result = S9xShowDialog("Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
+            svcSleepThread((long)(1000000.0f * 1000));
             sprintf(s, ".%d.frz", slot);
             Snapshot(S9xGetFilename (s));
+            S9xHideDialog();
 
-            sprintf(s, "Slot %d save complete", slot);
-            S9xAlertSuccess("Save State", s, "");
+            sprintf(text, "Slot %d save completed.", slot);
+            result = S9xShowDialog("Savestates", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+            S9xHideDialog();
 
             S9xSetSelectedItemIndexByID(0, 1000);
         }
@@ -1506,8 +1524,9 @@ void menuPause()
             }
             else
             {
-                sprintf(s, "Unable to load slot %d", slot);
-                S9xAlertFailure("Load State", s, "");
+                sprintf(s, "Oops. Unable to load slot %d!", slot);
+                S9xShowDialog("Savestates", s, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                S9xHideDialog();
             }
         }
         else if (selection == 4001)
@@ -1515,34 +1534,59 @@ void menuPause()
             char path[256];
             u32 timestamp = (u32)(svcGetSystemTick() / 446872);
             snprintf(path, 256, "%ssnes9x_%08d.bmp", cwd, timestamp);
-            S9xShowWaitingMessage("Take Screenshot", "Now taking a screenshot.", "This may take a while...");
-            if (S9xTakeScreenshot(path)) S9xAlertSuccess("Take Screenshot", "Screenshot saved to", path);
-            else S9xAlertFailure("Take Screenshot", "Unable to save screenshot.", "");
+
+            S9xShowDialog("Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, NULL, 0);
+            bool success = S9xTakeScreenshot(path);
+            S9xHideDialog();
+
+            if (success)
+            {
+                char text[600];
+                snprintf(text, 600, "Done! File saved to %s", path);
+                S9xShowDialog("Screenshot", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
+                S9xHideDialog();
+            }
+            else 
+            {
+                S9xShowDialog("Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
+                S9xHideDialog();
+            }
         }
         else if (selection == 5001)
         {
-            S9xReset();
-            cacheInit();
-            gpu3dsInitializeMode7Vertexes();
-            gpu3dsCopyVRAMTilesIntoMode7TileVertexes(Memory.VRAM);
-            // Bug fix: For some reason doing this has a probability of locking up the GPU
-            // so we will comment this out.
-            //gpu3dsClearAllRenderTargets();
-            GPU3DS.emulatorState = EMUSTATE_EMULATE;
-            consoleClear();
+            int result = S9xShowDialog("Reset Console", "Are you sure?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            S9xHideDialog();
 
-            prevSnesJoyPad = 0;
+            if (result == 1)
+            {
+                S9xReset();
+                cacheInit();
+                gpu3dsInitializeMode7Vertexes();
+                gpu3dsCopyVRAMTilesIntoMode7TileVertexes(Memory.VRAM);
+                // Bug fix: For some reason doing this has a probability of locking up the GPU
+                // so we will comment this out.
+                //gpu3dsClearAllRenderTargets();
+                GPU3DS.emulatorState = EMUSTATE_EMULATE;
+                consoleClear();
 
-            break;
+                prevSnesJoyPad = 0;
+
+                break;
+            }
+            
         }
         else if (selection == 6001)
         {
-            if (S9xConfirm("Exit SNES9X", "Are you sure you want to exit?", ""))
+            int result = S9xShowDialog("Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            if (result == 1)
             {
                 GPU3DS.emulatorState = EMUSTATE_END;
 
                 break;
             }
+            else
+                S9xHideDialog();
+            
         }
 
         // Handle all other settings.
@@ -1756,6 +1800,7 @@ void emulatorInitialize()
         exit(0);
     }
 
+    printf ("Initializating...\n");
 
     cacheInit();
     if (!snesInitialize())
@@ -1796,33 +1841,60 @@ void emulatorInitialize()
 void emulatorFinalize()
 {
     consoleClear();
+
+#ifndef RELEASE
     printf("gspWaitForP3D:\n");
+#endif
     gspWaitForVBlank();
     gpu3dsWaitForPreviousFlush();
     gspWaitForVBlank();
 
+#ifndef RELEASE
     printf("snd3dsFinalize:\n");
+#endif
     snd3dsFinalize();
+
+#ifndef RELEASE
     printf("gpu3dsFinalize:\n");
+#endif
     gpu3dsFinalize();
 
+#ifndef RELEASE
     printf("S9xGraphicsDeinit:\n");
+#endif
     S9xGraphicsDeinit();
+
+#ifndef RELEASE
     printf("S9xDeinitAPU:\n");
+#endif
     S9xDeinitAPU();
+    
+#ifndef RELEASE
     printf("Memory.Deinit:\n");
+#endif
     Memory.Deinit();
 
+#ifndef RELEASE
     printf("ptmSysmExit:\n");
+#endif
     ptmSysmExit ();
 
     //printf("romfsExit:\n");
     //romfsExit();
+    
+#ifndef RELEASE
     printf("hidExit:\n");
+#endif
 	hidExit();
+    
+#ifndef RELEASE
     printf("aptExit:\n");
+#endif
 	aptExit();
+    
+#ifndef RELEASE
     printf("srvExit:\n");
+#endif
 	srvExit();
 }
 
@@ -1895,8 +1967,8 @@ void updateFrameCount()
             else
                 snprintf (frameCountBuffer, 69, "FPS: %2d.%1d \n", fpsmul10 / 10, fpsmul10 % 10);
 
-            ui3dsSetColor(0x7f7f7f, 0);
-            ui3dsDrawString(2, 2, 200, false, frameCountBuffer);
+            ui3dsDrawRect(2, 2, 200, 16, 0x000000);
+            ui3dsDrawStringWithNoWrapping(2, 2, 200, 16, 0x7f7f7f, HALIGN_LEFT, frameCountBuffer);
         }
 
         frameCount60 = 60;
@@ -1948,10 +2020,12 @@ void snesEmulatorLoop()
 
     IPPU.RenderThisFrame = true;
 
+    // Reinitialize the console.
+    consoleInit(GFX_BOTTOM, NULL);
+    S9xDrawBlackScreen();
     if (settings3DS.HideUnnecessaryBottomScrText == 0)
     {
-        ui3dsSetColor(0x7f7f7f, 0);
-        ui3dsDrawString(100, 100, 220, true, "Touch screen for menu");
+        ui3dsDrawStringWithNoWrapping(0, 100, 320, 115, 0x7f7f7f, HALIGN_CENTER, "Touch screen for menu");
     }
 
     snd3dsStartPlaying();
@@ -2027,7 +2101,7 @@ void snesEmulatorLoop()
         gpu3dsSetTextureEnvironmentReplaceTexture0();
         gpu3dsDisableStencilTest();
         gpu3dsAddQuadVertexes(
-            settings3DS.ScreenX0, settings3DS.ScreenY0, settings3DS.ScreenX1, settings3DS.ScreenY1,
+            settings3DS.ScreenX0, settings3DS.ScreenY0, settings3DS.ScreenX1, settings3DS.ScreenY1 < 0 ? PPU.ScreenHeight : settings3DS.ScreenY1,
             settings3DS.CropPixels, settings3DS.CropPixels, 256 - settings3DS.CropPixels, PPU.ScreenHeight - settings3DS.CropPixels, 
             0.1f);
         gpu3dsDrawVertexes();
@@ -2151,7 +2225,7 @@ void snesEmulatorLoop()
     snd3dsStopPlaying();
 }
 
-
+/*
 void testGPU()
 {
     bool firstFrame = true;
@@ -2336,11 +2410,6 @@ void testGPU()
 
             gpu3dsDisableStencilTest();
 
-            /*
-            gpu3dsBindTextureDepthForScreens(GPU_TEXUNIT0);
-            gpu3dsSetRenderTargetToMainScreenTexture();
-            gpu3dsAddTileVertexes(0, 0, 200, 200, 0, 0, 256, 256, 0);
-            gpu3dsDrawVertexes();*/
         }
         else if (testMode == 12)
         {
@@ -2387,15 +2456,6 @@ void testGPU()
         }
 
         t3dsEndTiming(2);
-
-        /*
-        // Draw some test rectangles with alpha blending
-        gpu3dsSetTextureEnvironmentReplaceColor();
-        gpu3dsEnableDepthTest();
-        gpu3dsEnableAlphaBlending();
-        gpu3dsDrawRectangle(16, 1, 96, 96, 0, 0xff0000af);  // red rectangle
-        gpu3dsDrawRectangle(96, 1, 192, 96, 1, 0x0000ffaf);  // blue rectangle
-        */
 
         t3dsStartTiming(3, "End Frame");
         t3dsEndTiming(3);
@@ -2452,8 +2512,9 @@ void testGPU()
     gpu3dsFinalize();
     exit(0);
 }
+*/
 
-
+/*
 void S9xSetEnvRate (Channel *ch, unsigned long rate, int direction, int target);
 
 void testAPU()
@@ -2540,6 +2601,7 @@ void testTileCache()
         }
     }
 }
+*/
 
 int main()
 {
