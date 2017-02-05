@@ -97,6 +97,11 @@ void ui3dsPushViewport(int x1, int y1, int x2, int y2)
 {
     if (viewportStackCount < 10)
     {
+        if (x1 < viewportX1) x1 = viewportX1;
+        if (x2 > viewportX2) x2 = viewportX2;
+        if (y1 < viewportY1) y1 = viewportY1;
+        if (y2 > viewportY2) y2 = viewportY2;
+
         viewportStack[viewportStackCount][0] = viewportX1;
         viewportStack[viewportStackCount][1] = viewportX2;
         viewportStack[viewportStackCount][2] = viewportY1;
@@ -353,7 +358,8 @@ void ui3dsDrawStringOnly(uint16 *fb, int absoluteX, int absoluteY, int color, ch
             uint8 c = buffer[i];
             if (c == 0)
                 break;
-            ui3dsDrawChar(fb, x, y, color, c);
+            if (c != 32)
+                ui3dsDrawChar(fb, x, y, color, c);
             x += fontWidth[c];
         }
     }
@@ -494,26 +500,29 @@ void ui3dsDrawStringWithNoWrapping(int x0, int y0, int x1, int y1, int color, in
 
 
 //---------------------------------------------------------------
-// Original draw string, for compatibility.
+// Copies pixel data from the frame buffer to another buffer
 //---------------------------------------------------------------
-void ui3dsDrawString(int x0, int y, int x1, bool centerAligned, char *buffer)
+void ui3dsCopyFromFrameBuffer(uint16 *destBuffer)
 {
-    if (centerAligned)
-        ui3dsDrawStringWithNoWrapping(x0, y, x1, y + fontHeight, foreColor, HALIGN_CENTER, buffer);
-    else
-        ui3dsDrawStringWithNoWrapping(x0, y, x1, y + fontHeight, foreColor, HALIGN_LEFT, buffer);
+    uint16* fb = (uint16 *) gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
+    memcpy(destBuffer, fb, 320*240*2);
 }
 
 
 //---------------------------------------------------------------
-// Draw parallelogram
+// Copies pixel data from the buffer to the framebuffer
 //---------------------------------------------------------------
-void ui3dsDrawParallelogram(int x0, int y0, int x1, int y1, int dx, int color, float alpha)
+void ui3dsBlitToFrameBuffer(uint16 *srcBuffer, float alpha)
 {
-    for (int y = y0; y < y1; y++)
-    {
-        ui3dsDrawRect(x0, y, x1, y + 1, color, alpha);
-        x0 += dx;
-        x1 += dx;
-    }
+    uint16* fb = (uint16 *) gfxGetFramebuffer(GFX_BOTTOM, GFX_LEFT, NULL, NULL);
+    
+    int a = (int)(alpha * MAX_ALPHA);
+    for (int x = viewportX1; x < viewportX2; x++)
+        for (int y = viewportY1; y < viewportY2; y++)
+        {
+            int ofs = ui3dsComputeFrameBufferOffset(x,y);
+            int color = ui3dsApplyAlphaToColour565(srcBuffer[ofs], a);
+            fb[ofs] = color;
+        }
 }
+

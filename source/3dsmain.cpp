@@ -48,7 +48,7 @@ typedef struct
 
     int     ForceFrameRate = 0;             // 0 - Use ROM's Region, 1 - Force 50 fps, 2 - Force 60 fps
 
-    int     ScreenX0, ScreenX1, ScreenY0, ScreenY1;
+    int     StretchWidth, StretchHeight;
     int     CropPixels;
 
     int     Turbo[6] = {0, 0, 0, 0, 0, 0};  // Turbo buttons: 0 - No turbo, 1 - Release/Press every alt frame.
@@ -577,82 +577,145 @@ uint32 readJoypadButtons()
 // Menu options
 //----------------------------------------------------------------------
 
+#define MENU_MAKE_ACTION(ID, text) \
+    { MENUITEM_ACTION, ID, text, NULL, 0 }
+
+#define MENU_MAKE_DIALOG_ACTION(ID, text, desc) \
+    { MENUITEM_ACTION, ID, text, desc, 0 }
+
+#define MENU_MAKE_DISABLED(text) \
+    { MENUITEM_DISABLED, -1, text, NULL }
+
+#define MENU_MAKE_HEADER1(text) \
+    { MENUITEM_HEADER1, -1, text, NULL }
+
+#define MENU_MAKE_HEADER2(text) \
+    { MENUITEM_HEADER2, -1, text, NULL }
+
+#define MENU_MAKE_CHECKBOX(ID, text, value) \
+    { MENUITEM_CHECKBOX, ID, text, NULL, value }
+
+#define MENU_MAKE_GAUGE(ID, text, min, max, value) \
+    { MENUITEM_GAUGE, ID, text, NULL, value, min, max }
+
+#define MENU_MAKE_PICKER(ID, text, pickerDescription, pickerOptions, backColor) \
+    { MENUITEM_PICKER, ID, text, NULL, 0, 0, 0, pickerDescription, sizeof(pickerOptions)/sizeof(SMenuItem), pickerOptions, backColor }
+
+
 SMenuItem emulatorMenu[] = {
-    { -1,   "Resume           ", -1, 0, 0, 0 },
-    { 1000, "  Resume Game    ", -1, 0, 0, 0 },
-    { -1,   NULL,                -1, 0, 0, 0 },
-    { -1,   "Savestates       ", -1, 0, 0, 0 },
-    { 2001, "  Save Slot #1   ", -1, 0, 0, 0 },
-    { 2002, "  Save Slot #2   ", -1, 0, 0, 0 },
-    { 2003, "  Save Slot #3   ", -1, 0, 0, 0 },
-    { 2004, "  Save Slot #4   ", -1, 0, 0, 0 },
-    { -1,   NULL,                -1, 0, 0, 0 },
-    { 3001, "  Load Slot #1   ", -1, 0, 0, 0 },
-    { 3002, "  Load Slot #2   ", -1, 0, 0, 0 },
-    { 3003, "  Load Slot #3   ", -1, 0, 0, 0 },
-    { 3004, "  Load Slot #4   ", -1, 0, 0, 0 },
-    { -1,   NULL,                -1, 0, 0, 0 },
-    { -1,   "Emulation        ", -1, 0, 0, 0 },
-    { 4001, "  Take Screenshot", -1, 0, 0, 0 },
-    { 5001, "  Reset Console  ", -1, 0, 0, 0 },
-    { 6001, "  Exit           ", -1, 0, 0, 0 }
+    MENU_MAKE_HEADER2   ("Resume"),
+    MENU_MAKE_ACTION    (1000, "  Resume Game"),
+    MENU_MAKE_HEADER2   (""),
+
+    MENU_MAKE_HEADER2   ("Savestates"),
+    MENU_MAKE_ACTION    (2001, "  Save Slot #1"),
+    MENU_MAKE_ACTION    (2002, "  Save Slot #2"),
+    MENU_MAKE_ACTION    (2003, "  Save Slot #3"),
+    MENU_MAKE_ACTION    (2004, "  Save Slot #4"),
+    MENU_MAKE_HEADER2   (""),
+    
+    MENU_MAKE_ACTION    (3001, "  Load Slot #1"),
+    MENU_MAKE_ACTION    (3002, "  Load Slot #2"),
+    MENU_MAKE_ACTION    (3003, "  Load Slot #3"),
+    MENU_MAKE_ACTION    (3004, "  Load Slot #4"),
+    MENU_MAKE_HEADER2   (""),
+
+    MENU_MAKE_HEADER2   ("Others"),
+    MENU_MAKE_ACTION    (4001, "  Take Screenshot"),
+    MENU_MAKE_ACTION    (5001, "  Reset Console"),
+    MENU_MAKE_ACTION    (6001, "  Exit"),
+    /*
+    { -1         ,   "Resume           ", -1, 0, 0, 0 },
+    { 1000,          "  Resume Game    ", -1, 0, 0, 0 },
+    { -1         ,   NULL,                -1, 0, 0, 0 },
+    { -1         ,   "Savestates       ", -1, 0, 0, 0 },
+    { 2001,          "  Save Slot #1   ", -1, 0, 0, 0 },
+    { 2002,          "  Save Slot #2   ", -1, 0, 0, 0 },
+    { 2003,          "  Save Slot #3   ", -1, 0, 0, 0 },
+    { 2004,          "  Save Slot #4   ", -1, 0, 0, 0 },
+    { -1         ,   NULL,                -1, 0, 0, 0 },
+    { 3001,          "  Load Slot #1   ", -1, 0, 0, 0 },
+    { 3002,          "  Load Slot #2   ", -1, 0, 0, 0 },
+    { 3003,          "  Load Slot #3   ", -1, 0, 0, 0 },
+    { 3004,          "  Load Slot #4   ", -1, 0, 0, 0 },
+    { -1         ,   NULL,                -1, 0, 0, 0 },
+    { -1         ,   "Emulation        ", -1, 0, 0, 0 },
+    { 4001,          "  Take Screenshot", -1, 0, 0, 0 },
+    { 5001,          "  Reset Console  ", -1, 0, 0, 0 },
+    { 6001,          "  Exit           ", -1, 0, 0, 0 }*/
     };
 
+SMenuItem optionsForStretch[] = {
+    MENU_MAKE_DIALOG_ACTION (0, "No Stretch",               "1:1 pixels"),
+    MENU_MAKE_DIALOG_ACTION (5, "Width to 4:3",             "Stretches width only"),
+    MENU_MAKE_DIALOG_ACTION (1, "Stretch to 4:3",           "Fit to screen"),
+    MENU_MAKE_DIALOG_ACTION (2, "Stretch to Fullscreen",    "Fill screen"),
+    MENU_MAKE_DIALOG_ACTION (3, "Cropped 4:3",              "Crops 8 pixels; Fit to screen"),
+    MENU_MAKE_DIALOG_ACTION (4, "Cropped Fullscreen",       "Crops 8 pixels; Fill screen")
+};
+
+SMenuItem optionsForFrameskip[] = {
+    MENU_MAKE_DIALOG_ACTION (0, "Disabled",                 ""),
+    MENU_MAKE_DIALOG_ACTION (1, "Enabled (max 1 frame)",    ""),
+    MENU_MAKE_DIALOG_ACTION (2, "Enabled (max 2 frames)",    ""),
+    MENU_MAKE_DIALOG_ACTION (3, "Enabled (max 3 frames)",    ""),
+    MENU_MAKE_DIALOG_ACTION (4, "Enabled (max 4 frames)",    "")
+};
+
+SMenuItem optionsForFrameRate[] = {
+    MENU_MAKE_DIALOG_ACTION (0, "Default based on ROM",     ""),
+    MENU_MAKE_DIALOG_ACTION (1, "50 FPS",                   ""),
+    MENU_MAKE_DIALOG_ACTION (2, "60 FPS",                   "")
+};
+
+SMenuItem optionsForAutoSaveSRAMDelay[] = {
+    MENU_MAKE_DIALOG_ACTION (1, "1 second",     ""),
+    MENU_MAKE_DIALOG_ACTION (2, "10 seconds",   ""),
+    MENU_MAKE_DIALOG_ACTION (3, "60 seconds",   ""),
+    MENU_MAKE_DIALOG_ACTION (4, "Disabled",     "Saved when you touch the bottom screen")
+};
+
+SMenuItem optionsForInFramePaletteChanges[] = {
+    MENU_MAKE_DIALOG_ACTION (1, "Enabled",          "Best (not 100% accurate); slower"),
+    MENU_MAKE_DIALOG_ACTION (2, "Disabled Style 1", "Faster than \"Enabled\""),
+    MENU_MAKE_DIALOG_ACTION (3, "Disabled Style 2", "Faster than \"Enabled\"")
+};
+
 SMenuItem emulatorNewMenu[] = {
-    { 6001, "  Exit           ", -1, 0, 0, 0 }
+    MENU_MAKE_ACTION(6001, "  Exit")
     };
 
 SMenuItem optionMenu[] = {
-    { -1,    "                                  --- Global Settings ---",  -1, 0, 0, 0 },
-    { -1,    "Screen                        ",  -1, 0, 0, 0 },
-    { 11000, "  No stretch                  ",   1, 0, 0, 0 },
-    { 11001, "  Stretch to 4:3              ",   0, 0, 0, 0 },
-    { 11002, "  Stretch to fullscreen       ",   0, 0, 0, 0 },
-    { 11003, "  Stretch to cropped 4:3      ",   0, 0, 0, 0 },
-    { 11004, "  Stretch to cropped fullscreen",  0, 0, 0, 0 },
-    { -1,    NULL,                              -1, 0, 0, 0 },
-    { 15001, "  Hide FPS and unnecessary text in bottom screen", 0, 0, 0, 0 },
-    { -1,    NULL,                              -1, 0, 0, 0 },
-    { -1,    "                            --- Game-specific Settings ---",  -1, 0, 0, 0 },
-    { -1,    "Frameskip                     ",  -1, 0, 0, 0 },
-    { 10000, "  Disabled                    ",   0, 0, 0, 0 },
-    { 10001, "  Enabled (max 1 frame)       ",   0, 0, 0, 0 },
-    { 10002, "  Enabled (max 2 frames)      ",   0, 0, 0, 0 },
-    { 10003, "  Enabled (max 3 frames)      ",   0, 0, 0, 0 },
-    { 10004, "  Enabled (max 4 frames)      ",   1, 0, 0, 0 },
-    { -1,    NULL,                              -1, 0, 0, 0 },
-    { -1,    "Audio                         ",  -1, 0, 0, 0 },
-    { 14000, "  Amplification",                 -1, 0, 8, 0 },
-    { -1, NULL,                                 -1, 0, 0, 0 },
-    { -1,    "Turbo Buttons                 ",  -1, 0, 0, 0 },
-    { 13000, "  Button A                    ",   0, 0, 0, 0 },
-    { 13001, "  Button B                    ",   0, 0, 0, 0 },
-    { 13002, "  Button X                    ",   0, 0, 0, 0 },
-    { 13003, "  Button Y                    ",   0, 0, 0, 0 },
-    { 13004, "  Button L                    ",   0, 0, 0, 0 },
-    { 13005, "  Button R                    ",   0, 0, 0, 0 },
-    { -1,    NULL,                              -1, 0, 0, 0 },
-    { -1,    "Frame Rate                    ",  -1, 0, 0, 0 },
-    { 12000, "  Depending on ROM's Region   ",   1, 0, 0, 0 },
-    { 12001, "  Run at 50 FPS               ",   0, 0, 0, 0 },
-    { 12002, "  Run at 60 FPS               ",   0, 0, 0, 0 },
-    { -1,    NULL,                              -1, 0, 0, 0 },
-    { -1,    "SRAM Auto-Save Delay",  -1, 0, 0, 0 },
-    { 17001, "  About 1 second              ",   1, 0, 0, 0 },
-    { 17002, "  About 10 seconds            ",   0, 0, 0, 0 },
-    { 17003, "  About 60 seconds            ",   0, 0, 0, 0 },
-    { 17004, "  Disable auto-saving         ",   0, 0, 0, 0 },
-    { -1,    "  *SRAM is saved when you touch the bottom screen.",  -1, 0, 0, 0 },
-    { -1,    NULL,                              -1, 0, 0, 0 },
-    { -1,    "In-Frame Palette Changes      ",  -1, 0, 0, 0 },
-    { 16001, "  Enabled (more accurate, slower) ",   1, 0, 0, 0 },
-    { 16002, "  Disabled Style 1            ",   0, 0, 0, 0 },
-    { 16003, "  Disabled Style 2            ",   0, 0, 0, 0 }
+    MENU_MAKE_HEADER1   ("GLOBAL SETTINGS"),
+    MENU_MAKE_PICKER    (11000, "  Stretch", "How would you like the final screen to appear?", optionsForStretch, DIALOGCOLOR_CYAN),
+    MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen", 0),
+    MENU_MAKE_DISABLED  (""),
+    MENU_MAKE_HEADER1   ("GAME-SPECIFIC SETTINGS"),
+    MENU_MAKE_HEADER2   ("Graphics"),
+    MENU_MAKE_PICKER    (10000, "  Frameskip", "Try changing this if the game runs slow. Skipping frames help it run faster but less smooth.", optionsForFrameskip, DIALOGCOLOR_CYAN),
+    MENU_MAKE_PICKER    (12000, "  Framerate", "Some games run at 50 or 60 FPS by default. Override if required.", optionsForFrameRate, DIALOGCOLOR_CYAN),
+    MENU_MAKE_PICKER    (16000, "  In-Frame Palette Changes", "Try changing this if some colours in the game look off.", optionsForInFramePaletteChanges, DIALOGCOLOR_CYAN),
+    MENU_MAKE_DISABLED  (""),
+    MENU_MAKE_HEADER2   ("Audio"),
+    MENU_MAKE_GAUGE     (14000, "  Volume Amplification", 0, 8, 4),
+    MENU_MAKE_DISABLED  (""),
+    MENU_MAKE_HEADER2   ("Buttons"),
+    MENU_MAKE_CHECKBOX  (13000, "  Button A", 0),
+    MENU_MAKE_CHECKBOX  (13001, "  Button B", 0),
+    MENU_MAKE_CHECKBOX  (13002, "  Button X", 0),
+    MENU_MAKE_CHECKBOX  (13003, "  Button Y", 0),
+    MENU_MAKE_CHECKBOX  (13004, "  Button L", 0),
+    MENU_MAKE_CHECKBOX  (13005, "  Button R", 0),
+    MENU_MAKE_DISABLED  (""),
+    MENU_MAKE_HEADER2   ("SRAM (Save Data)"),
+    MENU_MAKE_PICKER    (17000, "  SRAM Auto-Save Delay", "Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently.", optionsForAutoSaveSRAMDelay, DIALOGCOLOR_CYAN)
+
     };
 
 SMenuItem cheatMenu[MAX_CHEATS+1] =
 {
-    { -1, "Cheats", -1, 0, 0, 0 }
+    MENU_MAKE_HEADER2   ("Cheats")
+    /*{ -1         , "Cheats", -1, 0, 0, 0 }*/
 };
 
 char *amplificationText[9] =
@@ -672,12 +735,12 @@ int optionMenuCount = 0;
 int cheatMenuCount = 1;
 
 SMenuItem optionsForNoYes[] = {
-    { 0, "No", -1, 0, 0, 0 },
-    { 1, "Yes", -1, 0, 0, 0 }
+    MENU_MAKE_ACTION(0, "No"),
+    MENU_MAKE_ACTION(1, "Yes")
 };
 
 SMenuItem optionsForOk[] = {
-    { 0, "OK", -1, 0, 0, 0 }
+    MENU_MAKE_ACTION(0, "OK")
 };
 
 
@@ -706,44 +769,40 @@ bool settingsUpdateAllSettings()
     //
     if (settings3DS.ScreenStretch == 0)
     {
-        settings3DS.ScreenX0 = 72;
-        settings3DS.ScreenX1 = 72 + 256;
-        settings3DS.ScreenY0 = 0;
-        settings3DS.ScreenY1 = -1;
+        settings3DS.StretchWidth = 256;
+        settings3DS.StretchHeight = -1;    // Actual height
         settings3DS.CropPixels = 0;
     }
     else if (settings3DS.ScreenStretch == 1)
     {
         // Added support for 320x240 (4:3) screen ratio
-        settings3DS.ScreenX0 = 40;
-        settings3DS.ScreenX1 = 360;
-        settings3DS.ScreenY0 = 0;
-        settings3DS.ScreenY1 = 240;
+        settings3DS.StretchWidth = 320;
+        settings3DS.StretchHeight = 240;
         settings3DS.CropPixels = 0;
     }
     else if (settings3DS.ScreenStretch == 2)
     {
-        settings3DS.ScreenX0 = 0;
-        settings3DS.ScreenX1 = 400;
-        settings3DS.ScreenY0 = 0;
-        settings3DS.ScreenY1 = 240;
+        settings3DS.StretchWidth = 400;
+        settings3DS.StretchHeight = 240;
         settings3DS.CropPixels = 0;
     }
     else if (settings3DS.ScreenStretch == 3)
     {
-        settings3DS.ScreenX0 = 40;
-        settings3DS.ScreenX1 = 360;
-        settings3DS.ScreenY0 = 0;
-        settings3DS.ScreenY1 = 240;
+        settings3DS.StretchWidth = 320;
+        settings3DS.StretchHeight = 240;
         settings3DS.CropPixels = 8;
     }
     else if (settings3DS.ScreenStretch == 4)
     {
-        settings3DS.ScreenX0 = 0;
-        settings3DS.ScreenX1 = 400;
-        settings3DS.ScreenY0 = 0;
-        settings3DS.ScreenY1 = 240;
+        settings3DS.StretchWidth = 400;
+        settings3DS.StretchHeight = 240;
         settings3DS.CropPixels = 8;
+    }
+    else if (settings3DS.ScreenStretch == 5)
+    {
+        settings3DS.StretchWidth = 0403;       // Stretch width to 4/3
+        settings3DS.StretchHeight = -1;
+        settings3DS.CropPixels = 0;
     }
 
     // update global volume
@@ -918,7 +977,7 @@ void settingsReadWriteFullListGlobal(FILE *fp)
     settingsReadWrite(fp, "#v1\n", NULL, 0, 0);
     settingsReadWrite(fp, "# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
 
-    settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 4);
+    settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 5);
     settingsReadWrite(fp, "HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
 
     // Fixes the bug where we have spaces in the directory name
@@ -926,38 +985,6 @@ void settingsReadWriteFullListGlobal(FILE *fp)
     settingsReadWriteString(fp, "ROM=%s\n", "ROM=%1000[^\n]s\n", romFileNameLastSelected);
 
     // All new options should come here!
-}
-
-//----------------------------------------------------------------------
-// Update the checkboxes to keep them in sync with the
-// actual loaded settings.
-//----------------------------------------------------------------------
-void settingsUpdateMenuCheckboxes()
-{
-    S9xUncheckGroup(optionMenu, optionMenuCount, settings3DS.MaxFrameSkips + 10000);
-    S9xCheckItemByID(optionMenu, optionMenuCount, settings3DS.MaxFrameSkips + 10000);
-
-    S9xUncheckGroup(optionMenu, optionMenuCount, settings3DS.ScreenStretch + 11000);
-    S9xCheckItemByID(optionMenu, optionMenuCount, settings3DS.ScreenStretch + 11000);
-
-    S9xUncheckGroup(optionMenu, optionMenuCount, settings3DS.ForceFrameRate + 12000);
-    S9xCheckItemByID(optionMenu, optionMenuCount, settings3DS.ForceFrameRate + 12000);
-
-    for (int i = 0; i < 6; i++)
-        S9xSetCheckItemByID(optionMenu, optionMenuCount, 13000 + i, settings3DS.Turbo[i]);
-
-    S9xSetGaugeValueItemByID(optionMenu, optionMenuCount, 14000, settings3DS.Volume, amplificationText[settings3DS.Volume]);
-
-    S9xUncheckGroup(optionMenu, optionMenuCount, settings3DS.HideUnnecessaryBottomScrText + 15000);
-    if (settings3DS.HideUnnecessaryBottomScrText)
-        S9xCheckItemByID(optionMenu, optionMenuCount, settings3DS.HideUnnecessaryBottomScrText + 15000);
-
-    S9xUncheckGroup(optionMenu, optionMenuCount, settings3DS.PaletteFix + 16000);
-    S9xCheckItemByID(optionMenu, optionMenuCount, settings3DS.PaletteFix + 16000);
-
-    S9xUncheckGroup(optionMenu, optionMenuCount, settings3DS.SRAMSaveInterval + 17000);
-    S9xCheckItemByID(optionMenu, optionMenuCount, settings3DS.SRAMSaveInterval + 17000);
-
 }
 
 //----------------------------------------------------------------------
@@ -1031,7 +1058,6 @@ bool settingsLoad(bool includeGameSettings = true)
 
             if (settingsUpdateAllSettings())
                 settingsSave();
-            settingsUpdateMenuCheckboxes();
 
             // Bug fix: Oops... forgot to close this file!
             //
@@ -1066,7 +1092,6 @@ bool settingsLoad(bool includeGameSettings = true)
                 settings3DS.SRAMSaveInterval = 3;
 
             settingsUpdateAllSettings();
-            settingsUpdateMenuCheckboxes();
 
             return settingsSave();
         }
@@ -1216,12 +1241,9 @@ void fileGetAllFiles(void)
     {
         strncpy(romFileNames[i], files[i].c_str(), _MAX_PATH);
         totalRomFileCount++;
+        fileMenu[i].Type = MENUITEM_ACTION;
         fileMenu[i].ID = i;
         fileMenu[i].Text = romFileNames[i];
-        fileMenu[i].Checked = -1;
-        fileMenu[i].GaugeValue = 0;
-        fileMenu[i].GaugeMinValue = 0;
-        fileMenu[i].GaugeMaxValue = 0;
     }
 }
 
@@ -1243,87 +1265,69 @@ int fileFindLastSelectedFile()
 
 
 //----------------------------------------------------------------------
-// Handle menu settings.
+// Copy values from menu to settings.
 //----------------------------------------------------------------------
-bool menuHandleSettings(int selection)
+bool menuCopySettings(bool copyMenuToSettings)
 {
-    if (selection / 1000 == 10)
-    {
-        settings3DS.MaxFrameSkips = selection % 1000;
-        settingsUpdateMenuCheckboxes();
-        return true;
+#define UPDATE_SETTINGS(var, tabIndex, ID)  \
+    if (copyMenuToSettings && (var) != S9xGetValueByID(tabIndex, ID)) \
+    { \
+        var = S9xGetValueByID(tabIndex, ID); \
+        settingsUpdated = true; \
+    } \
+    if (!copyMenuToSettings) \
+    { \
+        S9xSetValueByID(tabIndex, ID, (var)); \
     }
-    else if (selection / 1000 == 11)
-    {
-        settings3DS.ScreenStretch = selection % 1000;
-        settingsUpdateMenuCheckboxes();
-        settingsUpdateAllSettings();
-        return true;
-    }
-    else if (selection / 1000 == 12)
-    {
-        settings3DS.ForceFrameRate = selection % 1000;
-        settingsUpdateMenuCheckboxes();
-        settingsUpdateAllSettings();
-        return true;
-    }
-    else if (selection / 1000 == 13)
-    {
-        settings3DS.Turbo[selection % 1000] = 1 - settings3DS.Turbo[selection % 1000];
-        settingsUpdateMenuCheckboxes();
-        return true;
-    }
-    else if (selection / 1000 == 14)
-    {
-        settings3DS.Volume = S9xGetGaugeValueItemByID(optionMenu, optionMenuCount, selection);
-        settingsUpdateMenuCheckboxes();
-        settingsUpdateAllSettings();
-        return true;
-    }
-    else if (selection / 1000 == 15)
-    {
-        settings3DS.HideUnnecessaryBottomScrText = 1 - settings3DS.HideUnnecessaryBottomScrText;
-        settingsUpdateMenuCheckboxes();
-        settingsUpdateAllSettings();
-        return true;
-    }
-    else if (selection / 1000 == 16)
-    {
-        settings3DS.PaletteFix = selection % 1000;
-        settingsUpdateMenuCheckboxes();
-        settingsUpdateAllSettings();
-        return true;
-    }
-    else if (selection / 1000 == 17)
-    {
-        settings3DS.SRAMSaveInterval = selection % 1000;
-        settingsUpdateMenuCheckboxes();
-        settingsUpdateAllSettings();
-        return true;
-    }
-    return false;
+
+    bool settingsUpdated = false;
+    UPDATE_SETTINGS(settings3DS.ScreenStretch, 1, 11000);
+    UPDATE_SETTINGS(settings3DS.HideUnnecessaryBottomScrText, 1, 15001);
+    UPDATE_SETTINGS(settings3DS.MaxFrameSkips, 1, 10000);
+    UPDATE_SETTINGS(settings3DS.ForceFrameRate, 1, 12000);
+    UPDATE_SETTINGS(settings3DS.Turbo[0], 1, 13000);
+    UPDATE_SETTINGS(settings3DS.Turbo[1], 1, 13001);
+    UPDATE_SETTINGS(settings3DS.Turbo[2], 1, 13002);
+    UPDATE_SETTINGS(settings3DS.Turbo[3], 1, 13003);
+    UPDATE_SETTINGS(settings3DS.Turbo[4], 1, 13004);
+    UPDATE_SETTINGS(settings3DS.Turbo[5], 1, 13005);
+    UPDATE_SETTINGS(settings3DS.Volume, 1, 14000);
+    UPDATE_SETTINGS(settings3DS.PaletteFix, 1, 16000);
+    UPDATE_SETTINGS(settings3DS.SRAMSaveInterval, 1, 17000);
+
+    return settingsUpdated;
 }
 
 
 //----------------------------------------------------------------------
 // Handle menu cheats.
 //----------------------------------------------------------------------
-bool menuHandleCheats(int selection)
+bool menuCopyCheats(bool copyMenuToSettings)
 {
-    if (selection / 1000 == 20)
+    bool cheatsUpdated = false;
+    for (int i = 0; i < MAX_CHEATS && i < Cheat.num_cheats; i++)
     {
-        int whichCheat = selection % 1000;
+        cheatMenu[i+1].Type = MENUITEM_CHECKBOX;
+        cheatMenu[i+1].ID = 20000 + i;
+        cheatMenu[i+1].Text = Cheat.c[i].name;
 
-        if (Cheat.c[whichCheat].enabled)
-            S9xDisableCheat(whichCheat);
+        if (copyMenuToSettings)
+        {
+            if (Cheat.c[i].enabled != cheatMenu[i+1].Value)
+            {
+                Cheat.c[i].enabled = cheatMenu[i+1].Value;
+                if (Cheat.c[i].enabled)
+                    S9xDisableCheat(i);
+                else
+                    S9xEnableCheat(i);
+                cheatsUpdated = true;
+            }
+        }
         else
-            S9xEnableCheat(whichCheat);
-
-        menuSetupCheats();
-
-        return true;
+            cheatMenu[i+1].Value = Cheat.c[i].enabled;
     }
-    return false;
+    
+    return cheatsUpdated;
 }
 
 
@@ -1396,10 +1400,6 @@ void menuSelectFile(void)
             }
         }
 
-        // Handle all other settings.
-        //
-        //menuHandleSettings(selection);
-
         selection = -1;     // Bug fix: Fixes crashing when setting options before any ROMs are loaded.
     }
     while (selection == -1);
@@ -1423,11 +1423,16 @@ void menuPause()
     bool loadRomBeforeExit = false;
     bool returnToEmulation = false;
 
+
     S9xClearMenuTabs();
     S9xAddTab("Emulator", emulatorMenu, emulatorMenuCount);
     S9xAddTab("Options", optionMenu, optionMenuCount);
     S9xAddTab("Cheats", cheatMenu, cheatMenuCount);
     S9xAddTab("Select ROM", fileMenu, totalRomFileCount);
+
+    menuCopySettings(false);
+    menuCopyCheats(false);
+
     int previousFileID = fileFindLastSelectedFile();
     S9xSetTabSubTitle(0, NULL);
     S9xSetTabSubTitle(1, NULL);
@@ -1437,7 +1442,6 @@ void menuPause()
         S9xSetSelectedItemIndexByID(3, previousFileID);
     S9xSetCurrentMenuTab(0);
     S9xSetTransferGameScreen(true);
-    settingsUpdateMenuCheckboxes();
 
     while (true)
     {
@@ -1492,7 +1496,6 @@ void menuPause()
            
             sprintf(text, "Saving into slot %d...\nThis may take a while", slot);
             int result = S9xShowDialog("Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
-            svcSleepThread((long)(1000000.0f * 1000));
             sprintf(s, ".%d.frz", slot);
             Snapshot(S9xGetFilename (s));
             S9xHideDialog();
@@ -1589,17 +1592,6 @@ void menuPause()
             
         }
 
-        // Handle all other settings.
-        //
-        bool handled = menuHandleSettings(selection);
-        if (handled)
-            settingsUpdated = true;
-        else
-        {
-            bool cheatsHandled = menuHandleCheats(selection);
-            if (cheatsHandled)
-                cheatsUpdated = true;
-        }
     }
 
     // Gets the last key pressed and saves it into menuKeyDown
@@ -1611,12 +1603,15 @@ void menuPause()
         break;
     }
 
-    // Save settings and cheats.
+    // Save settings and cheats
     //
-    if (settingsUpdated)
+    if (menuCopySettings(true))
         settingsSave();
-    if (cheatsUpdated)
+    settingsUpdateAllSettings();
+
+    if (menuCopyCheats(true))
         S9xSaveCheatFile (S9xGetFilename(".cht"));
+
     if (returnToEmulation)
     {
         GPU3DS.emulatorState = EMUSTATE_EMULATE;
@@ -1662,13 +1657,10 @@ void menuSetupCheats()
             cheatMenuCount = MAX_CHEATS;
         for (int i = 0; i < MAX_CHEATS && i < Cheat.num_cheats; i++)
         {
+            cheatMenu[i+1].Type = MENUITEM_CHECKBOX;
             cheatMenu[i+1].ID = 20000 + i;
             cheatMenu[i+1].Text = Cheat.c[i].name;
-            cheatMenu[i+1].Checked = Cheat.c[i].enabled ? 1 : 0;
-            cheatMenu[i+1].GaugeValue = 0;
-            cheatMenu[i+1].GaugeMinValue = 0;
-            cheatMenu[i+1].GaugeMaxValue = 0;
-
+            cheatMenu[i+1].Value = Cheat.c[i].enabled ? 1 : 0;
         }
     }
     else
@@ -1676,9 +1668,9 @@ void menuSetupCheats()
         cheatMenuCount = 14;
         for (int i = 0; i < cheatMenuCount; i++)
         {
+            cheatMenu[i+1].Type = MENUITEM_DISABLED;
             cheatMenu[i+1].ID = -2;
             cheatMenu[i+1].Text = noCheatsText[i];
-            cheatMenu[i+1].Checked = -1;
         }
     }
 }
@@ -2022,6 +2014,7 @@ void snesEmulatorLoop()
 
     // Reinitialize the console.
     consoleInit(GFX_BOTTOM, NULL);
+    gfxSetDoubleBuffering(GFX_BOTTOM, false);
     S9xDrawBlackScreen();
     if (settings3DS.HideUnnecessaryBottomScrText == 0)
     {
@@ -2100,9 +2093,23 @@ void snesEmulatorLoop()
         gpu3dsBindTextureMainScreen(GPU_TEXUNIT0);
         gpu3dsSetTextureEnvironmentReplaceTexture0();
         gpu3dsDisableStencilTest();
+
+        int sWidth = settings3DS.StretchWidth;
+        int sHeight = (settings3DS.StretchHeight == -1 ? PPU.ScreenHeight : settings3DS.StretchHeight) - 1;
+        if (sWidth == 0403)
+        {
+            sWidth = sHeight * 4 / 3;
+        }
+
+        int sx0 = (400 - sWidth) / 2;
+        int sx1 = 400 - (400 - sWidth) / 2;
+        int sy0 = (240 - sHeight) / 2;
+        int sy1 = 240 - (240 - sHeight) / 2;
+
+        //printf ("%d,%d,%d,%d (%d)\n", sx0, sy0, sx1, sy1, PPU.ScreenHeight);
         gpu3dsAddQuadVertexes(
-            settings3DS.ScreenX0, settings3DS.ScreenY0, settings3DS.ScreenX1, settings3DS.ScreenY1 < 0 ? PPU.ScreenHeight : settings3DS.ScreenY1,
-            settings3DS.CropPixels, settings3DS.CropPixels, 256 - settings3DS.CropPixels, PPU.ScreenHeight - settings3DS.CropPixels, 
+            sx0, sy0, sx1, sy1,
+            settings3DS.CropPixels, settings3DS.CropPixels ? settings3DS.CropPixels : 1, 256 - settings3DS.CropPixels, PPU.ScreenHeight - settings3DS.CropPixels, 
             0.1f);
         gpu3dsDrawVertexes();
         t3dsEndTiming(3);

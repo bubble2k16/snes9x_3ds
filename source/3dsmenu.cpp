@@ -39,6 +39,9 @@ int                 currentMenuTab = 0;
 bool                isDialog = false;
 
 bool                transferGameScreen = false;
+int                 transferGameScreenCount = 0;
+
+bool                swapBuffer = true;
 
 
 //-------------------------------------------------------
@@ -52,53 +55,13 @@ bool                transferGameScreen = false;
 void S9xSetTransferGameScreen(bool transfer)
 {
     transferGameScreen = transfer;
+    if (transfer)
+        transferGameScreenCount = 2;
+    else
+        transferGameScreenCount = 0;
+
 }
 
-
-void S9xSwapBuffers()
-{
-    gfxFlushBuffers();
-    if (transferGameScreen)
-        gpu3dsTransferToScreenBuffer();
-    gfxSwapBuffers();
-}
-
-char *S9xMenuTruncateString(char *outBuffer, char *inBuffer)
-{
-    memset(outBuffer, 0, CONSOLE_WIDTH);
-    if (strlen(inBuffer) < CONSOLE_WIDTH - 3)
-        return inBuffer;
-
-    for (int i = 0; i < CONSOLE_WIDTH - 3; i++)
-    {
-        outBuffer[i] = inBuffer[i];
-        if (inBuffer[i] == 0)
-            break;
-    }
-
-    return outBuffer;
-}
-
-
-void S9xShowTitleAndMessage(
-    int titleForeColor, int titleBackColor,
-    int mainForeColor, int mainBackColor,
-    char *title, char *messageLine1, char *messageLine2, char *messageLine3, char *messageLine4)
-{
-    ui3dsSetColor(titleForeColor, titleBackColor);
-    ui3dsDrawRect(0, 0, 320, 16);
-    ui3dsDrawRect(0, 224, 320, 240);
-    ui3dsDrawString(2, 2, 318, true, title);
-
-    ui3dsSetColor(mainForeColor, mainBackColor);
-    ui3dsDrawRect(0, 16, 320, 224);
-
-    int line = 70;
-    ui3dsDrawString(2, line, 318, true, messageLine1);
-    ui3dsDrawString(2, line+12, 318, true, messageLine2);
-    ui3dsDrawString(2, line+24, 318, true, messageLine3);
-    ui3dsDrawString(2, line+36, 318, true, messageLine4);
-}
 
 
 // Draw a black screen.
@@ -109,20 +72,45 @@ void S9xDrawBlackScreen(float opacity)
 }
 
 
-char menuTextBuffer[512];
+
+void S9xSwapBuffersAndWaitForVBlank()
+{
+    if (transferGameScreenCount)
+    {
+        gpu3dsTransferToScreenBuffer();
+        transferGameScreenCount --;
+    }
+    if (swapBuffer)
+    {
+        gfxFlushBuffers();
+        gfxSwapBuffers();
+        gspWaitForVBlank();
+    }
+    else
+    {
+        gspWaitForVBlank();
+    }
+    
+    swapBuffer = false;
+}
+
 
 void S9xDrawItems(
     SMenuTab *currentTab, int horizontalPadding, int menuStartY, int maxItems,
     int selectedItemBackColor,
     int selectedItemTextColor, 
+    int selectedItemDescriptionTextColor, 
     int checkedItemTextColor, 
     int normalItemTextColor,
+    int normalItemDescriptionTextColor,
     int disabledItemTextColor, 
     int headerItemTextColor, 
     int subtitleTextColor)
 {
     int fontHeight = 13;
     char gauge[52];
+    char menuTextBuffer[512];
+    char selectedTextBuffer[512];
     
     // Display the subtitle
     if (currentTab->SubTitle[0])
@@ -136,55 +124,139 @@ void S9xDrawItems(
 
     int line = 0;
     int color = 0xffffff;
+
+    // Draw all the individual items
+    //
     for (int i = currentTab->FirstItemIndex;
         i < currentTab->ItemCount && i < currentTab->FirstItemIndex + maxItems; i++)
     {
         int y = line * fontHeight + menuStartY;
 
+        if (currentTab->MenuItems[i].Text == NULL)
+            snprintf (menuTextBuffer, 511, "");
+        else
+            snprintf (menuTextBuffer, 511, "%s", currentTab->MenuItems[i].Text);
+
+        // Draw the selected background 
+        //
         if (currentTab->SelectedItemIndex == i)
         {
-            color = selectedItemTextColor;
             ui3dsDrawRect(0, y, 320, y + 14, selectedItemBackColor);
         }
-        else if (currentTab->MenuItems[i].ID == -1)
-            color = headerItemTextColor;
-        else if (currentTab->MenuItems[i].ID < -1)
-            color = disabledItemTextColor;
-        else if (currentTab->MenuItems[i].Checked == 1)
-            color = checkedItemTextColor;
-        else if (currentTab->MenuItems[i].Checked == 0)
-            color = disabledItemTextColor;
-        else
-            color = normalItemTextColor;
-
-        if (currentTab->MenuItems[i].Text == NULL)
-            menuTextBuffer[0] = 0;
-        else
-            snprintf(menuTextBuffer, 512, "%s", currentTab->MenuItems[i].Text);
-        ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + 14, color, HALIGN_LEFT, menuTextBuffer);
-
-        if (currentTab->MenuItems[i].Checked == 0)
-            ui3dsDrawStringWithNoWrapping(280, y, 320 - horizontalPadding, y + 14, color, HALIGN_LEFT, "\xfe");
-        else if (currentTab->MenuItems[i].Checked == 1)
-            ui3dsDrawStringWithNoWrapping(280, y, 320 - horizontalPadding, y + 14, color, HALIGN_LEFT, "\xfd");
-        else
+        
+        if (currentTab->MenuItems[i].Type == MENUITEM_HEADER1)
         {
-            if (currentTab->MenuItems[i].GaugeMinValue < currentTab->MenuItems[i].GaugeMaxValue)
-            {
-                int max = 40;
-                int diff = currentTab->MenuItems[i].GaugeMaxValue - currentTab->MenuItems[i].GaugeMinValue;
-                int pos = (currentTab->MenuItems[i].GaugeValue - currentTab->MenuItems[i].GaugeMinValue) * (max - 1) / diff;
+            color = headerItemTextColor;
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+            ui3dsDrawRect(horizontalPadding, y + fontHeight - 1, 320 - horizontalPadding, y + fontHeight, color);
+        }
+        else if (currentTab->MenuItems[i].Type == MENUITEM_HEADER2)
+        {
+            color = headerItemTextColor;
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+        }
+        else if (currentTab->MenuItems[i].Type == MENUITEM_DISABLED)
+        {
+            color = disabledItemTextColor;
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+        }
+        else if (currentTab->MenuItems[i].Type == MENUITEM_ACTION)
+        {
+            color = normalItemTextColor;
+            if (currentTab->SelectedItemIndex == i)
+                color = selectedItemTextColor;
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
 
-                for (int j = 0; j < max; j++)
-                    gauge[j] = (j == pos) ? '\xfa' : '\xfb';
-                gauge[max] = 0;
-                ui3dsDrawStringWithNoWrapping(245, y, 320 - horizontalPadding, y + 14, color, HALIGN_LEFT, gauge);
+            color = normalItemDescriptionTextColor;
+            if (currentTab->SelectedItemIndex == i)
+                color = selectedItemDescriptionTextColor;
+            if (currentTab->MenuItems[i].Description != NULL)
+            {
+                snprintf(menuTextBuffer, 511, "%s", currentTab->MenuItems[i].Description);
+                ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, menuTextBuffer);
+            }
+        }
+        else if (currentTab->MenuItems[i].Type == MENUITEM_CHECKBOX)
+        {
+            if (currentTab->MenuItems[i].Value == 0)
+            {
+                color = disabledItemTextColor;
+                if (currentTab->SelectedItemIndex == i)
+                    color = selectedItemTextColor;
+                ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+
+                snprintf(menuTextBuffer, 511, "\xfe");
+                ui3dsDrawStringWithNoWrapping(280, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, menuTextBuffer);
             }
             else
-                ui3dsDrawStringWithNoWrapping(245, y, 320 - horizontalPadding, y + 14, color, HALIGN_LEFT, "");
+            {
+                color = normalItemTextColor;
+                if (currentTab->SelectedItemIndex == i)
+                    color = selectedItemTextColor;
+                ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+
+                snprintf(menuTextBuffer, 511, "\xfd");
+                ui3dsDrawStringWithNoWrapping(280, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, menuTextBuffer);
+            }
         }
+        else if (currentTab->MenuItems[i].Type == MENUITEM_GAUGE)
+        {
+            color = normalItemTextColor;
+            if (currentTab->SelectedItemIndex == i)
+                color = selectedItemTextColor;
+
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+
+            int max = 40;
+            int diff = currentTab->MenuItems[i].GaugeMaxValue - currentTab->MenuItems[i].GaugeMinValue;
+            int pos = (currentTab->MenuItems[i].Value - currentTab->MenuItems[i].GaugeMinValue) * (max - 1) / diff;
+
+            for (int j = 0; j < max; j++)
+                gauge[j] = (j == pos) ? '\xfa' : '\xfb';
+            gauge[max] = 0;
+            ui3dsDrawStringWithNoWrapping(245, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, gauge);
+        }
+        else if (currentTab->MenuItems[i].Type == MENUITEM_PICKER)
+        {
+            color = normalItemTextColor;
+            if (currentTab->SelectedItemIndex == i)
+                color = selectedItemTextColor;
+
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 160, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+
+            snprintf(selectedTextBuffer, 511, "");
+            if (currentTab->MenuItems[i].PickerItems != NULL)
+            {
+                for (int j = 0; j < currentTab->MenuItems[i].PickerItemCount; j++)
+                {
+                    SMenuItem *pickerItems = (SMenuItem *)currentTab->MenuItems[i].PickerItems;
+                    if (pickerItems[j].ID == currentTab->MenuItems[i].Value)
+                    {
+                        snprintf(selectedTextBuffer, 511, "%s", pickerItems[j].Text);
+                    }
+                }
+                ui3dsDrawStringWithNoWrapping(160, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, selectedTextBuffer);
+            }
+        }
+
         line ++;
     }
+
+
+    // Draw the "up arrow" to indicate more options available at top
+    //
+    if (currentTab->FirstItemIndex != 0)
+    {
+        ui3dsDrawStringWithNoWrapping(320 - horizontalPadding, menuStartY, 320, menuStartY + fontHeight, disabledItemTextColor, HALIGN_CENTER, "\xf8");
+    }
+
+    // Draw the "down arrow" to indicate more options available at bottom
+    //
+    if (currentTab->FirstItemIndex + maxItems < currentTab->ItemCount)
+    {
+        ui3dsDrawStringWithNoWrapping(320 - horizontalPadding, menuStartY + (maxItems - 1) * fontHeight, 320, menuStartY + maxItems * fontHeight, disabledItemTextColor, HALIGN_CENTER, "\xf9");
+    }
+    
 }
 
 // Display the list of choices for selection
@@ -231,8 +303,11 @@ void S9xDrawMenu()
         currentTab, 20, menuStartY, maxItems,
         0x333333,       // selectedItemBackColor
         0xffffff,       // selectedItemTextColor
+        0x777777,       // selectedItemDescriptionTextColor
+
         0x000000,       // checkedItemTextColor
         0x333333,       // normalItemTextColor      
+        0x777777,       // normalItemDescriptionTextColor      
         0x888888,       // disabledItemTextColor
         0x1E88E5,       // headerItemTextColor
         0x1E88E5);      // subtitleTextColor
@@ -260,54 +335,72 @@ void S9xDrawDialog()
 {
     // Dialog's Background
     int dialogBackColor2 = ui3dsApplyAlphaToColor(dialogBackColor, 0.9f);
-    ui3dsDrawRect(0, 80, 320, 155, dialogBackColor2);
-    ui3dsDrawRect(0, 155, 320, 240, dialogBackColor);
+    ui3dsDrawRect(0, 0, 320, 75, dialogBackColor2);
+    ui3dsDrawRect(0, 75, 320, 160, dialogBackColor);
 
+    // Left trim the dialog title
+    int len = strlen(dialogTab.Title);
+    int startChar = 0;
+    for (int i = 0; i < len; i++)
+        if (dialogTab.Title[i] != ' ')
+        {
+            startChar = i;
+            break;
+        }
+
+    // Draw the dialog's title and descriptive text
     int dialogTitleTextColor = 
-        ui3dsApplyAlphaToColor(dialogBackColor, 0.3f);
+        ui3dsApplyAlphaToColor(dialogBackColor, 0.5f) + 
+        ui3dsApplyAlphaToColor(dialogTextColor, 0.5f);
+    ui3dsDrawStringWithNoWrapping(30, 10, 290, 25, dialogTitleTextColor, HALIGN_LEFT, &dialogTab.Title[startChar]);
+    ui3dsDrawStringWithWrapping(30, 30, 290, 70, dialogTextColor, HALIGN_LEFT, dialogTab.DialogText);
 
-    ui3dsDrawStringWithNoWrapping(30, 90, 290, 105, dialogTitleTextColor, HALIGN_LEFT, dialogTab.Title);
-
-    ui3dsDrawStringWithWrapping(30, 105, 290, 150, dialogTextColor, HALIGN_LEFT, dialogTab.DialogText);
-
+    // Draw the selectable items.
+    int dialogItemDescriptionTextColor = dialogTitleTextColor;
     S9xDrawItems(
-        &dialogTab, 30, 160, DIALOG_HEIGHT,
-        dialogSelectedItemBackColor,
-        dialogSelectedItemTextColor, 
-        dialogItemTextColor, 
-        dialogItemTextColor,
-        dialogItemTextColor, 
-        dialogItemTextColor, 
-        dialogItemTextColor);
+        &dialogTab, 30, 80, DIALOG_HEIGHT,
+        dialogSelectedItemBackColor,        // selectedItemBackColor
+        dialogSelectedItemTextColor,        // selectedItemTextColor
+        dialogItemDescriptionTextColor,     // selectedItemDescriptionColor
+
+        dialogItemTextColor,                // checkedItemTextColor
+        dialogItemTextColor,                // normalItemTextColor
+        dialogItemDescriptionTextColor,     // normalItemDescriptionTextColor
+        dialogItemDescriptionTextColor,     // disabledItemTextColor
+        dialogItemTextColor,                // headerItemTextColor
+        dialogItemTextColor                 // subtitleTextColor
+        );
 }
 
 
-void S9xDrawEverythingAndSwapBuffers(int dialogFrame = 0)
+void S9xDrawEverything(int dialogFrame = 0)
 {
-    int y = 240;
-
-    if (isDialog)
+    if (!isDialog)
     {
-        y = 240 - (8 - dialogFrame) * 20;
-    }
-
-    ui3dsSetTranslate(0, 0);
-
-    ui3dsSetViewport(0, 0, 320, y);
-    S9xDrawMenu();
-
-    if (isDialog)
-    {
+        ui3dsSetTranslate(0, 0);
         ui3dsSetViewport(0, 0, 320, 240);
-        ui3dsDrawRect(0, 0, 320, y, 0x000000, 
-            (float)(8 - dialogFrame) / 10);    
-        
-        ui3dsSetTranslate(0, dialogFrame * 20);
+        S9xDrawMenu();
+    }
+    else
+    {
+        int y = 80 + dialogFrame * dialogFrame * 80 / 32;
+
+        ui3dsSetViewport(0, 0, 320, y);
+        //ui3dsBlitToFrameBuffer(savedBuffer, 1.0f - (float)(8 - dialogFrame) / 10);
+        ui3dsSetTranslate(0, 0);
+        S9xDrawMenu();
+        ui3dsDrawRect(0, 0, 320, y, 0x000000, (float)(8 - dialogFrame) / 10);
+
+        ui3dsSetViewport(0, 0, 320, 240);
+        ui3dsSetTranslate(0, y);
         S9xDrawDialog();
         ui3dsSetTranslate(0, 0);
     }
-    S9xSwapBuffers();
+    swapBuffer = true;
 }
+
+static u32 lastKeysHeld = 0xffffff;
+static u32 thisKeysHeld = 0;
 
 
 // Displays the menu and allows the user to select from
@@ -318,19 +411,18 @@ int S9xMenuSelectItem()
     int framesDKeyHeld = 0;
     int returnResult = -1;
 
+    char menuTextBuffer[512];
+
     SMenuTab *currentTab = &menuTab[currentMenuTab];
 
     if (isDialog)
         currentTab = &dialogTab;
 
-    u32 lastKeysHeld = 0xffffff;
-    u32 thisKeysHeld = 0;
-
     for (int i = 0; i < 2; i ++)
     {
         aptMainLoop();
-        S9xDrawEverythingAndSwapBuffers();
-        gspWaitForVBlank();
+        S9xDrawEverything();
+        S9xSwapBuffersAndWaitForVBlank();
 
         hidScanInput();
         lastKeysHeld = hidKeysHeld();
@@ -372,96 +464,85 @@ int S9xMenuSelectItem()
         {
             if (!isDialog)
             {
-                if (keysDown & KEY_RIGHT)
+                if (keysDown & KEY_RIGHT &&
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_GAUGE)
                 {
-                    // Gauge adjustment
-                    if (currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue <
+                    if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value <
                         currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
                     {
-                        if (currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue <
-                            currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
-                        {
-                            currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue ++ ;
-                        }
-                        returnResult = currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
-                        break;    
+                        currentTab->MenuItems[currentTab->SelectedItemIndex].Value ++ ;
                     }
+                    S9xDrawEverything();
                 }
+                else
+                {
+                    currentMenuTab++;
+                    if (currentMenuTab >= menuTabCount)
+                        currentMenuTab = 0;
+                    currentTab = &menuTab[currentMenuTab];
 
-                currentMenuTab++;
-                if (currentMenuTab >= menuTabCount)
-                    currentMenuTab = 0;
-                currentTab = &menuTab[currentMenuTab];
-
-                S9xDrawEverythingAndSwapBuffers();
+                    S9xDrawEverything();
+                }
             }
         }
         if ((keysDown & KEY_LEFT) || (keysDown & KEY_L))
         {
             if (!isDialog)
             {
-                if (keysDown & KEY_LEFT)
+                if (keysDown & KEY_LEFT &&
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_GAUGE)
                 {
                     // Gauge adjustment
-                    if (currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue <
-                        currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
+                    if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value >
+                        currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue)
                     {
-                        if (currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue >
-                            currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue)
-                        {
-                            currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue -- ;
-                        }
-                        returnResult = currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
-                        break;
+                        currentTab->MenuItems[currentTab->SelectedItemIndex].Value -- ;
                     }
+                    S9xDrawEverything();
                 }
-
-                currentMenuTab--;
-                if (currentMenuTab < 0)
-                    currentMenuTab = menuTabCount - 1;
-                currentTab = &menuTab[currentMenuTab];
-
-                S9xDrawEverythingAndSwapBuffers();
-            }
-        }
-        if (keysDown & KEY_Y)
-        {
-            // Gauge adjustment
-            if (currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue <
-                currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
-            {
-                if (currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue >
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue)
+                else
                 {
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue -- ;
+                    currentMenuTab--;
+                    if (currentMenuTab < 0)
+                        currentMenuTab = menuTabCount - 1;
+                    currentTab = &menuTab[currentMenuTab];
+
+                    S9xDrawEverything();
                 }
-                returnResult = currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
-                break;
             }
-
-            // Bug fix: Do not return if this is not a gauge
-            //return currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
-            S9xDrawEverythingAndSwapBuffers();
         }
-
         if (keysDown & KEY_START || keysDown & KEY_A)
         {
-            // Gauge adjustment
-            if ((keysDown & KEY_A) &&
-                currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue <
-                currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
+            if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_ACTION)
             {
-                if (currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue <
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
-                {
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeValue ++ ;
-                }
                 returnResult = currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
                 break;
             }
+            if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_CHECKBOX)
+            {
+                if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value == 0)
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].Value = 1;
+                else
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].Value = 0;
+                S9xDrawEverything();
+            }
+            if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_PICKER)
+            {
+                snprintf(menuTextBuffer, 511, "%s", currentTab->MenuItems[currentTab->SelectedItemIndex].Text);
+                int resultValue = S9xShowDialog(menuTextBuffer, 
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].PickerDescription,
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].PickerBackColor,
+                    (SMenuItem *)currentTab->MenuItems[currentTab->SelectedItemIndex].PickerItems,
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].PickerItemCount,
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].Value
+                    );
+                if (resultValue != -1)
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].Value = resultValue;
+                S9xDrawEverything();
+                S9xHideDialog();
 
-            returnResult = currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
-            break;
+
+            }
         }
         if (keysDown & KEY_UP || ((thisKeysHeld & KEY_UP) && (framesDKeyHeld > 30) && (framesDKeyHeld % 2 == 0)))
         {
@@ -485,7 +566,11 @@ int S9xMenuSelectItem()
                 }
                 moveCursorTimes++;
             }
-            while (currentTab->MenuItems[currentTab->SelectedItemIndex].ID <= -1 &&
+            while (
+                (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_DISABLED ||
+                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_HEADER1 ||
+                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_HEADER2
+                ) &&
                 moveCursorTimes < currentTab->ItemCount);
 
             if (currentTab->SelectedItemIndex < currentTab->FirstItemIndex)
@@ -493,7 +578,7 @@ int S9xMenuSelectItem()
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
 
-            S9xDrawEverythingAndSwapBuffers();
+            S9xDrawEverything();
 
         }
         if (keysDown & KEY_DOWN || ((thisKeysHeld & KEY_DOWN) && (framesDKeyHeld > 30) && (framesDKeyHeld % 2 == 0)))
@@ -518,7 +603,11 @@ int S9xMenuSelectItem()
                 }
                 moveCursorTimes++;
             }
-            while (currentTab->MenuItems[currentTab->SelectedItemIndex].ID <= -1 &&
+            while (
+                (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_DISABLED ||
+                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_HEADER1 ||
+                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_HEADER2
+                ) &&
                 moveCursorTimes < currentTab->ItemCount);
 
             if (currentTab->SelectedItemIndex < currentTab->FirstItemIndex)
@@ -526,10 +615,10 @@ int S9xMenuSelectItem()
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
 
-            S9xDrawEverythingAndSwapBuffers();
+            S9xDrawEverything();
         }
 
-        gspWaitForVBlank();
+        S9xSwapBuffersAndWaitForVBlank();
     }
 
     return returnResult;
@@ -605,6 +694,36 @@ void S9xSetSelectedItemIndexByID(int tabIndex, int ID)
 }
 
 
+void S9xSetValueByID(int tabIndex, int ID, int value)
+{
+    SMenuTab *currentTab = &menuTab[tabIndex];
+
+    for (int i = 0; i < currentTab->ItemCount; i++)
+    {
+        if (currentTab->MenuItems[i].ID == ID)
+        {
+            currentTab->MenuItems[i].Value = value;
+            break;
+        }
+    }
+}
+
+
+int S9xGetValueByID(int tabIndex, int ID)
+{
+    SMenuTab *currentTab = &menuTab[tabIndex];
+
+    for (int i = 0; i < currentTab->ItemCount; i++)
+    {
+        if (currentTab->MenuItems[i].ID == ID)
+        {
+            return currentTab->MenuItems[i].Value;
+        }
+    }
+    return -1;
+}
+
+
 void S9xClearMenuTabs()
 {
     menuTabCount = 0;
@@ -612,7 +731,7 @@ void S9xClearMenuTabs()
 }
 
 
-int S9xShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuItem *menuItems, int itemCount)
+int S9xShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID)
 {
     SMenuTab *currentTab = &dialogTab;
 
@@ -628,7 +747,8 @@ int S9xShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuIt
 
     for (int i = 0; i < itemCount; i++)
     {
-        if (menuItems[i].ID > -1)
+        if ((selectedID == -1 && menuItems[i].ID > -1) || 
+            menuItems[i].ID == selectedID)
         {
             currentTab->SelectedItemIndex = i;
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + DIALOG_HEIGHT)
@@ -640,15 +760,16 @@ int S9xShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuIt
     // fade the dialog fade in
     //
     aptMainLoop();
-    S9xDrawEverythingAndSwapBuffers();
-    gspWaitForVBlank();  
+    S9xDrawEverything();
+    S9xSwapBuffersAndWaitForVBlank();  
+    //ui3dsCopyFromFrameBuffer(savedBuffer);
 
     isDialog = true;
     for (int f = 8; f >= 0; f--)
     {
         aptMainLoop();
-        S9xDrawEverythingAndSwapBuffers(f);    
-        gspWaitForVBlank();  
+        S9xDrawEverything(f);    
+        S9xSwapBuffersAndWaitForVBlank();  
     }
 
     // Execute the dialog and return result.
@@ -670,183 +791,20 @@ void S9xHideDialog()
     for (int f = 0; f <= 8; f++)
     {
         aptMainLoop();
-        S9xDrawEverythingAndSwapBuffers(f);        
-        gspWaitForVBlank();    
+        S9xDrawEverything(f);        
+        S9xSwapBuffersAndWaitForVBlank();    
     }
+
     isDialog = false;
+    
+    // draw the updated menu
+    //
+    aptMainLoop();
+    S9xDrawEverything();
+    S9xSwapBuffersAndWaitForVBlank();  
     
 }
 
-
-void S9xShowWaitingMessage(char *title, char *messageLine1, char *messageLine2)
-{
-    S9xShowTitleAndMessage(
-        0xffffff, 0x2196F3,
-        0x333333, 0xffffff,
-        title, messageLine1, messageLine2, "", "");
-}
-
-
-void S9xAlertSuccess(char *title, char *messageLine1, char *messageLine2)
-{
-    S9xShowTitleAndMessage(
-        0xffffff, 0x43A047,
-        0x333333, 0xffffff,
-        title, messageLine1, messageLine2, "", "A - OK");
-
-    u32 lastKeysHeld = 0xffffff;
-    u32 thisKeysHeld = 0;
-
-    while (aptMainLoop())
-    {
-        hidScanInput();
-        thisKeysHeld = hidKeysHeld();
-        u32 keysDown = (~lastKeysHeld) & thisKeysHeld;
-        lastKeysHeld = thisKeysHeld;
-
-        if (keysDown & KEY_A)
-        {
-            return;
-        }
-        gspWaitForVBlank();
-
-    }
-}
-
-
-void S9xAlertFailure(char *title, char *messageLine1, char *messageLine2)
-{
-    S9xShowTitleAndMessage(
-        0xffffff, 0xC62828,
-        0x333333, 0xffffff,
-        title, messageLine1, messageLine2, "", "A - OK");
-
-    u32 lastKeysHeld = 0xffffff;
-    u32 thisKeysHeld = 0;
-
-    while (aptMainLoop())
-    {
-        hidScanInput();
-        thisKeysHeld = hidKeysHeld();
-        u32 keysDown = (~lastKeysHeld) & thisKeysHeld;
-        lastKeysHeld = thisKeysHeld;
-
-        if (keysDown & KEY_A)
-        {
-            return;
-        }
-        gspWaitForVBlank();
-
-    }
-}
-
-
-bool S9xConfirm(char *title, char *messageLine1, char *messageLine2)
-{
-    S9xShowTitleAndMessage(
-        0xffffff, 0x00897B,
-        0x333333, 0xffffff,
-        title, messageLine1, messageLine2, "", "START - Yes      B - No");
-
-
-    u32 lastKeysHeld = 0xffffff;
-    u32 thisKeysHeld = 0;
-
-
-    while (aptMainLoop())
-    {
-        hidScanInput();
-        thisKeysHeld = hidKeysHeld();
-        u32 keysDown = (~lastKeysHeld) & thisKeysHeld;
-        lastKeysHeld = thisKeysHeld;
-
-        if (keysDown & KEY_START)
-        {
-            return true;
-        }
-        if (keysDown & KEY_B)
-        {
-            return false;
-        }
-        gspWaitForVBlank();
-
-    }
-    return false;
-
-}
-
-
-void S9xUncheckGroup(SMenuItem *menuItems, int itemCount, int group)
-{
-    for (int i = 0; i < itemCount; i++)
-    {
-        if (menuItems[i].ID / 1000 == group / 1000)
-        {
-            menuItems[i].Checked = 0;
-        }
-
-    }
-}
-
-
-void S9xCheckItemByID(SMenuItem *menuItems, int itemCount, int id)
-{
-    for (int i = 0; i < itemCount; i++)
-    {
-        if (menuItems[i].ID == id)
-        {
-            menuItems[i].Checked = 1;
-            break;
-        }
-
-    }
-}
-
-void S9xSetCheckItemByID(SMenuItem *menuItems, int itemCount, int id, int value)
-{
-    for (int i = 0; i < itemCount; i++)
-    {
-        if (menuItems[i].ID == id)
-        {
-            menuItems[i].Checked = value;
-            break;
-        }
-    }
-}
-
-void S9xSetGaugeValueItemByID(SMenuItem *menuItems, int itemCount, int id, int value, char *text)
-{
-    for (int i = 0; i < itemCount; i++)
-    {
-        if (menuItems[i].ID == id)
-        {
-            if (value < menuItems[i].GaugeMinValue)
-                value = menuItems[i].GaugeMinValue;
-            if (value > menuItems[i].GaugeMaxValue)
-                value = menuItems[i].GaugeMaxValue;
-            menuItems[i].GaugeValue = value;
-
-            if (text != NULL)
-                menuItems[i].Text = text;
-            break;
-        }
-
-    }
-}
-
-int S9xGetGaugeValueItemByID(SMenuItem *menuItems, int itemCount, int id)
-{
-    for (int i = 0; i < itemCount; i++)
-    {
-        if (menuItems[i].ID == id)
-        {
-            return menuItems[i].GaugeValue;
-            break;
-        }
-
-    }
-    return 0;
-}
 
 
 bool S9xTakeScreenshot(char* path)
@@ -860,6 +818,11 @@ bool S9xTakeScreenshot(char* path)
     //
     u32 bitmapsize = 400*240*2;
     u8* tempbuf = (u8*)linearAlloc(0x8A + 400*240*2);
+    if (tempbuf == NULL)
+    {
+        fclose(pFile);
+        return false;
+    }
     memset(tempbuf, 0, 0x8A + bitmapsize);
 
     *(u16*)&tempbuf[0x0] = 0x4D42;
