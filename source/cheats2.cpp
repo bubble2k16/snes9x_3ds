@@ -115,6 +115,26 @@ void S9xAddCheat (bool8 enable, bool8 save_current_value,
 	    Cheat.c [Cheat.num_cheats].saved_byte = S9xGetByte (address);
 	    Cheat.c [Cheat.num_cheats].saved = TRUE;
 	}
+    Cheat.c [Cheat.num_cheats].cheat_code[0] = 0;
+	Cheat.num_cheats++;
+    }
+}
+
+void S9xAddCheatWithCode (bool8 enable, bool8 save_current_value, 
+		  uint32 address, uint8 byte, char *code, char *name)
+{
+    if (Cheat.num_cheats < sizeof (Cheat.c) / sizeof (Cheat. c [0]))
+    {
+	Cheat.c [Cheat.num_cheats].address = address;
+	Cheat.c [Cheat.num_cheats].byte = byte;
+	Cheat.c [Cheat.num_cheats].enabled = enable;
+	if (save_current_value)
+	{
+	    Cheat.c [Cheat.num_cheats].saved_byte = S9xGetByte (address);
+	    Cheat.c [Cheat.num_cheats].saved = TRUE;
+	}
+    strncpy(Cheat.c [Cheat.num_cheats].name, name, 49);
+    strncpy(Cheat.c [Cheat.num_cheats].cheat_code, code, 49);
 	Cheat.num_cheats++;
     }
 }
@@ -206,6 +226,16 @@ void S9xRemoveCheats ()
 	    S9xRemoveCheat (i);
 }
 
+bool S9xCheatExists(uint32 addr)
+{
+    for (uint32 i = 0; i < Cheat.num_cheats; i++)
+    {
+        if (Cheat.c [i].address == addr)
+            return true;
+    }
+    return false;
+}
+
 bool8 S9xLoadCheatFile (const char *filename)
 {
     Cheat.num_cheats = 0;
@@ -230,11 +260,16 @@ bool8 S9xLoadCheatFile (const char *filename)
     }
     fclose (fs);
 
+    Cheat.text_format = false;
+
     return (TRUE);
 }
 
 bool8 S9xSaveCheatFile (const char *filename)
 {
+    if (Cheat.text_format)
+        return false;
+
     if (Cheat.num_cheats == 0)
     {
 	(void) remove (filename);
@@ -278,4 +313,112 @@ bool8 S9xSaveCheatFile (const char *filename)
     return (fclose (fs) == 0);
 }
 
+
+
+void S9xStripNewLine(char *s)
+{
+    int len = strlen(s);
+    for (int i = 0; i < len; i++)
+    {
+        if (s[i] == '\n' || s[i] == '\r')
+            s[i] = 0;
+    }
+}
+
+
+// This implements the text file format for supporting
+// Game Genie and Pro-Action Replay cheats.
+//
+bool8 S9xSaveCheatTextFile (const char *filename)
+{
+    if (!Cheat.text_format)
+        return false;
+    
+    FILE *fp = fopen (filename, "w");
+    if (fp == NULL)
+        return false;
+
+    for (uint32 i = 0; i < Cheat.num_cheats; i++)
+    {
+        // If there's no cheat code, then we compose
+        // the PAR cheat code (which is a simple (addr << 8) + byte)
+        //
+        if (Cheat.c [i].cheat_code[0] == 0)
+        {
+            snprintf(Cheat.c [i].cheat_code, 9, "%8X", 
+                ((Cheat.c [i].address << 8) + Cheat.c [i].byte));
+        }
+
+        fprintf (fp, "%s,%s,%s\n", 
+            Cheat.c [i].enabled ? "Y" : "N",
+            Cheat.c [i].cheat_code,
+            Cheat.c [i].name);
+    }
+
+    fclose(fp);
+    return true;
+}
+
+
+// This implements the text file format for supporting
+// Game Genie and Pro-Action Replay cheats.
+//
+bool8 S9xLoadCheatTextFile (const char *filename)
+{
+    FILE *fp = fopen (filename, "r");
+    if (fp == NULL)
+        return false;
+
+    char line[200];
+    char *enabled;
+    char *code;
+    char *name;
+
+    // For sanity reasons.
+    //
+    S9xDeleteCheats();
+
+    while (!feof(fp))
+    {
+        uint32 addr;
+        uint8 byte;
+        
+        fgets(line, 199, fp);
+        S9xStripNewLine(line);
+
+        enabled = line;
+
+        char *newline = strchr(line, '\n');
+        *newline = 0;
+
+        code = strchr(line, ',');
+        if (code == NULL)
+            continue;
+        *code = 0; code ++;
+
+        name = strchr(code, ',');
+        if (name == NULL)
+            continue;
+        *name = 0; name++;
+
+        // Try the Game Genie and PAR code formats and see which one is valid
+        //
+        if (S9xGameGenieToRaw(code, addr, byte) == NULL)
+        {
+            S9xAddCheatWithCode (
+                enabled[0] == 'Y' || enabled[0] == 'y', 
+                FALSE, addr, byte, code, name);            
+        }
+        else if (S9xProActionReplayToRaw(code, addr, byte) == NULL)
+        {
+            S9xAddCheatWithCode (
+                enabled[0] == 'Y' || enabled[0] == 'y', 
+                FALSE, addr, byte, code, name);            
+        }
+    }
+    fclose(fp);
+    Cheat.text_format = true;
+
+    return true;
+}
 

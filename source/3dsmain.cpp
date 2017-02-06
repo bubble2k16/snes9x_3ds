@@ -1317,9 +1317,9 @@ bool menuCopyCheats(bool copyMenuToSettings)
             {
                 Cheat.c[i].enabled = cheatMenu[i+1].Value;
                 if (Cheat.c[i].enabled)
-                    S9xDisableCheat(i);
-                else
                     S9xEnableCheat(i);
+                else
+                    S9xDisableCheat(i);
                 cheatsUpdated = true;
             }
         }
@@ -1610,7 +1610,11 @@ void menuPause()
     settingsUpdateAllSettings();
 
     if (menuCopyCheats(true))
+    {
+        // Only one of these will succeeed.
         S9xSaveCheatFile (S9xGetFilename(".cht"));
+        S9xSaveCheatTextFile (S9xGetFilename(".chx"));
+    }
 
     if (returnToEmulation)
     {

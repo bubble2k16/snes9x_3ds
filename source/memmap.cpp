@@ -845,7 +845,14 @@ again:
 
     FreeSDD1Data ();
     InitROM (Tales);
-    S9xLoadCheatFile (S9xGetFilename(".cht"));
+
+	// Updated to load cheats from a text file.
+	// The text file takes priority over the original
+	// binary format file.
+	//
+	if (!S9xLoadCheatTextFile (S9xGetFilename(".chx")))
+    	S9xLoadCheatFile (S9xGetFilename(".cht"));
+
     S9xInitCheatData ();
 	S9xApplyCheats ();
 	
