@@ -152,7 +152,7 @@ void S9xResetCPU ()
     CPU.MemSpeedx2 = SLOW_ONE_CYCLE * 2;
     CPU.FastROMSpeed = SLOW_ONE_CYCLE;
     CPU.AutoSaveTimer = 0;
-    CPU.AccumulatedAutoSaveTimer = 0;
+    //CPU.AccumulatedAutoSaveTimer = 0;
     CPU.SRAMModified = FALSE;
     // CPU.NMITriggerPoint = 4; // Set when ROM image loaded
     CPU.BRKTriggered = FALSE;

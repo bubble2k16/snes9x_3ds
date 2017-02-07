@@ -170,7 +170,8 @@ void S9xAutoSaveSRAM (void)
 {
     // Ensure that the timer is reset
     //
-    CPU.AccumulatedAutoSaveTimer = 0;
+    //CPU.AccumulatedAutoSaveTimer = 0;
+    CPU.SRAMModified = false;
 
     ui3dsDrawRect(50, 140, 270, 154, 0x000000);
     ui3dsDrawStringWithNoWrapping(50, 140, 270, 154, 0x3f7fff, HALIGN_CENTER, "Saving SRAM to SD card...");
@@ -647,11 +648,12 @@ SMenuItem emulatorMenu[] = {
 
 SMenuItem optionsForStretch[] = {
     MENU_MAKE_DIALOG_ACTION (0, "No Stretch",               "1:1 pixels"),
-    MENU_MAKE_DIALOG_ACTION (5, "Width to 4:3",             "Stretches width only"),
-    MENU_MAKE_DIALOG_ACTION (1, "Stretch to 4:3",           "Fit to screen"),
-    MENU_MAKE_DIALOG_ACTION (2, "Stretch to Fullscreen",    "Fill screen"),
-    MENU_MAKE_DIALOG_ACTION (3, "Cropped 4:3",              "Crops 8 pixels; Fit to screen"),
-    MENU_MAKE_DIALOG_ACTION (4, "Cropped Fullscreen",       "Crops 8 pixels; Fill screen")
+    MENU_MAKE_DIALOG_ACTION (6, "TV",                       "Stretch width only"),
+    MENU_MAKE_DIALOG_ACTION (5, "4:3",                      "Stretch width only"),
+    MENU_MAKE_DIALOG_ACTION (1, "4:3 Fit",                ""),
+    MENU_MAKE_DIALOG_ACTION (2, "Fullscreen",               ""),
+    MENU_MAKE_DIALOG_ACTION (3, "Cropped 4:3 Fit",        "Fit height to screen"),
+    MENU_MAKE_DIALOG_ACTION (4, "Cropped Fullscreen",       "Fill screen")
 };
 
 SMenuItem optionsForFrameskip[] = {
@@ -672,7 +674,7 @@ SMenuItem optionsForAutoSaveSRAMDelay[] = {
     MENU_MAKE_DIALOG_ACTION (1, "1 second",     ""),
     MENU_MAKE_DIALOG_ACTION (2, "10 seconds",   ""),
     MENU_MAKE_DIALOG_ACTION (3, "60 seconds",   ""),
-    MENU_MAKE_DIALOG_ACTION (4, "Disabled",     "Saved when you touch the bottom screen")
+    MENU_MAKE_DIALOG_ACTION (4, "Disabled",     "Touch bottom screen to save")
 };
 
 SMenuItem optionsForInFramePaletteChanges[] = {
@@ -687,7 +689,7 @@ SMenuItem emulatorNewMenu[] = {
 
 SMenuItem optionMenu[] = {
     MENU_MAKE_HEADER1   ("GLOBAL SETTINGS"),
-    MENU_MAKE_PICKER    (11000, "  Stretch", "How would you like the final screen to appear?", optionsForStretch, DIALOGCOLOR_CYAN),
+    MENU_MAKE_PICKER    (11000, "  Screen Stretch", "How would you like the final screen to appear?", optionsForStretch, DIALOGCOLOR_CYAN),
     MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen", 0),
     MENU_MAKE_DISABLED  (""),
     MENU_MAKE_HEADER1   ("GAME-SPECIFIC SETTINGS"),
@@ -804,6 +806,12 @@ bool settingsUpdateAllSettings()
         settings3DS.StretchHeight = -1;
         settings3DS.CropPixels = 0;
     }
+    else if (settings3DS.ScreenStretch == 6)    // TV
+    {
+        settings3DS.StretchWidth = 292;       
+        settings3DS.StretchHeight = -1;
+        settings3DS.CropPixels = 0;
+    }
 
     // update global volume
     //
@@ -851,6 +859,16 @@ bool settingsUpdateAllSettings()
             settings3DS.SRAMSaveInterval = 3;
         settingsChanged = true;
     }
+    
+    // Fixes the Auto-Save timer bug that causes
+    // the SRAM to be saved once when the settings were
+    // changed to Disabled.
+    //
+    if (Settings.AutoSaveDelay == -1)
+        CPU.AutoSaveTimer = -1;
+    else
+        CPU.AutoSaveTimer = 0;
+
     return settingsChanged;
 }
 
@@ -977,7 +995,7 @@ void settingsReadWriteFullListGlobal(FILE *fp)
     settingsReadWrite(fp, "#v1\n", NULL, 0, 0);
     settingsReadWrite(fp, "# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
 
-    settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 5);
+    settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 6);
     settingsReadWrite(fp, "HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
 
     // Fixes the bug where we have spaces in the directory name
@@ -1110,6 +1128,8 @@ void menuSetupCheats();  // forward declaration
 
 void snesLoadRom()
 {
+    consoleInit(GFX_BOTTOM, NULL);
+    gfxSetDoubleBuffering(GFX_BOTTOM, false);
     consoleClear();
     settingsSave(false);
     snprintf(romFileNameFullPath, _MAX_PATH, "%s%s", cwd, romFileName);
@@ -1409,6 +1429,17 @@ void menuSelectFile(void)
 
 
 //----------------------------------------------------------------------
+// Checks if file exists.
+//----------------------------------------------------------------------
+bool IsFileExists(const char * filename) {
+    if (FILE * file = fopen(filename, "r")) {
+        fclose(file);
+        return true;
+    }
+    return false;
+}
+
+//----------------------------------------------------------------------
 // Menu when the emulator is paused in-game.
 //----------------------------------------------------------------------
 
@@ -1534,12 +1565,28 @@ void menuPause()
         }
         else if (selection == 4001)
         {
-            char path[256];
-            u32 timestamp = (u32)(svcGetSystemTick() / 446872);
-            snprintf(path, 256, "%ssnes9x_%08d.bmp", cwd, timestamp);
-
             S9xShowDialog("Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, NULL, 0);
-            bool success = S9xTakeScreenshot(path);
+
+            char ext[256];
+            const char *path = NULL;
+
+            int i = 1;
+            while (i <= 999)
+            {
+                snprintf(ext, 255, ".b%03d.bmp", i);
+                path = S9xGetFilename(ext);
+                if (!IsFileExists(path))
+                    break;
+                path = NULL;
+                i++;
+            }
+
+
+            bool success = false;
+            if (path)
+            {
+                success = S9xTakeScreenshot(path);
+            }
             S9xHideDialog();
 
             if (success)
@@ -2099,7 +2146,7 @@ void snesEmulatorLoop()
         gpu3dsDisableStencilTest();
 
         int sWidth = settings3DS.StretchWidth;
-        int sHeight = (settings3DS.StretchHeight == -1 ? PPU.ScreenHeight : settings3DS.StretchHeight) - 1;
+        int sHeight = (settings3DS.StretchHeight == -1 ? PPU.ScreenHeight : settings3DS.StretchHeight);
         if (sWidth == 0403)
         {
             sWidth = sHeight * 4 / 3;
@@ -2110,12 +2157,17 @@ void snesEmulatorLoop()
         int sy0 = (240 - sHeight) / 2;
         int sy1 = 240 - (240 - sHeight) / 2;
 
-        //printf ("%d,%d,%d,%d (%d)\n", sx0, sy0, sx1, sy1, PPU.ScreenHeight);
         gpu3dsAddQuadVertexes(
             sx0, sy0, sx1, sy1,
-            settings3DS.CropPixels, settings3DS.CropPixels ? settings3DS.CropPixels : 1, 256 - settings3DS.CropPixels, PPU.ScreenHeight - settings3DS.CropPixels, 
+            settings3DS.CropPixels, settings3DS.CropPixels, 
+            256 - settings3DS.CropPixels, PPU.ScreenHeight - settings3DS.CropPixels, 
             0.1f);
         gpu3dsDrawVertexes();
+
+	    gpu3dsUseShader(2);             // for drawing tiles
+        gpu3dsSetTextureEnvironmentReplaceColor();
+        gpu3dsDrawRectangle(sx0, sy0, sx1, sy0 + 1, 0, 0x000000ff);
+        
         t3dsEndTiming(3);
 
         if (!firstFrame)

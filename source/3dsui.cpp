@@ -68,6 +68,16 @@ void ui3dsInitialize()
     //for (int i = 0; i < 256; i++)
     //    fontWidth[i] += 1;
 
+    fontWidth[10] = 0;
+    fontWidth[13] = 0;
+    fontWidth[248] = 10;
+    fontWidth[249] = 10;
+    fontWidth[250] = 9;
+    fontWidth[251] = 1;
+    fontWidth[253] = 10;
+    fontWidth[254] = 10;
+    fontWidth[255] = 7;
+
     viewportX1 = 0;
     viewportY1 = 0;
     viewportX2 = 320;

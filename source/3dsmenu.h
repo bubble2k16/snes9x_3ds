@@ -65,7 +65,7 @@ void S9xDrawBlackScreen(float opacity = 1.0f);
 int S9xShowDialog(char *title, char *dialogText, int dialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID = -1);
 void S9xHideDialog();
 
-bool S9xTakeScreenshot(char *path);
+bool S9xTakeScreenshot(const char *path);
 
 
 #define DIALOGCOLOR_RED     0xEC407A

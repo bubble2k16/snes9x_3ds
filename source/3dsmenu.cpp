@@ -807,7 +807,7 @@ void S9xHideDialog()
 
 
 
-bool S9xTakeScreenshot(char* path)
+bool S9xTakeScreenshot(const char* path)
 {
     int x, y;
 

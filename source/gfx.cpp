@@ -990,7 +990,10 @@ void S9xEndScreenRefresh ()
 	// Update the save SRAM timer logic.
 	if (CPU.SRAMModified)
 	{
-		if (CPU.AutoSaveTimer > 0)
+		// Fixed SRAM saving logic
+		// Can't remember what I used AccumulatedAutoSaveTimer for!
+		//
+		/*if (CPU.AutoSaveTimer > 0)
 		{
 			if (CPU.AccumulatedAutoSaveTimer <= 3600 * 5)  
 			{
@@ -1008,13 +1011,12 @@ void S9xEndScreenRefresh ()
 				CPU.AccumulatedAutoSaveTimer = 0;
 				CPU.AutoSaveTimer = 1;
 			}
-		}
-		else
+		}*/
+		if (CPU.AutoSaveTimer == 0)
 		{
-			CPU.AccumulatedAutoSaveTimer = 0;
+			//CPU.AccumulatedAutoSaveTimer = 0;
 			CPU.AutoSaveTimer = Settings.AutoSaveDelay;		// Auto-save SRAM in x frames.
 		}
-		CPU.SRAMModified = false;
 	}
 
 	if (CPU.AutoSaveTimer > 0)
@@ -1023,7 +1025,7 @@ void S9xEndScreenRefresh ()
 		if (CPU.AutoSaveTimer == 0)
 		{
 			S9xAutoSaveSRAM ();
-			CPU.AccumulatedAutoSaveTimer = 0;
+			//CPU.AccumulatedAutoSaveTimer = 0;
 		}		
 	}
 }
