@@ -709,7 +709,7 @@ SMenuItem optionMenu[] = {
     MENU_MAKE_HEADER2   ("Audio"),
     MENU_MAKE_GAUGE     (14000, "  Volume Amplification", 0, 8, 4),
     MENU_MAKE_DISABLED  (""),
-    MENU_MAKE_HEADER2   ("Buttons"),
+    MENU_MAKE_HEADER2   ("Turbo Buttons"),
     MENU_MAKE_CHECKBOX  (13000, "  Button A", 0),
     MENU_MAKE_CHECKBOX  (13001, "  Button B", 0),
     MENU_MAKE_CHECKBOX  (13002, "  Button X", 0),

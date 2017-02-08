@@ -33,6 +33,10 @@
 bool somethingWasDrawn = false;
 bool somethingWasFlushed = false;
 
+extern u8* gfxTopRightFramebuffers[2];
+extern u8* gfxTopLeftFramebuffers[2];
+u8* gfxOldTopRightFramebuffers[2];
+
 /*
 For reference only:
 
@@ -678,7 +682,12 @@ bool gpu3dsInitialize()
     GPU3DS.screenFormat = GSP_RGBA8_OES;
     gfxInit	(GPU3DS.screenFormat, GPU3DS.screenFormat, false);
 	GPU_Init(NULL);
-	gfxSet3D(false);
+	gfxSet3D(true);
+
+    gfxTopRightFramebuffers[0] = gfxTopLeftFramebuffers[0];
+    gfxTopRightFramebuffers[1] = gfxTopLeftFramebuffers[1];
+    gfxOldTopRightFramebuffers[0] = gfxTopRightFramebuffers[0];
+    gfxOldTopRightFramebuffers[1] = gfxTopRightFramebuffers[1];
 
     // Create the frame and depth buffers for the top screen.
     //
@@ -886,6 +895,12 @@ void gpu3dsFinalize()
 #ifndef RELEASE
     printf("gfxExit:\n");
 #endif
+
+    // Restore the old frame buffers so that gfxExit can properly
+    // free them.
+    //
+    gfxTopRightFramebuffers[0] = gfxOldTopRightFramebuffers[0];
+    gfxTopRightFramebuffers[1] = gfxOldTopRightFramebuffers[1];
 	gfxExit();
 
 }
