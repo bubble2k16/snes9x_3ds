@@ -50,7 +50,7 @@ typedef struct
 
 
 void S9xSetTransferGameScreen(bool transfer);
-int S9xMenuSelectItem();
+int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value));
 
 void S9xSetTabSubTitle(int tabIndex, char *subtitle);
 void S9xAddTab(char *title, SMenuItem *menuItems, int itemCount);
@@ -59,7 +59,6 @@ void S9xSetCurrentMenuTab(int tabIndex);
 void S9xSetSelectedItemIndexByID(int tabIndex, int ID);
 void S9xSetValueByID(int tabIndex, int ID, int value);
 int S9xGetValueByID(int tabIndex, int ID);
-
 
 void S9xDrawBlackScreen(float opacity = 1.0f);
 int S9xShowDialog(char *title, char *dialogText, int dialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID = -1);

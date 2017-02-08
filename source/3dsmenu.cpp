@@ -406,7 +406,7 @@ static u32 thisKeysHeld = 0;
 // Displays the menu and allows the user to select from
 // a list of choices.
 //
-int S9xMenuSelectItem()
+int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
 {
     int framesDKeyHeld = 0;
     int returnResult = -1;
@@ -537,7 +537,12 @@ int S9xMenuSelectItem()
                     currentTab->MenuItems[currentTab->SelectedItemIndex].Value
                     );
                 if (resultValue != -1)
+                {
+                    if (itemChangedCallback)
+                        itemChangedCallback(currentTab->MenuItems[currentTab->SelectedItemIndex].ID, resultValue);
+                    
                     currentTab->MenuItems[currentTab->SelectedItemIndex].Value = resultValue;
+                }
                 S9xDrawEverything();
                 S9xHideDialog();
 
@@ -776,7 +781,7 @@ int S9xShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuIt
     //
     if (itemCount > 0)
     {
-        int result = S9xMenuSelectItem();
+        int result = S9xMenuSelectItem(NULL);
 
         return result;
     }

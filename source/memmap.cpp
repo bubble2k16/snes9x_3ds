@@ -4452,6 +4452,9 @@ void CMemory::ApplyROMFixes ()
 	{
 		SpeedHackAdd(0x00893D, -1, 0xf0, 0xdb, -1, -1);  // US + EUR version
 	}
+
+	// SA1 Game's Speed Hack
+	//
 	if (strcmp (ROMName, "SUPER MARIO RPG") == 0)
 	{
 		SpeedHackAdd(0xC302FF, -1, 0xF0, 0xFC);  // US version

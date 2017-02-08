@@ -87,7 +87,34 @@
   Nintendo Co., Limited and its subsidiary companies.
 *******************************************************************************/
 
+/*
+#include "snes9x.h"
+#include "memmap.h"
+#include "cpuops.h"
+#include "ppu.h"
+#include "cpuexec.h"
+#include "debug.h"
+#include "snapshot.h"
+#include "gfx.h"
+#include "missing.h"
+#include "apu.h"
+#include "dma.h"
+#include "fxemu.h"
+#include "sa1.h"
+#include "spc7110.h"
 
+#include "3dsgpu.h"
+#include "3dsopt.h"
+#include "3dssnes9x.h"
+
+
+register SOpcodes *fastOpcodes asm ("r11");
+register long fastCPUCycles asm ("r10");
+register uint8 *fastCPUPC asm ("r9");
+
+#define CPU_Cycles 		fastCPUCycles
+#define CPU_PC   		fastCPUPC
+*/
 
 START_EXTERN_C
 extern uint8 A1, A2, A3, A4, W1, W2, W3, W4;
@@ -141,7 +168,7 @@ long TempInt32;
     Other functions
 ***********************************************************************************************/
 
-STATIC inline void CpuLoadFastRegisters ()
+STATIC inline void  __attribute__((always_inline)) CpuLoadFastRegisters ()
 {
 #ifdef CPUCYCLES_REGISTERS
     //printf ("  Load cycles: %d\n", CPU.Cycles);
@@ -150,7 +177,7 @@ STATIC inline void CpuLoadFastRegisters ()
 #endif
 }
 
-STATIC inline void CpuSaveFastRegisters ()
+STATIC inline void  __attribute__((always_inline)) CpuSaveFastRegisters ()
 {
 #ifdef CPUCYCLES_REGISTERS
     CPU.Cycles = fastCPUCycles;
@@ -161,7 +188,7 @@ STATIC inline void CpuSaveFastRegisters ()
 }
 
 
-STATIC inline void CpuFixCycles ()
+STATIC inline void  __attribute__((always_inline)) CpuFixCycles ()
 {
 #ifdef OPCODE_REGISTERS
 #define ASSIGN_OPCODES(x)  fastOpcodes = ICPU.S9xOpcodes = x;
@@ -199,7 +226,7 @@ STATIC inline void CpuFixCycles ()
 }
 
 
-INLINE void CpuSetPCBase (uint32 Address)
+INLINE void  __attribute__((always_inline)) CpuSetPCBase (uint32 Address)
 {
     int block;
     uint8 *GetAddress = Memory.Map [block = (Address >> MEMMAP_SHIFT) & MEMMAP_MASK];
@@ -6034,6 +6061,7 @@ void S9xOpcode_IRQ (void)
 	S9xTraceMessage ("*** IRQ");
 #endif
     SA1.isInIdleLoop = false;
+    //SA1.Executing = !SA1.Waiting;
 
     if (!CheckEmulation())
     {
@@ -6104,6 +6132,7 @@ void S9xOpcode_NMI (void)
 	S9xTraceMessage ("*** NMI");
 #endif
     SA1.isInIdleLoop = false;
+    //SA1.Executing = !SA1.Waiting;
 
     if (!CheckEmulation())
     {

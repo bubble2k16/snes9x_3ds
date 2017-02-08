@@ -133,7 +133,6 @@ register uint8 *fastCPUPC asm ("r9");
 #endif
 
 
-
 #include "cpuexec-ops.cpp"
 
 inline void __attribute__ ((always_inline)) S9xHandleFlags()

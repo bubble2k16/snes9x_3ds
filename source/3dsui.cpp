@@ -9,7 +9,7 @@
 #include "snes9x.h"
 
 #include "3dsui.h"
-#include "3dsfont.h"
+#include "3dsfont.cpp"
 
 int foreColor = 0xffffff;
 int backColor = 0x000000;
@@ -36,6 +36,12 @@ typedef struct
 
 SAlpha alphas;
 
+uint8 *fontWidthArray[] = { fontTempestaWidth, fontRondaWidth, fontArialWidth };
+uint8 *fontBitmapArray[] = { fontTempestaBitmap, fontRondaBitmap, fontArialBitmap };
+
+uint8 *fontBitmap;
+uint8 *fontWidth;
+
 //---------------------------------------------------------------
 // Initialize this library
 //---------------------------------------------------------------
@@ -56,32 +62,51 @@ void ui3dsInitialize()
 
     // Initialize fonts
     //
-    for (int i = 0; i < 65536; i++)
+    for (int f = 0; f < 3; f++)
     {
-        uint8 c = fontBitmap[i];
+        fontBitmap = fontBitmapArray[f];
+        fontWidth = fontWidthArray[f];
+        for (int i = 0; i < 65536; i++)
+        {
+            uint8 c = fontBitmap[i];
+            if (c == ' ')
+                fontBitmap[i] = 0;
+            else
+                fontBitmap[i] = c - '0';
+        }
 
-        if (c == ' ')
-            fontBitmap[i] = 0;
-        else
-            fontBitmap[i] = c - '0';
+        fontWidth[1] = 10;
+        fontWidth[10] = 0;
+        fontWidth[13] = 0;
+        fontWidth[248] = 10;
+        fontWidth[249] = 10;
+        fontWidth[250] = 9;
+        fontWidth[251] = 1;
+        fontWidth[253] = 10;
+        fontWidth[254] = 10;
+        fontWidth[255] = 7;
     }
-    //for (int i = 0; i < 256; i++)
-    //    fontWidth[i] += 1;
 
-    fontWidth[10] = 0;
-    fontWidth[13] = 0;
-    fontWidth[248] = 10;
-    fontWidth[249] = 10;
-    fontWidth[250] = 9;
-    fontWidth[251] = 1;
-    fontWidth[253] = 10;
-    fontWidth[254] = 10;
-    fontWidth[255] = 7;
+    fontBitmap = fontTempestaBitmap;
+    fontWidth = fontTempestaWidth;
 
     viewportX1 = 0;
     viewportY1 = 0;
     viewportX2 = 320;
     viewportY2 = 240;    
+}
+
+
+//---------------------------------------------------------------
+// Sets the font
+//---------------------------------------------------------------
+void ui3dsSetFont(int fontIndex)
+{
+    if (fontIndex >= 0 && fontIndex < 3)
+    {
+        fontBitmap = fontBitmapArray[fontIndex];
+        fontWidth = fontWidthArray[fontIndex];
+    }
 }
 
 //---------------------------------------------------------------

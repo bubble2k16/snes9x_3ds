@@ -44,6 +44,7 @@ typedef struct
                                             // Feature: add new option to disable unnecessary bottom screen text.
                                             // 0 - Default show FPS and "Touch screen for menu" text, 1 - Hide those text.
 
+    int     Font = 0;                       // 0 - Tempesta, 1 - Ronda, 2 - Arial
     int     ScreenStretch = 0;              // 0 - no stretch, 1 - stretch full, 2 - aspect fit
 
     int     ForceFrameRate = 0;             // 0 - Use ROM's Region, 1 - Force 50 fps, 2 - Force 60 fps
@@ -646,6 +647,12 @@ SMenuItem emulatorMenu[] = {
     { 6001,          "  Exit           ", -1, 0, 0, 0 }*/
     };
 
+SMenuItem optionsForFont[] = {
+    MENU_MAKE_DIALOG_ACTION (0, "Tempesta",               ""),
+    MENU_MAKE_DIALOG_ACTION (1, "Ronda",               ""),
+    MENU_MAKE_DIALOG_ACTION (2, "Arial",                  "")
+};
+
 SMenuItem optionsForStretch[] = {
     MENU_MAKE_DIALOG_ACTION (0, "No Stretch",               "1:1 pixels"),
     MENU_MAKE_DIALOG_ACTION (6, "TV",                       "Stretch width only"),
@@ -690,6 +697,7 @@ SMenuItem emulatorNewMenu[] = {
 SMenuItem optionMenu[] = {
     MENU_MAKE_HEADER1   ("GLOBAL SETTINGS"),
     MENU_MAKE_PICKER    (11000, "  Screen Stretch", "How would you like the final screen to appear?", optionsForStretch, DIALOGCOLOR_CYAN),
+    MENU_MAKE_PICKER    (18000, "  Font", "The font used for the user interface.", optionsForFont, DIALOGCOLOR_CYAN),
     MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen", 0),
     MENU_MAKE_DISABLED  (""),
     MENU_MAKE_HEADER1   ("GAME-SPECIFIC SETTINGS"),
@@ -750,22 +758,9 @@ SMenuItem optionsForOk[] = {
 // Update settings.
 //----------------------------------------------------------------------
 
-bool settingsUpdateAllSettings()
+bool settingsUpdateAllSettings(bool updateGameSettings = true)
 {
     bool settingsChanged = false;
-
-    // Update frame rate
-    //
-    if (Settings.PAL)
-        settings3DS.TicksPerFrame = TICKS_PER_FRAME_PAL;
-    else
-        settings3DS.TicksPerFrame = TICKS_PER_FRAME_NTSC;
-
-    if (settings3DS.ForceFrameRate == 1)
-        settings3DS.TicksPerFrame = TICKS_PER_FRAME_PAL;
-
-    else if (settings3DS.ForceFrameRate == 2)
-        settings3DS.TicksPerFrame = TICKS_PER_FRAME_NTSC;
 
     // update screen stretch
     //
@@ -813,61 +808,81 @@ bool settingsUpdateAllSettings()
         settings3DS.CropPixels = 0;
     }
 
-    // update global volume
+    // Update the screen font
     //
-    if (settings3DS.Volume < 0)
-        settings3DS.Volume = 0;
-    if (settings3DS.Volume > 8)
-        settings3DS.Volume = 8;
-    Settings.VolumeMultiplyMul4 = (settings3DS.Volume + 4);
-    //printf ("vol: %d\n", Settings.VolumeMultiplyMul4);
+    ui3dsSetFont(settings3DS.Font);
 
-    // update in-frame palette fix
-    //
-    if (settings3DS.PaletteFix == 1)
-        SNESGameFixes.PaletteCommitLine = -2;
-    else if (settings3DS.PaletteFix == 2)
-        SNESGameFixes.PaletteCommitLine = 1;
-    else if (settings3DS.PaletteFix == 3)
-        SNESGameFixes.PaletteCommitLine = -1;
-    else
+    if (updateGameSettings)
     {
-        if (SNESGameFixes.PaletteCommitLine == -2)
-            settings3DS.PaletteFix = 1;
-        else if (SNESGameFixes.PaletteCommitLine == 1)
-            settings3DS.PaletteFix = 2;
-        else if (SNESGameFixes.PaletteCommitLine == -1)
-            settings3DS.PaletteFix = 3;
-        settingsChanged = true;
-    }
+        // Update frame rate
+        //
+        if (Settings.PAL)
+            settings3DS.TicksPerFrame = TICKS_PER_FRAME_PAL;
+        else
+            settings3DS.TicksPerFrame = TICKS_PER_FRAME_NTSC;
 
-    if (settings3DS.SRAMSaveInterval == 1)
-	    Settings.AutoSaveDelay = 60;
-    else if (settings3DS.SRAMSaveInterval == 2)
-	    Settings.AutoSaveDelay = 600;
-    else if (settings3DS.SRAMSaveInterval == 3)
-	    Settings.AutoSaveDelay = 3600;
-    else if (settings3DS.SRAMSaveInterval == 4)
-	    Settings.AutoSaveDelay = -1;
-    else
-    {
-        if (Settings.AutoSaveDelay == 60)
-            settings3DS.SRAMSaveInterval = 1;
-        else if (Settings.AutoSaveDelay == 600)
-            settings3DS.SRAMSaveInterval = 2;
-        else if (Settings.AutoSaveDelay == 3600)
-            settings3DS.SRAMSaveInterval = 3;
-        settingsChanged = true;
+        if (settings3DS.ForceFrameRate == 1)
+            settings3DS.TicksPerFrame = TICKS_PER_FRAME_PAL;
+
+        else if (settings3DS.ForceFrameRate == 2)
+            settings3DS.TicksPerFrame = TICKS_PER_FRAME_NTSC;
+
+        // update global volume
+        //
+        if (settings3DS.Volume < 0)
+            settings3DS.Volume = 0;
+        if (settings3DS.Volume > 8)
+            settings3DS.Volume = 8;
+        Settings.VolumeMultiplyMul4 = (settings3DS.Volume + 4);
+        //printf ("vol: %d\n", Settings.VolumeMultiplyMul4);
+
+        // update in-frame palette fix
+        //
+        if (settings3DS.PaletteFix == 1)
+            SNESGameFixes.PaletteCommitLine = -2;
+        else if (settings3DS.PaletteFix == 2)
+            SNESGameFixes.PaletteCommitLine = 1;
+        else if (settings3DS.PaletteFix == 3)
+            SNESGameFixes.PaletteCommitLine = -1;
+        else
+        {
+            if (SNESGameFixes.PaletteCommitLine == -2)
+                settings3DS.PaletteFix = 1;
+            else if (SNESGameFixes.PaletteCommitLine == 1)
+                settings3DS.PaletteFix = 2;
+            else if (SNESGameFixes.PaletteCommitLine == -1)
+                settings3DS.PaletteFix = 3;
+            settingsChanged = true;
+        }
+
+        if (settings3DS.SRAMSaveInterval == 1)
+            Settings.AutoSaveDelay = 60;
+        else if (settings3DS.SRAMSaveInterval == 2)
+            Settings.AutoSaveDelay = 600;
+        else if (settings3DS.SRAMSaveInterval == 3)
+            Settings.AutoSaveDelay = 3600;
+        else if (settings3DS.SRAMSaveInterval == 4)
+            Settings.AutoSaveDelay = -1;
+        else
+        {
+            if (Settings.AutoSaveDelay == 60)
+                settings3DS.SRAMSaveInterval = 1;
+            else if (Settings.AutoSaveDelay == 600)
+                settings3DS.SRAMSaveInterval = 2;
+            else if (Settings.AutoSaveDelay == 3600)
+                settings3DS.SRAMSaveInterval = 3;
+            settingsChanged = true;
+        }
+        
+        // Fixes the Auto-Save timer bug that causes
+        // the SRAM to be saved once when the settings were
+        // changed to Disabled.
+        //
+        if (Settings.AutoSaveDelay == -1)
+            CPU.AutoSaveTimer = -1;
+        else
+            CPU.AutoSaveTimer = 0;
     }
-    
-    // Fixes the Auto-Save timer bug that causes
-    // the SRAM to be saved once when the settings were
-    // changed to Disabled.
-    //
-    if (Settings.AutoSaveDelay == -1)
-        CPU.AutoSaveTimer = -1;
-    else
-        CPU.AutoSaveTimer = 0;
 
     return settingsChanged;
 }
@@ -997,6 +1012,7 @@ void settingsReadWriteFullListGlobal(FILE *fp)
 
     settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 6);
     settingsReadWrite(fp, "HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
+    settingsReadWrite(fp, "Font=%d\n", &settings3DS.Font, 0, 1);
 
     // Fixes the bug where we have spaces in the directory name
     settingsReadWriteString(fp, "Dir=%s\n", "Dir=%1000[^\n]s\n", cwd);
@@ -1060,6 +1076,7 @@ bool settingsLoad(bool includeGameSettings = true)
     {
         settingsWriteMode = false;
         settingsReadWriteFullListGlobal(fp);
+        settingsUpdateAllSettings(false);
         fclose(fp);
     }
     else
@@ -1146,10 +1163,6 @@ void snesLoadRom()
     //gpu3dsClearAllRenderTargets();
     //printf ("b\n");
 
-    if (loaded)
-    {
-        printf ("  ROM Loaded...\n");
-    }
     GPU3DS.emulatorState = EMUSTATE_EMULATE;
 
     consoleClear();
@@ -1301,6 +1314,7 @@ bool menuCopySettings(bool copyMenuToSettings)
     }
 
     bool settingsUpdated = false;
+    UPDATE_SETTINGS(settings3DS.Font, 1, 18000);
     UPDATE_SETTINGS(settings3DS.ScreenStretch, 1, 11000);
     UPDATE_SETTINGS(settings3DS.HideUnnecessaryBottomScrText, 1, 15001);
     UPDATE_SETTINGS(settings3DS.MaxFrameSkips, 1, 10000);
@@ -1379,7 +1393,7 @@ void menuSelectFile(void)
         if (appExiting)
             return;
 
-        selection = S9xMenuSelectItem();
+        selection = S9xMenuSelectItem(NULL);
 
         if (selection >= 0 && selection < 1000)
         {
@@ -1439,6 +1453,19 @@ bool IsFileExists(const char * filename) {
     return false;
 }
 
+
+//----------------------------------------------------------------------
+// Callback when a menu item changes
+//----------------------------------------------------------------------
+void menuItemChangedCallback(int ID, int value)
+{
+    if (ID == 18000)
+    {
+        ui3dsSetFont(value);
+    }
+}
+
+
 //----------------------------------------------------------------------
 // Menu when the emulator is paused in-game.
 //----------------------------------------------------------------------
@@ -1481,7 +1508,7 @@ void menuPause()
             break;
         }
 
-        int selection = S9xMenuSelectItem();
+        int selection = S9xMenuSelectItem(menuItemChangedCallback);
 
         if (selection == -1 || selection == 1000)
         {
@@ -1684,7 +1711,7 @@ char *noCheatsText[] {
     "    No cheats available for this game ",
     "",
     "    To enable cheats:  ",
-    "      Copy your .CHT file into the same folder as  ",
+    "      Copy your .CHT/.CHX file into the same folder as  ",
     "      ROM file and make sure it has the same name. ",
     "",
     "      If your ROM filename is: ",
@@ -1692,6 +1719,7 @@ char *noCheatsText[] {
     "      Then your cheat filename must be: ",
     "          MyGame.cht ",
     "",
+    "    Refer to readme.md for the .CHX file format. ",
     ""
      };
 
@@ -1843,7 +1871,7 @@ void emulatorInitialize()
         exit(0);
     }
 
-    printf ("Initializating...\n");
+    printf ("Initializing...\n");
 
     cacheInit();
     if (!snesInitialize())
@@ -2146,28 +2174,22 @@ void snesEmulatorLoop()
         gpu3dsDisableStencilTest();
 
         int sWidth = settings3DS.StretchWidth;
-        int sHeight = (settings3DS.StretchHeight == -1 ? PPU.ScreenHeight : settings3DS.StretchHeight);
+        int sHeight = (settings3DS.StretchHeight == -1 ? PPU.ScreenHeight - 1 : settings3DS.StretchHeight);
         if (sWidth == 0403)
-        {
             sWidth = sHeight * 4 / 3;
-        }
 
         int sx0 = (400 - sWidth) / 2;
-        int sx1 = 400 - (400 - sWidth) / 2;
+        int sx1 = sx0 + sWidth;
         int sy0 = (240 - sHeight) / 2;
-        int sy1 = 240 - (240 - sHeight) / 2;
+        int sy1 = sy0 + sHeight;
 
         gpu3dsAddQuadVertexes(
             sx0, sy0, sx1, sy1,
-            settings3DS.CropPixels, settings3DS.CropPixels, 
+            settings3DS.CropPixels, settings3DS.CropPixels ? settings3DS.CropPixels : 1, 
             256 - settings3DS.CropPixels, PPU.ScreenHeight - settings3DS.CropPixels, 
             0.1f);
         gpu3dsDrawVertexes();
 
-	    gpu3dsUseShader(2);             // for drawing tiles
-        gpu3dsSetTextureEnvironmentReplaceColor();
-        gpu3dsDrawRectangle(sx0, sy0, sx1, sy0 + 1, 0, 0x000000ff);
-        
         t3dsEndTiming(3);
 
         if (!firstFrame)

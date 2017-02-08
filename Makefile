@@ -79,7 +79,7 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 #CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 #CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 CFILES		:=
-CPPFILES	:=	3dsmain.cpp 3dsmenu.cpp 3dsopt.cpp 3dsgpu.cpp 3dssound.cpp 3dsui.cpp 3dsfont.cpp 3dsexit.cpp \
+CPPFILES	:=	3dsmain.cpp 3dsmenu.cpp 3dsopt.cpp 3dsgpu.cpp 3dssound.cpp 3dsui.cpp 3dsexit.cpp \
 			gpulib.cpp \
 			sf2d_private.cpp \
 			fxinst.cpp fxemu.cpp fxdbg.cpp \

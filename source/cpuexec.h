@@ -137,10 +137,6 @@ extern struct SOpcodes S9xOpcodesM1X0 [256];
 extern struct SOpcodes S9xOpcodesM0X1 [256];
 extern struct SOpcodes S9xOpcodesM0X0 [256];
 
-uint8 S9xGetByteFromRegister (uint8 *GetAddress, uint32 Address);
-uint16 S9xGetWordFromRegister (uint8 *GetAddress, uint32 Address);
-void S9xSetByteToRegister (uint8 Byte, uint8* SetAddress, uint32 Address);
-void S9xSetWordToRegister(uint16 Word, uint8 *SetAddress, uint32 Address);
 
 //extern struct SICPU ICPU;
 #define ICPU OCPU.FastICPU

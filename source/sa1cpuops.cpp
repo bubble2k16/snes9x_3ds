@@ -4279,6 +4279,7 @@ static void Op42 (void)
     {
         //printf ("S");
         SA1.isInIdleLoop = true;
+        //SA1.Executing = false;
     }
     
 }
