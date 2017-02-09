@@ -2973,7 +2973,7 @@ void S9xPrepareMode7CheckAndUpdateCharTiles()
 	// This fixes some of the mode 7 tile problems in Secret of Mana.
 	//
 	//if (!Memory.FillRAM [0x2133] & 0x40)
-	if (!(Memory.FillRAM [0x2133] & 0x40))
+	if (!IPPU.Mode7EXTBGFlag)
 	{
 		// Bug fix: Super Mario Kart Bowser Castle's tile 0 
 		//
@@ -3030,9 +3030,11 @@ void S9xPrepareMode7CheckAndUpdateCharTiles()
 		
 		// Prepare the 128 color palette by duplicate colors from 0-127 to 128-255
 		//
-		// Low priority 
+		// Low priority (set the alpha to 0xe, and make use of the inprecise
+		// floating point math to achieve the same alpha translucency)
+		//
 		for (int i = 0; i < 128; i++)
-			GFX.ScreenColors128[i] = GFX.ScreenRGB555toRGBA4[GFX.ScreenColors[i]] & 0xfff7;		
+			GFX.ScreenColors128[i] = GFX.ScreenRGB555toRGBA4[GFX.ScreenColors[i]] & 0xfffe;		
 		// High priority 	
 		for (int i = 0; i < 128; i++)
 			GFX.ScreenColors128[i + 128] = GFX.ScreenRGB555toRGBA4[GFX.ScreenColors[i]];		
@@ -3140,7 +3142,7 @@ void S9xPrepareMode7(bool sub)
 
 	t3dsStartTiming(71, "PrepM7-Palette");
 
-	if (!(Memory.FillRAM [0x2133] & 0x40))
+	if (!IPPU.Mode7EXTBGFlag)
 	{
 		gpu3dsSetMode7TexturesPixelFormatToRGB5551();
 	}
@@ -3220,6 +3222,8 @@ void S9xPrepareMode7(bool sub)
 }
 
 
+extern int adjustableValue;
+
 //---------------------------------------------------------------------------
 // Draws the Mode 7 background.
 //---------------------------------------------------------------------------
@@ -3227,6 +3231,7 @@ void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth, int alphaTest)
 {
 	t3dsStartTiming(27, "DrawBG0_M7");
 	//printf ("M7BG alphatest=%d\n", alphaTest);
+	//printf ("adjustableValue: %x\n", adjustableValue);
 
 	if (layerDrawn[bg])
 	{
@@ -3235,7 +3240,12 @@ void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth, int alphaTest)
 		if (alphaTest == 0)
 			gpu3dsEnableAlphaTestNotEqualsZero();
 		else
-			gpu3dsEnableAlphaTestEquals(0xff);
+		{
+			if (GFX.r2131 & 0x40)
+				gpu3dsEnableAlphaTestGreaterThanEquals(0x7f);
+			else
+				gpu3dsEnableAlphaTestGreaterThanEquals(0xf0);
+		}
 
 		gpu3dsEnableDepthTest();
 
@@ -3334,7 +3344,12 @@ void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth, int alphaTest)
 	if (alphaTest == 0)
 		gpu3dsEnableAlphaTestNotEqualsZero();
 	else
-		gpu3dsEnableAlphaTestEquals(0xff);
+	{
+		if (GFX.r2131 & 0x40)
+			gpu3dsEnableAlphaTestGreaterThanEquals(0x7f);
+		else
+			gpu3dsEnableAlphaTestGreaterThanEquals(0xf0);
+	}
 
 	gpu3dsEnableDepthTest();
 
@@ -3782,13 +3797,17 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 
 				
 			DRAW_OBJS(0);
-			//printf ("$2133 = %x\n", Memory.FillRAM [0x2133]);
-			if ((Memory.FillRAM [0x2133] & 0x40))
+			//printf ("$2131 = %x, $2133 = %x (%s)\n", GFX.r2131, Memory.FillRAM [0x2133], sub ? "S" : "M");
+			if (IPPU.Mode7EXTBGFlag)
 			{
 				DRAW_M7BG(1, 2, 0);
 				DRAW_M7BG(1, 8, 1);
+				DRAW_M7BG(0, 5, 0);
 			}
-			DRAW_M7BG(0, 5, 0);
+			else
+			{
+				DRAW_M7BG(0, 5, 0);
+			}
 
 			// debugging only
 			//
@@ -4232,15 +4251,16 @@ void S9xUpdateScreenHardware ()
 
 	/*
 	// For debugging only	
+	// (displays the mode 7 full texture)
 	// 
 	gpu3dsDisableStencilTest();
 	gpu3dsDisableDepthTest();
 	gpu3dsDisableAlphaTest();
 	gpu3dsDisableAlphaBlending();
 	gpu3dsSetTextureEnvironmentReplaceTexture0();
-	gpu3dsBindTextureSnesMode7TileCache(GPU_TEXUNIT0);
+	gpu3dsBindTextureSnesMode7Full(GPU_TEXUNIT0);
 	gpu3dsSetRenderTargetToMainScreenTexture();
-	gpu3dsAddTileVertexes(50, 170, 100, 220, 0, 0, 256, 256, 0);
+	gpu3dsAddTileVertexes(0, 0, 220, 220, 0, 0, 1024, 1024, 0);
 	gpu3dsDrawVertexes();
 	*/
 	

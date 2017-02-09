@@ -510,6 +510,7 @@ void clearTopScreenWithLogo()
 //-------------------------------------------
 int debugFrameCounter = 0;
 extern int csndTicksPerSecond;
+int adjustableValue = 0x70;
 
 uint32 readJoypadButtons()
 {
@@ -545,13 +546,13 @@ uint32 readJoypadButtons()
 
     /*if (keysDown & (KEY_L))
     {
-        csndTicksPerSecond -= 1000;
-        printf ("CSND TPS: %d\n", csndTicksPerSecond);
+        adjustableValue -= 1;
+        printf ("Adjust: %d\n", adjustableValue);
     }
     if (keysDown & (KEY_R))
     {
-        csndTicksPerSecond += 1000;
-        printf ("CSND TPS: %d\n", csndTicksPerSecond);
+        adjustableValue += 1;
+        printf ("Adjust: %d\n", adjustableValue);
     }*/
     // -----------------------------------------------
 #endif
@@ -654,13 +655,14 @@ SMenuItem optionsForFont[] = {
 };
 
 SMenuItem optionsForStretch[] = {
-    MENU_MAKE_DIALOG_ACTION (0, "No Stretch",               "1:1 pixels"),
-    MENU_MAKE_DIALOG_ACTION (6, "TV",                       "Stretch width only"),
+    MENU_MAKE_DIALOG_ACTION (0, "No Stretch",               "'Pixel Perfect'"),
+    MENU_MAKE_DIALOG_ACTION (7, "Expand to Fit",            "'Pixel Perfect' fit"),
+    MENU_MAKE_DIALOG_ACTION (6, "TV-style",                 "Stretch width only to 292px"),
     MENU_MAKE_DIALOG_ACTION (5, "4:3",                      "Stretch width only"),
-    MENU_MAKE_DIALOG_ACTION (1, "4:3 Fit",                ""),
-    MENU_MAKE_DIALOG_ACTION (2, "Fullscreen",               ""),
-    MENU_MAKE_DIALOG_ACTION (3, "Cropped 4:3 Fit",        "Fit height to screen"),
-    MENU_MAKE_DIALOG_ACTION (4, "Cropped Fullscreen",       "Fill screen")
+    MENU_MAKE_DIALOG_ACTION (1, "4:3 Fit",                  "Stretch to 320x240"),
+    MENU_MAKE_DIALOG_ACTION (2, "Fullscreen",               "Stretch to 400x240"),
+    MENU_MAKE_DIALOG_ACTION (3, "Cropped 4:3 Fit",          "Crop & Stretch to 320x240"),
+    MENU_MAKE_DIALOG_ACTION (4, "Cropped Fullscreen",       "Crop & Stretch to 400x240")
 };
 
 SMenuItem optionsForFrameskip[] = {
@@ -797,7 +799,7 @@ bool settingsUpdateAllSettings(bool updateGameSettings = true)
     }
     else if (settings3DS.ScreenStretch == 5)
     {
-        settings3DS.StretchWidth = 0403;       // Stretch width to 4/3
+        settings3DS.StretchWidth = 04030000;       // Stretch width only to 4/3
         settings3DS.StretchHeight = -1;
         settings3DS.CropPixels = 0;
     }
@@ -805,6 +807,12 @@ bool settingsUpdateAllSettings(bool updateGameSettings = true)
     {
         settings3DS.StretchWidth = 292;       
         settings3DS.StretchHeight = -1;
+        settings3DS.CropPixels = 0;
+    }
+    else if (settings3DS.ScreenStretch == 7)    // Stretch h/w but keep 1:1 ratio
+    {
+        settings3DS.StretchWidth = 01010000;       
+        settings3DS.StretchHeight = 240;
         settings3DS.CropPixels = 0;
     }
 
@@ -1010,7 +1018,7 @@ void settingsReadWriteFullListGlobal(FILE *fp)
     settingsReadWrite(fp, "#v1\n", NULL, 0, 0);
     settingsReadWrite(fp, "# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
 
-    settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 6);
+    settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 7);
     settingsReadWrite(fp, "HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
     settingsReadWrite(fp, "Font=%d\n", &settings3DS.Font, 0, 1);
 
@@ -2175,8 +2183,21 @@ void snesEmulatorLoop()
 
         int sWidth = settings3DS.StretchWidth;
         int sHeight = (settings3DS.StretchHeight == -1 ? PPU.ScreenHeight - 1 : settings3DS.StretchHeight);
-        if (sWidth == 0403)
+        if (sWidth == 04030000)
             sWidth = sHeight * 4 / 3;
+        else if (sWidth == 01010000)
+        {
+            if (PPU.ScreenHeight < SNES_HEIGHT_EXTENDED)
+            {
+                sWidth = SNES_HEIGHT_EXTENDED * SNES_WIDTH / SNES_HEIGHT;
+                sHeight = SNES_HEIGHT_EXTENDED;
+            }
+            else
+            {
+                sWidth = SNES_WIDTH;
+                sHeight = SNES_HEIGHT_EXTENDED;
+            }
+        }
 
         int sx0 = (400 - sWidth) / 2;
         int sx1 = sx0 + sWidth;

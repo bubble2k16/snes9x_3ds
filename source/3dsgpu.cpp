@@ -920,6 +920,11 @@ void gpu3dsEnableAlphaTestEquals(uint8 alpha)
     GPU_SetAlphaTest(true, GPU_EQUAL, alpha);
 }
 
+void gpu3dsEnableAlphaTestGreaterThanEquals(uint8 alpha)
+{
+    GPU_SetAlphaTest(true, GPU_GEQUAL, alpha);
+}
+
 
 void gpu3dsDisableAlphaTest()
 {

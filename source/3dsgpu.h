@@ -284,6 +284,7 @@ void gpu3dsSwapScreenBuffers();
 void gpu3dsEnableAlphaTestNotEqualsZero();
 void gpu3dsEnableAlphaTestEqualsOne();
 void gpu3dsEnableAlphaTestEquals(uint8 alpha);
+void gpu3dsEnableAlphaTestGreaterThanEquals(uint8 alpha);
 void gpu3dsDisableAlphaTest();
 
 void gpu3dsEnableDepthTestAndWriteColorAlphaOnly();
