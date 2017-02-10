@@ -293,7 +293,7 @@ The .CHX is a cheat file format that you can create with any text editor. Each l
      [Y/N],[CheatCode],[Name]
 
 1. [Y/N] represents whether the cheat is enabled. Whenever you enable/disable it in the emulator, the .CHX cheat file will be modified to save your changes.
-2. [CheatCode] must be a Game Genie or a Pro Action Replay code. A Game Genie code looks like F38B-6DA4. A Pro-Action Replay code looks like 7E00DC04.
+2. [CheatCode] must be a Game Genie or a Pro Action Replay code. A Game Genie code looks like this: **F38B-6DA4**. A Pro-Action Replay code looks like this: **7E00DC04**.
 3. [Name] is a short name that represents this cheat. Since this will appear in the emulator, keep it short (< 30 characters). 
 
 The .CHX must have the same name as your ROM. This is an example of a .CHX file:
