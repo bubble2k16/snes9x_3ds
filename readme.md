@@ -309,10 +309,41 @@ https://raw.githubusercontent.com/bubble2k16/snes9x_3ds/master/samples/Gradius%2
 
 -------------------------------------------------------------------------------------------------------
 
+##How to Build
+
+The current version can be built in two ways:
+
+###libctru v1.0.0
+
+You will need:
+- devkitARM r45
+- libctru v1.0.0
+- citro3d v1.0.0
+
+Ensure that the makefile has the following definition -DLIBCTRU_1_0_0.
+
+Then build by using *make*.
+
+###libctru v1.2.0
+
+You will need:
+- devkitARM r46
+- libctru v1.2.0
+- citro3d v1.2.0
+
+Remove the following definition -DLIBCTRU_1_0_0 from the makefile
+
+Then build by using *make*.
+
+*Please note that building with libctru v1.2.0 causes the emulator to run at Old 3DS clock speeds on a New 3DS. It seems like a known problem with libctru v1.2.0.
+
+-------------------------------------------------------------------------------------------------------
+
 ##Credits
 
 1. Snes9x team for the fantastic SNES emulator
 2. StapleButter / DiscostewSM for their work on BlargSNES. Many ideas for optimisations came from them.
 3. Author of SF2D library. Some codes for hardware acceleration evolved from here.
 4. Authors of the Citra 3DS Emulator team. Without them, this project would have been extremely difficult.
-
+5. Maki-chan for helping with the libctru 1.2.0 conversion.
+6. Fellow forummers on GBATemp for the bug reports and suggestions for improvements.
