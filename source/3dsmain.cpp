@@ -1734,7 +1734,7 @@ char *noCheatsText[] {
     "      If your ROM filename is: ",
     "          MyGame.smc ",
     "      Then your cheat filename must be: ",
-    "          MyGame.cht ",
+    "          MyGame.cht or MyGame.chx ",
     "",
     "    Refer to readme.md for the .CHX file format. ",
     ""

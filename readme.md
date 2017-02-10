@@ -20,7 +20,7 @@ To use:
 
 ###CIA Version:
 
-1. Use your favorite CIA installer to install snes9x_3ds.cia into your CFW.
+1. Use your favorite CIA installer to install snes9x_3ds.cia into your CFW. You can also use FBI to download from TitleDB.
 2. Place your SNES ROMs inside any folder.
 3. Copy snes9x_3ds_top.png to ROOT of your SD card.
 4. Exit your CIA installer and go to your CFW's home screen to launch the app.
@@ -75,9 +75,9 @@ Castlevania - Dracula X
 
 ##Frequently Asked Questions 
 
-###Why do some games have strange color issues (for eg., Wild Guns, Kirby Super Star, Judge Dredd, Batman Forever, Secret of Mana)?
+###Why do some games have strange color issues (for eg., Wild Guns, Kirby Super Star, Judge Dredd, Batman Forever, Secret of Mana, Kirby Super Star)?
 
-Try going to the Settings and change the In-Frame Palette Changes to either one of the 3 options: Enabled, Disabled Style 1, Disabled Style 2. Color emulation is never perfect because we are using the 3DS GPU for rendering, which lacks certain capabilities
+Try going to the Settings and change the In-Frame Palette Changes to either one of the 3 options: Enabled, Disabled Style 1, Disabled Style 2. Color emulation is never perfect because we are using the 3DS GPU for rendering, which doesn't allow us to do what the SNES requires.
 
 ###Why some games keep writing to the SD Card every second or so (for eg., Treasure Hunter G, Some Super Mario Hacks, Final Fantasy Mystic Quest)?
 
@@ -93,7 +93,7 @@ You can try using save states from Snes9x v1.43, but sometimes this emulator doe
 
 ###How can I make Snes9x utilize the full speed of the New 3DS?
 
-The .3DSX version currently uses the full clock speed of the New 3DS, enabling all your SuperFX, SA-1 games to run faster. But the .CIA version currently has some problems, so you may have to use another app like HANS to configure the New 3DS to switch to its full clock speed before starting up this Snes9x emulator.
+The .3DSX version currently uses the full clock speed of the New 3DS, enabling all your SuperFX, SA-1 games to run faster.
 
 ###After closing the lid and re-opening it, the sound synchronization during game emulation goes off!
 
@@ -109,7 +109,7 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 
 1. Graphic modes 0 - 5, 7. 
 2. Save states of up to 4 slots
-3. Cheats - place your .CHT with the same filename in the same folder as your ROM. For example, if your ROM name is MyGame.smc, then your cheat file should be named MyGame.CHT.
+3. Cheats - place your .CHT/.CHX (text format) with the same filename in the same folder as your ROM. For example, if your ROM name is MyGame.smc, then your cheat file should be named MyGame.CHT or MyGame.CHX
 4. Currently uses CSND for audio. So your entry point to home-brew must be able to use CSND. If you can play BlargSNES with sound, you should be able to play Snes9X_3DS with sound.
 5. Frame skipping.
 6. Stretch to full screen / 4:3 ratio 
@@ -121,17 +121,33 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 12. DSP chips (Super Mario Kart, Ace o Nerae)
 13. SA-1 chip (Super Mario RPG, Kirby Superstar)
 14. Use of full clock speed in the New 3DS.
-15. Sound emulation (at 32KHz, with echo and interpolation)
+15. Sound emulation (at 32KHz, with echo and gaussian interpolation)
 
 ##What's missing / needs to be improved
 
-1. Some sound emulation errors.
+1. Minor sound emulation errors.
 2. Mosaics.
 3. In-frame palette changes - This is because this emulator uses the 3DS GPU for all graphic rendering. Without in-frame palette changes implemented, a small number of games experience colour issues.
 
 -------------------------------------------------------------------------------------------------------
 
 ##Change History
+
+v1.00
+- Transplanted the full SPC700 + DSP source codes from Snes9x v1.51 into this emulator. As a result, the sound emulation now supports Gaussian Interpolation, and has better accuracy. This fixes some sound problems in Clay Fighter and Mortal Kombat I and II.
+- Fixed Mode 7 priorities in games that use this: Contra III's stage 1 (at the loss of some color fidelity). Implementing this required the use of some crazy math hacks and hardware tricks to pull this off.
+- Implemented some experimental speed hacks for Super Mario RPG and Kirby's Dreamland. Runs slightly faster (still not full speed) on Old 3DS.
+- Implemented hi-res translucency. We get non-flickering emulation of hi-res screens (Secret of Mana, Seiken Densetsu 3, A.S.P. Air Strike Patrol) now as a bonus. As a result, Kirby's Dreamland is now playable.
+- Invented a new cheat file format .CHX (text file) so that players can add cheats by using any text editor.
+- Centralized the SNES output screen vertically on the top screen.
+- Overhauled the user interface to give a more modern look as well as provide additional fonts.
+- Added more screen stretch options as requested by many users.
+- Added 3D slider support. Pushing up the 3D slider doesn't create any 3D effect, but may create a better viewing experience.
+- Removed unnecessary debug messages during start up / shut down of the emulator.
+- Fixed a bug when the SRAM still saves randomly when it is set to Disabled.
+- Removed memory footprint for storing texture position caches.
+- Made this version buildable with libctru v1.2.0 (thanks to Maki-chan) 
+  [Note: Building with devkitARM r46 and libctru v1.2.0 will cause a bug where the emulator cannot utilize the full clock speed of the New 3DS.]
 
 v0.80
 - Fixed NMI interrupt for specific games such as Cu-On-Pa. This allows Cu-On-Pa to get past the selection screen.
@@ -267,6 +283,29 @@ v0.34
 - Fixed the crashing problem when selecting options without any ROM running
 - Fixed DKC1 piracy problem. The wrong mask logic was used when writing to SRAM.
 - Improved the logic to save SRAM to SD card about 1-2 seconds after your game was saved in the emulator.
+
+-------------------------------------------------------------------------------------------------------
+
+##.CHX Cheat File format
+
+The .CHX is a cheat file format that you can create with any text editor. Each line in the file corresponds to one cheat, and is of the following format:
+
+     [Y/N],[CheatCode],[Name]
+
+1. [Y/N] represents whether the cheat is enabled. Whenever you enable/disable it in the emulator, the .CHX cheat file will be modified to save your changes.
+2. [CheatCode] must be a Game Genie or a Pro Action Replay code. A Game Genie code looks like F38B-6DA4. A Pro-Action Replay code looks like 7E00DC04.
+3. [Name] is a short name that represents this cheat. Since this will appear in the emulator, keep it short (< 30 characters). 
+
+The .CHX must have the same name as your ROM. This is an example of a .CHX file:
+
+Filename: Gradius III (U) [I].CHX
+```
+Y,F38B-6DA4,Start with 31 lives
+Y,7E00DC04,Constant Megacrush (enemies die)
+```
+
+If you are still lost, refer to a sample Gradius cheat file here: 
+https://raw.githubusercontent.com/bubble2k16/snes9x_3ds/master/samples/Gradius%20III%20(U)%20%5B!%7D.chx.txt
 
 -------------------------------------------------------------------------------------------------------
 
