@@ -1,0 +1,2 @@
+Y,F38B-6DA4,Start with 31 lives
+Y,7E00DC04,Constant Megacrush (enemies die)
