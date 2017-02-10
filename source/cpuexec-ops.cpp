@@ -367,6 +367,34 @@ INLINE void __attribute__((always_inline)) CpuSetByte (uint8 Byte, uint32 Addres
 }
 
 
+INLINE void __attribute__((always_inline)) CpuSetByteWakeSA1 (uint8 Byte, uint32 Address)
+{
+    int block;
+    uint8 *SetAddress = CPU.MemoryWriteMap [block = ((Address >> MEMMAP_SHIFT) & MEMMAP_MASK)];
+
+    CPU_Cycles += CPU.MemorySpeed [block];
+	
+    if (SetAddress >= (uint8 *) CMemory::MAP_LAST)
+    {
+        *(SetAddress + (Address & 0xffff)) = Byte;
+
+ 		if (SetAddress == SA1.WaitByteAddress1 ||
+			SetAddress == SA1.WaitByteAddress2)
+		{
+            SA1.Executing = !SA1.Waiting;
+			//SA1.Executing = SA1.S9xOpcodes != NULL;
+			//SA1.WaitCounter = 0;
+		}       
+
+        return;
+    }
+
+    CpuSaveFastRegisters();
+    S9xSetByteToRegister(Byte, SetAddress, Address);
+    CpuLoadFastRegisters();
+}
+
+
 
 INLINE void __attribute__((always_inline)) CpuSetWord (uint16 Word, uint32 Address)
 {
@@ -383,6 +411,44 @@ INLINE void __attribute__((always_inline)) CpuSetWord (uint16 Word, uint32 Addre
             return;
         }	
             
+        CpuSaveFastRegisters();
+        S9xSetWordToRegister(Word, SetAddress, Address);
+        CpuLoadFastRegisters();
+
+    }
+    else
+    {
+        CpuSetByte(Word&0x00FF, Address);
+        CpuSetByte(Word>>8, Address+1);
+        return;
+    }
+
+}
+
+
+INLINE void __attribute__((always_inline)) CpuSetWordWakeSA1 (uint16 Word, uint32 Address)
+{
+    if((Address & 0x0FFF)!=0x0FFF)
+    {
+        int block;
+        uint8 *SetAddress = CPU.MemoryWriteMap [block = ((Address >> MEMMAP_SHIFT) & MEMMAP_MASK)];
+
+        CPU_Cycles += CPU.MemorySpeed [block] << 1;
+
+        if (SetAddress >= (uint8 *) CMemory::MAP_LAST)
+        {
+            *(uint16 *) (SetAddress + (Address & 0xffff)) = Word;
+
+            if (SetAddress == SA1.WaitByteAddress1 ||
+                SetAddress == SA1.WaitByteAddress2)
+            {
+                SA1.Executing = !SA1.Waiting;
+                //SA1.Executing = SA1.S9xOpcodes != NULL;
+                //SA1.WaitCounter = 0;
+            }       
+
+            return;
+        }	
         CpuSaveFastRegisters();
         S9xSetWordToRegister(Word, SetAddress, Address);
         CpuLoadFastRegisters();
@@ -6729,7 +6795,7 @@ static void Op42 (void)
     if (doSkip)
     {
         //printf ("s");
-        //printf ("VC: %d - skip %d to\n", CPU.V_Counter, CPU_Cycles);
+        //printf ("VC: %d - skip %d to %d\n", CPU.V_Counter, CPU_Cycles);
         
         int cyclesToSkip = SNESGameFixes.SpeedHackCycles[foundHackIndex];
 

@@ -49,22 +49,25 @@ typedef struct
 
 
 
-void S9xSetTransferGameScreen(bool transfer);
-int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value));
+void menu3dsSetTransferGameScreen(bool transfer);
 
-void S9xSetTabSubTitle(int tabIndex, char *subtitle);
-void S9xAddTab(char *title, SMenuItem *menuItems, int itemCount);
-void S9xClearMenuTabs();
-void S9xSetCurrentMenuTab(int tabIndex);
-void S9xSetSelectedItemIndexByID(int tabIndex, int ID);
-void S9xSetValueByID(int tabIndex, int ID, int value);
-int S9xGetValueByID(int tabIndex, int ID);
+void menu3dsSetTabSubTitle(int tabIndex, char *subtitle);
+void menu3dsAddTab(char *title, SMenuItem *menuItems, int itemCount);
+void menu3dsClearMenuTabs();
+void menu3dsSetCurrentMenuTab(int tabIndex);
+void menu3dsSetSelectedItemIndexByID(int tabIndex, int ID);
+void menu3dsSetValueByID(int tabIndex, int ID, int value);
+int menu3dsGetValueByID(int tabIndex, int ID);
 
-void S9xDrawBlackScreen(float opacity = 1.0f);
-int S9xShowDialog(char *title, char *dialogText, int dialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID = -1);
-void S9xHideDialog();
+void menu3dsDrawBlackScreen(float opacity = 1.0f);
 
-bool S9xTakeScreenshot(const char *path);
+int menu3dsShowMenu(void (*itemChangedCallback)(int ID, int value), bool animateMenu);
+void menu3dsHideMenu();
+
+int menu3dsShowDialog(char *title, char *dialogText, int dialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID = -1);
+void menu3dsHideDialog();
+
+bool menu3dsTakeScreenshot(const char *path);
 
 
 #define DIALOGCOLOR_RED     0xEC407A

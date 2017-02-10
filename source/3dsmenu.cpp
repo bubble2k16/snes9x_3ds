@@ -15,8 +15,8 @@
 #define MENU_HEIGHT             (14)
 #define DIALOG_HEIGHT           (5)
 
-#define SNES9X_VERSION "v1.00b"
-
+#define SNES9X_VERSION "v1.00"
+#define ANIMATE_TAB_STEPS 3
 
 
 typedef struct
@@ -52,7 +52,7 @@ bool                swapBuffer = true;
 // Usually you will set this to true during emulation,
 // and set this to false when this program first runs.
 //-------------------------------------------------------
-void S9xSetTransferGameScreen(bool transfer)
+void menu3dsSetTransferGameScreen(bool transfer)
 {
     transferGameScreen = transfer;
     if (transfer)
@@ -66,14 +66,14 @@ void S9xSetTransferGameScreen(bool transfer)
 
 // Draw a black screen.
 //
-void S9xDrawBlackScreen(float opacity)
+void menu3dsDrawBlackScreen(float opacity)
 {
     ui3dsDrawRect(0, 0, 320, 240, 0x000000, opacity);    
 }
 
 
 
-void S9xSwapBuffersAndWaitForVBlank()
+void menu3dsSwapBuffersAndWaitForVBlank()
 {
     if (transferGameScreenCount)
     {
@@ -95,7 +95,7 @@ void S9xSwapBuffersAndWaitForVBlank()
 }
 
 
-void S9xDrawItems(
+void menu3dsDrawItems(
     SMenuTab *currentTab, int horizontalPadding, int menuStartY, int maxItems,
     int selectedItemBackColor,
     int selectedItemTextColor, 
@@ -261,7 +261,7 @@ void S9xDrawItems(
 
 // Display the list of choices for selection
 //
-void S9xDrawMenu()
+void menu3dsDrawMenu(int menuItemFrame, int translateY)
 {
     SMenuTab *currentTab = &menuTab[currentMenuTab];
 
@@ -290,27 +290,55 @@ void S9xDrawMenu()
     //ui3dsDrawRect(0, 24, 320, 25, 0xcccccc);
     //ui3dsDrawRect(0, 25, 320, 27, 0xeeeeee);
 
-    ui3dsDrawStringWithNoWrapping(10, 224, 310, 240, 0x90CAF9, HALIGN_LEFT,
+    ui3dsDrawStringWithNoWrapping(10, 223, 310, 240, 0xFFFFFF, HALIGN_LEFT,
         "A:Select  B:Cancel");
-    ui3dsDrawStringWithNoWrapping(10, 224, 310, 240, 0x90CAF9, HALIGN_RIGHT,
-        SNES9X_VERSION);
+    ui3dsDrawStringWithNoWrapping(10, 223, 310, 240, 0xFFFFFF, HALIGN_RIGHT,
+        "SNES9x for 3DS " SNES9X_VERSION);
 
     int line = 0;
     int maxItems = MENU_HEIGHT;
     int menuStartY = 29;
 
-    S9xDrawItems(
-        currentTab, 20, menuStartY, maxItems,
-        0x333333,       // selectedItemBackColor
-        0xffffff,       // selectedItemTextColor
-        0x777777,       // selectedItemDescriptionTextColor
+    ui3dsSetTranslate(menuItemFrame * 3, translateY);
 
-        0x000000,       // checkedItemTextColor
-        0x333333,       // normalItemTextColor      
-        0x777777,       // normalItemDescriptionTextColor      
-        0x888888,       // disabledItemTextColor
-        0x1E88E5,       // headerItemTextColor
-        0x1E88E5);      // subtitleTextColor
+    if (menuItemFrame == 0)
+    {
+        menu3dsDrawItems(
+            currentTab, 20, menuStartY, maxItems,
+            0x333333,       // selectedItemBackColor
+            0xffffff,       // selectedItemTextColor
+            0x777777,       // selectedItemDescriptionTextColor
+
+            0x000000,       // checkedItemTextColor
+            0x333333,       // normalItemTextColor      
+            0x777777,       // normalItemDescriptionTextColor      
+            0x888888,       // disabledItemTextColor
+            0x1E88E5,       // headerItemTextColor
+            0x1E88E5);      // subtitleTextColor
+    }
+    else
+    {
+        if (menuItemFrame < 0)
+            menuItemFrame = -menuItemFrame;
+        float alpha = (float)(ANIMATE_TAB_STEPS - menuItemFrame + 1) / (ANIMATE_TAB_STEPS + 1);
+
+        int white = ui3dsApplyAlphaToColor(0xFFFFFF, 1.0f - alpha);
+        
+         menu3dsDrawItems(
+            currentTab, 20, menuStartY, maxItems,
+            ui3dsApplyAlphaToColor(0x333333, alpha) + white,
+            ui3dsApplyAlphaToColor(0xffffff, alpha) + white,       // selectedItemTextColor
+            ui3dsApplyAlphaToColor(0x777777, alpha) + white,       // selectedItemDescriptionTextColor
+
+            ui3dsApplyAlphaToColor(0x000000, alpha) + white,       // checkedItemTextColor
+            ui3dsApplyAlphaToColor(0x333333, alpha) + white,       // normalItemTextColor      
+            ui3dsApplyAlphaToColor(0x777777, alpha) + white,       // normalItemDescriptionTextColor      
+            ui3dsApplyAlphaToColor(0x888888, alpha) + white,       // disabledItemTextColor
+            ui3dsApplyAlphaToColor(0x1E88E5, alpha) + white,       // headerItemTextColor
+            ui3dsApplyAlphaToColor(0x1E88E5, alpha) + white);      // subtitleTextColor       
+        //svcSleepThread((long)(1000000.0f * 1000.0f));
+    }
+
       
 /*
     ui3dsDrawStringWithWrapping(10, 10, 100, 70, 0xff0000, HALIGN_LEFT, "This is a long text that should wrap to a few lines!");
@@ -331,7 +359,7 @@ int dialogItemTextColor = 0xffffff;
 int dialogSelectedItemTextColor = 0xffffff;
 int dialogSelectedItemBackColor = 0x000000;
 
-void S9xDrawDialog()
+void menu3dsDrawDialog()
 {
     // Dialog's Background
     int dialogBackColor2 = ui3dsApplyAlphaToColor(dialogBackColor, 0.9f);
@@ -357,7 +385,7 @@ void S9xDrawDialog()
 
     // Draw the selectable items.
     int dialogItemDescriptionTextColor = dialogTitleTextColor;
-    S9xDrawItems(
+    menu3dsDrawItems(
         &dialogTab, 30, 80, DIALOG_HEIGHT,
         dialogSelectedItemBackColor,        // selectedItemBackColor
         dialogSelectedItemTextColor,        // selectedItemTextColor
@@ -373,13 +401,17 @@ void S9xDrawDialog()
 }
 
 
-void S9xDrawEverything(int dialogFrame = 0)
+void menu3dsDrawEverything(int menuFrame = 0, int menuItemsFrame = 0, int dialogFrame = 0)
 {
     if (!isDialog)
     {
-        ui3dsSetTranslate(0, 0);
+        int y = 0 + menuFrame * menuFrame * 120 / 32;
+
         ui3dsSetViewport(0, 0, 320, 240);
-        S9xDrawMenu();
+        ui3dsSetTranslate(0, 0);
+        ui3dsDrawRect(0, 0, 400, y, 0x000000);
+        ui3dsSetTranslate(0, y);
+        menu3dsDrawMenu(menuItemsFrame, y);
     }
     else
     {
@@ -388,16 +420,67 @@ void S9xDrawEverything(int dialogFrame = 0)
         ui3dsSetViewport(0, 0, 320, y);
         //ui3dsBlitToFrameBuffer(savedBuffer, 1.0f - (float)(8 - dialogFrame) / 10);
         ui3dsSetTranslate(0, 0);
-        S9xDrawMenu();
+        menu3dsDrawMenu(0, 0);
         ui3dsDrawRect(0, 0, 320, y, 0x000000, (float)(8 - dialogFrame) / 10);
 
         ui3dsSetViewport(0, 0, 320, 240);
         ui3dsSetTranslate(0, y);
-        S9xDrawDialog();
+        menu3dsDrawDialog();
         ui3dsSetTranslate(0, 0);
     }
     swapBuffer = true;
 }
+
+
+SMenuTab *menu3dsAnimateTab(int direction)
+{
+    SMenuTab *currentTab = &menuTab[currentMenuTab];
+
+    if (direction < 0)
+    {
+        for (int i = 1; i <= ANIMATE_TAB_STEPS; i++)
+        {
+            aptMainLoop();
+            menu3dsDrawEverything(0, i, 0);
+            menu3dsSwapBuffersAndWaitForVBlank();
+        }
+
+        currentMenuTab--;
+        if (currentMenuTab < 0)
+            currentMenuTab = menuTabCount - 1;
+        currentTab = &menuTab[currentMenuTab];
+        
+        for (int i = -ANIMATE_TAB_STEPS; i <= 0; i++)
+        {
+            aptMainLoop();
+            menu3dsDrawEverything(0, i, 0);
+            menu3dsSwapBuffersAndWaitForVBlank();
+        }
+    }
+    else if (direction > 0)
+    {
+        for (int i = -1; i >= -ANIMATE_TAB_STEPS; i--)
+        {
+            aptMainLoop();
+            menu3dsDrawEverything(0, i, 0);
+            menu3dsSwapBuffersAndWaitForVBlank();
+        }
+
+        currentMenuTab++;
+        if (currentMenuTab >= menuTabCount)
+            currentMenuTab = 0;
+        currentTab = &menuTab[currentMenuTab];
+        
+        for (int i = ANIMATE_TAB_STEPS; i >= 0; i--)
+        {
+            aptMainLoop();
+            menu3dsDrawEverything(0, i, 0);
+            menu3dsSwapBuffersAndWaitForVBlank();
+        }
+    }
+    return currentTab;
+}
+
 
 static u32 lastKeysHeld = 0xffffff;
 static u32 thisKeysHeld = 0;
@@ -406,7 +489,7 @@ static u32 thisKeysHeld = 0;
 // Displays the menu and allows the user to select from
 // a list of choices.
 //
-int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
+int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
 {
     int framesDKeyHeld = 0;
     int returnResult = -1;
@@ -421,8 +504,8 @@ int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
     for (int i = 0; i < 2; i ++)
     {
         aptMainLoop();
-        S9xDrawEverything();
-        S9xSwapBuffersAndWaitForVBlank();
+        menu3dsDrawEverything();
+        menu3dsSwapBuffersAndWaitForVBlank();
 
         hidScanInput();
         lastKeysHeld = hidKeysHeld();
@@ -472,16 +555,11 @@ int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
                     {
                         currentTab->MenuItems[currentTab->SelectedItemIndex].Value ++ ;
                     }
-                    S9xDrawEverything();
+                    menu3dsDrawEverything();
                 }
                 else
                 {
-                    currentMenuTab++;
-                    if (currentMenuTab >= menuTabCount)
-                        currentMenuTab = 0;
-                    currentTab = &menuTab[currentMenuTab];
-
-                    S9xDrawEverything();
+                    currentTab = menu3dsAnimateTab(+1);
                 }
             }
         }
@@ -498,16 +576,11 @@ int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
                     {
                         currentTab->MenuItems[currentTab->SelectedItemIndex].Value -- ;
                     }
-                    S9xDrawEverything();
+                    menu3dsDrawEverything();
                 }
                 else
                 {
-                    currentMenuTab--;
-                    if (currentMenuTab < 0)
-                        currentMenuTab = menuTabCount - 1;
-                    currentTab = &menuTab[currentMenuTab];
-
-                    S9xDrawEverything();
+                    currentTab = menu3dsAnimateTab(-1);
                 }
             }
         }
@@ -524,12 +597,12 @@ int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
                     currentTab->MenuItems[currentTab->SelectedItemIndex].Value = 1;
                 else
                     currentTab->MenuItems[currentTab->SelectedItemIndex].Value = 0;
-                S9xDrawEverything();
+                menu3dsDrawEverything();
             }
             if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_PICKER)
             {
                 snprintf(menuTextBuffer, 511, "%s", currentTab->MenuItems[currentTab->SelectedItemIndex].Text);
-                int resultValue = S9xShowDialog(menuTextBuffer, 
+                int resultValue = menu3dsShowDialog(menuTextBuffer, 
                     currentTab->MenuItems[currentTab->SelectedItemIndex].PickerDescription,
                     currentTab->MenuItems[currentTab->SelectedItemIndex].PickerBackColor,
                     (SMenuItem *)currentTab->MenuItems[currentTab->SelectedItemIndex].PickerItems,
@@ -543,8 +616,8 @@ int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
                     
                     currentTab->MenuItems[currentTab->SelectedItemIndex].Value = resultValue;
                 }
-                S9xDrawEverything();
-                S9xHideDialog();
+                menu3dsDrawEverything();
+                menu3dsHideDialog();
 
 
             }
@@ -583,7 +656,7 @@ int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
 
-            S9xDrawEverything();
+            menu3dsDrawEverything();
 
         }
         if (keysDown & KEY_DOWN || ((thisKeysHeld & KEY_DOWN) && (framesDKeyHeld > 30) && (framesDKeyHeld % 2 == 0)))
@@ -620,10 +693,10 @@ int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
 
-            S9xDrawEverything();
+            menu3dsDrawEverything();
         }
 
-        S9xSwapBuffersAndWaitForVBlank();
+        menu3dsSwapBuffersAndWaitForVBlank();
     }
 
     return returnResult;
@@ -631,7 +704,8 @@ int S9xMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
 }
 
 
-void S9xAddTab(char *title, SMenuItem *menuItems, int itemCount)
+
+void menu3dsAddTab(char *title, SMenuItem *menuItems, int itemCount)
 {
     SMenuTab *currentTab = &menuTab[menuTabCount];
 
@@ -657,7 +731,7 @@ void S9xAddTab(char *title, SMenuItem *menuItems, int itemCount)
 
 
 
-void S9xSetTabSubTitle(int tabIndex, char *subtitle)
+void menu3dsSetTabSubTitle(int tabIndex, char *subtitle)
 {
     SMenuTab *currentTab = &menuTab[tabIndex];
 
@@ -666,13 +740,13 @@ void S9xSetTabSubTitle(int tabIndex, char *subtitle)
         strncpy(currentTab->SubTitle, subtitle, 255);
 }
 
-void S9xSetCurrentMenuTab(int tabIndex)
+void menu3dsSetCurrentMenuTab(int tabIndex)
 {
     currentMenuTab = tabIndex;
 }
 
 
-void S9xSetSelectedItemIndexByID(int tabIndex, int ID)
+void menu3dsSetSelectedItemIndexByID(int tabIndex, int ID)
 {
     currentMenuTab = tabIndex;
 
@@ -699,7 +773,7 @@ void S9xSetSelectedItemIndexByID(int tabIndex, int ID)
 }
 
 
-void S9xSetValueByID(int tabIndex, int ID, int value)
+void menu3dsSetValueByID(int tabIndex, int ID, int value)
 {
     SMenuTab *currentTab = &menuTab[tabIndex];
 
@@ -714,7 +788,7 @@ void S9xSetValueByID(int tabIndex, int ID, int value)
 }
 
 
-int S9xGetValueByID(int tabIndex, int ID)
+int menu3dsGetValueByID(int tabIndex, int ID)
 {
     SMenuTab *currentTab = &menuTab[tabIndex];
 
@@ -729,14 +803,44 @@ int S9xGetValueByID(int tabIndex, int ID)
 }
 
 
-void S9xClearMenuTabs()
+void menu3dsClearMenuTabs()
 {
     menuTabCount = 0;
     currentMenuTab = 0;
 }
 
 
-int S9xShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID)
+
+int menu3dsShowMenu(void (*itemChangedCallback)(int ID, int value), bool animateMenu)
+{
+    isDialog = false;
+
+    if (animateMenu)
+    {
+        for (int f = 8; f >= 0; f--)
+        {
+            aptMainLoop();
+            menu3dsDrawEverything(f, 0, 0);    
+            menu3dsSwapBuffersAndWaitForVBlank();  
+        }
+    }
+
+    return menu3dsMenuSelectItem(itemChangedCallback);
+
+}
+
+void menu3dsHideMenu()
+{
+    for (int f = 0; f <= 8; f++)
+    {
+        aptMainLoop();
+        menu3dsDrawEverything(f, 0, 0);    
+        menu3dsSwapBuffersAndWaitForVBlank();  
+    }    
+    ui3dsSetTranslate(0, 0);
+}
+
+int menu3dsShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID)
 {
     SMenuTab *currentTab = &dialogTab;
 
@@ -765,23 +869,23 @@ int S9xShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuIt
     // fade the dialog fade in
     //
     aptMainLoop();
-    S9xDrawEverything();
-    S9xSwapBuffersAndWaitForVBlank();  
+    menu3dsDrawEverything();
+    menu3dsSwapBuffersAndWaitForVBlank();  
     //ui3dsCopyFromFrameBuffer(savedBuffer);
 
     isDialog = true;
     for (int f = 8; f >= 0; f--)
     {
         aptMainLoop();
-        S9xDrawEverything(f);    
-        S9xSwapBuffersAndWaitForVBlank();  
+        menu3dsDrawEverything(0, 0, f);    
+        menu3dsSwapBuffersAndWaitForVBlank();  
     }
 
     // Execute the dialog and return result.
     //
     if (itemCount > 0)
     {
-        int result = S9xMenuSelectItem(NULL);
+        int result = menu3dsMenuSelectItem(NULL);
 
         return result;
     }
@@ -789,15 +893,15 @@ int S9xShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuIt
 }
 
 
-void S9xHideDialog()
+void menu3dsHideDialog()
 {
     // fade the dialog out
     //
     for (int f = 0; f <= 8; f++)
     {
         aptMainLoop();
-        S9xDrawEverything(f);        
-        S9xSwapBuffersAndWaitForVBlank();    
+        menu3dsDrawEverything(0, 0, f);        
+        menu3dsSwapBuffersAndWaitForVBlank();    
     }
 
     isDialog = false;
@@ -805,14 +909,14 @@ void S9xHideDialog()
     // draw the updated menu
     //
     aptMainLoop();
-    S9xDrawEverything();
-    S9xSwapBuffersAndWaitForVBlank();  
+    menu3dsDrawEverything();
+    menu3dsSwapBuffersAndWaitForVBlank();  
     
 }
 
 
 
-bool S9xTakeScreenshot(const char* path)
+bool menu3dsTakeScreenshot(const char* path)
 {
     int x, y;
 

@@ -4395,6 +4395,10 @@ void CMemory::ApplyROMFixes ()
 	{
 		SNESGameFixes.PaletteCommitLine = -2;		// do a FLUSH_REDRAW
 	}
+	if (strcmp (ROMName, "KIRBY SUPER DELUXE") == 0)
+	{
+		SNESGameFixes.PaletteCommitLine = -2;		// do a FLUSH_REDRAW
+	}
 	
 
 	// Hack for Final Fantasy Mystic Quest
