@@ -145,7 +145,7 @@ v1.00
 - Added 3D slider support. Pushing up the 3D slider doesn't create any 3D effect, but may create a better viewing experience.
 - Removed unnecessary debug messages during start up / shut down of the emulator.
 - Fixed a bug when the SRAM still saves randomly when it is set to Disabled.
-- Removed memory footprint for storing texture position caches.
+- Reduced memory footprint for storing texture position caches.
 - Made this version buildable with libctru v1.2.0 (thanks to Maki-chan) 
   [Note: Building with devkitARM r46 and libctru v1.2.0 will cause a bug where the emulator cannot utilize the full clock speed of the New 3DS.]
 
