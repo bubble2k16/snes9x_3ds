@@ -307,6 +307,8 @@ Y,7E00DC04,Constant Megacrush (enemies die)
 If you are still lost, refer to a sample Gradius cheat file here: 
 https://raw.githubusercontent.com/bubble2k16/snes9x_3ds/master/samples/Gradius%20III%20(U)%20%5B!%7D.chx.txt
 
+NOTE: You can only have either .CHT or .CHX in your ROM folder for the same ROM. If you have both, only the .CHX file will be effective.
+
 -------------------------------------------------------------------------------------------------------
 
 ##How to Build
