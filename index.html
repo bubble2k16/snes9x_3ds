@@ -31,12 +31,12 @@
           <h2>
 <a id="snes9x-for-3ds" class="anchor" href="#snes9x-for-3ds" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Snes9x for 3DS</h2>
 
-<p>Snes9x for 3DS is a high-compatibility SNES emulator for your old 3DS / 2DS. It runs many games at full speed (60 fps). It supports games that use CX4 chip (Megaman X2/X3), and the SDD-1 chip (Star Ocean, Super Street Fighter 2 Alpha). It can also play games that use the SuperFX chip (Yoshi's Island, etc) but they run with plenty of frame skips. It has generally much high compatibility than existing SNES emulators on the old 3DS because it uses Snes9x 1.43 as a base, and is a good alternative if your existing emulators cannot play all the games.</p>
+<p>Snes9x for 3DS is a high-compatibility SNES emulator for your Old 3DS / 2DS. It runs many games at full speed (60 fps). It supports games that use CX4 chip (Megaman X2/X3), and the SDD-1 chip (Star Ocean, Super Street Fighter 2 Alpha). It can also play games that use the SuperFX chip (Yoshi's Island, etc), and the SA-1 chip (Super Mario RPG, Kirby's Dreamland, Kirby Super Star) but it runs slowly. It has generally much high compatibility than existing SNES emulators on the old 3DS because it uses Snes9x 1.43 as a base, and is a good alternative if your existing emulators cannot play all the games.</p>
 
-<p>It also runs faster on your new 3DS!</p>
+<p>It also runs on your New 3DS, and it runs games faster! Use your New 3DS if you want to play SuperFX and SA-1 games!</p>
 
 <p>Download the latest from:
-   <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v0.70/snes9x_3ds_v0.70.zip">Snes9x for 3DS v0.70</a></p>
+   <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v1.00/snes9x_3ds_v1.00.zip">Snes9x for 3DS v1.00</a></p>
 
 <p>Give feedback / report bugs here:
    <a href="https://gbatemp.net/threads/snes9x-for-old-3ds.435568/">https://gbatemp.net/threads/snes9x-for-old-3ds.435568/</a></p>
@@ -47,7 +47,7 @@
 <a id="homebrew-launcher" class="anchor" href="#homebrew-launcher" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Homebrew Launcher:</h3>
 
 <ol>
-<li>Copy Snes9x_3ds.3dsx and snes9x_3ds_top.png into the /3ds/snes9x_3ds on your SD card. </li>
+<li>Copy Snes9x_3ds.3dsx, Snes9x_3ds.smdh and snes9x_3ds_top.png into the /3ds/snes9x_3ds on your SD card. </li>
 <li>Place your SNES ROMs inside any folder.</li>
 <li>Go to your Homebrew Launcher (through Cubic Ninja) and launch the snes9x_3ds emulator.</li>
 </ol>
@@ -67,7 +67,7 @@
 
 <ol>
 <li>Tap the bottom screen for the menu.</li>
-<li>Use Up/Down to choose option, and A to confirm. </li>
+<li>Use Up/Down to choose option, and A to confirm. (Hold down X while pressing Up/Down to Page Up/Page Down)</li>
 <li>Use Left/Right to change between ROM selection and emulator options.</li>
 <li>You can quit the emulator to your homebrew launcher / your CFW's home screen.</li>
 </ol>
@@ -129,6 +129,7 @@
 <li>SFX1/2 chip (Yoshi's Island, but slow on old 3DS)</li>
 <li>CX4 chip (Megaman X-2, Megaman X-3)</li>
 <li>DSP chips (Super Mario Kart, Ace o Nerae)</li>
+<li>SA-1 chip (Super Mario RPG, Kirby Superstar)</li>
 <li>Use of full clock speed in the New 3DS.</li>
 <li>Sound emulation (at 32KHz, with echo and interpolation)</li>
 </ol>
@@ -137,8 +138,7 @@
 <a id="whats-missing--needs-to-be-improved" class="anchor" href="#whats-missing--needs-to-be-improved" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What's missing / needs to be improved</h2>
 
 <ol>
-<li>Some sound emulation errors.</li>
-<li>All the other add-on chips. </li>
+<li>Minor sound emulation errors.</li>
 <li>Mosaics.</li>
 <li>In-frame palette changes - This is because this emulator uses the 3DS GPU for all graphic rendering. Without in-frame palette changes implemented, a small number of games experience colour issues.</li>
 <li>Sprite layering issues.</li>
@@ -148,6 +148,34 @@
 
 <h2>
 <a id="change-history" class="anchor" href="#change-history" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Change History</h2>
+
+<p>v1.00</p>
+<ul>
+<li>Transplanted the full SPC700 + DSP source codes from Snes9x v1.51 into this emulator. As a result, the sound emulation now supports Gaussian Interpolation, and has better accuracy. This fixes some sound problems in Clay Fighter and Mortal Kombat I and II.</li>
+<li>Fixed Mode 7 priorities in games that use this: Contra III's stage 1 (at the loss of some color fidelity). Implementing this required the use of some crazy math hacks and hardware tricks to pull this off.</li>
+<li>Implemented some experimental speed hacks for Super Mario RPG and Kirby's Dreamland. Runs slightly faster (still not full speed) on Old 3DS.</li>
+<li>Implemented hi-res translucency. We get non-flickering emulation of hi-res screens (Secret of Mana, Seiken Densetsu 3, A.S.P. Air Strike Patrol) now as a bonus. As a result, Kirby's Dreamland is now playable.</li>
+<li>Invented a new cheat file format .CHX (text file) so that players can add cheats by using any text editor.</li>
+<li>Centralized the SNES output screen vertically on the top screen.</li>
+<li>Overhauled the user interface to give a more modern look as well as provide additional fonts.</li>
+<li>Added more screen stretch options as requested by many users.</li>
+<li>Added 3D slider support. Pushing up the 3D slider doesn't create any 3D effect, but may create a better viewing experience.</li>
+<li>Removed unnecessary debug messages during start up / shut down of the emulator.</li>
+<li>Fixed a bug when the SRAM still saves randomly when it is set to Disabled.</li>
+<li>Reduced memory footprint for storing texture position caches.</li>
+<li>Made this version buildable with libctru v1.2.0 (thanks to Maki-chan) </li>
+  [Note: Building with devkitARM r46 and libctru v1.2.0 will cause a bug where the emulator cannot utilize the full clock speed of the New 3DS.]</li>
+</ul>
+
+<p>v0.80</p>
+<ul>
+<li>Fixed NMI interrupt for specific games such as Cu-On-Pa. This allows Cu-On-Pa to get past the selection screen.</li>
+<li>Fixed ROM size calculation for Wonder Project J (English Patch). The game no longer hangs at the menu.</li>
+<li>Implemented optimized rendering for offset-per-tile modes. This gives many games a major performance boost. Games such as Strike Gunner STG, Tetris Attack, Kirby's Avalanche, Contra's Stage 1 Boss, Super Mario All-Stars' Super Mario 2 all benefit from this improvement.</li>
+<li>Implemented optimized rendering for sprites for modest performance boost.</li>
+<li>Used SPC700 core from Snes9x v1.51.</li>
+<li>Re-implemented an moderately optimized SA-1 core. Now games like Kirby Super Star, Super Mario RPG can boot. It will NOT run well on the old 3DS currently, but it will run smooth on a new 3DS with full clock speed.</li>
+</ul>
 
 <p>v0.70</p>
 
@@ -322,7 +350,7 @@ This fix should work for all cases.</li>
         </section>
 
         <aside id="sidebar">
-          <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v0.70/snes9x_3ds_v0.70.zip" class="button">
+          <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v1.00/snes9x_3ds_v1.00.zip" class="button">
             <small>Download Binaries</small>
             .zip file
           </a>
