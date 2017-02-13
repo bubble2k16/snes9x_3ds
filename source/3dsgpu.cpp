@@ -673,6 +673,8 @@ void gpu3dsInitializeMode7Vertexes()
 
 extern char cwd[];
 
+extern "C" void gfxSetFramebufferInfo(gfxScreen_t screen, u8 id);
+
 bool gpu3dsInitialize()
 {
     // Initialize the 3DS screen
@@ -682,13 +684,17 @@ bool gpu3dsInitialize()
     GPU3DS.screenFormat = GSP_RGBA8_OES;
     gfxInit	(GPU3DS.screenFormat, GPU3DS.screenFormat, false);
 	GPU_Init(NULL);
+
+    gfxSetFramebufferInfo(GFX_TOP, 0);
+    gfxSetFramebufferInfo(GFX_BOTTOM, 0);
 	gfxSet3D(true);
 
+/*
     gfxTopRightFramebuffers[0] = gfxTopLeftFramebuffers[0];
     gfxTopRightFramebuffers[1] = gfxTopLeftFramebuffers[1];
     gfxOldTopRightFramebuffers[0] = gfxTopRightFramebuffers[0];
     gfxOldTopRightFramebuffers[1] = gfxTopRightFramebuffers[1];
-
+*/
     // Create the frame and depth buffers for the top screen.
     //
     GPU3DS.frameBufferFormat = GPU_RGBA8;
@@ -899,8 +905,8 @@ void gpu3dsFinalize()
     // Restore the old frame buffers so that gfxExit can properly
     // free them.
     //
-    gfxTopRightFramebuffers[0] = gfxOldTopRightFramebuffers[0];
-    gfxTopRightFramebuffers[1] = gfxOldTopRightFramebuffers[1];
+    //gfxTopRightFramebuffers[0] = gfxOldTopRightFramebuffers[0];
+    //gfxTopRightFramebuffers[1] = gfxOldTopRightFramebuffers[1];
 	gfxExit();
 
 }

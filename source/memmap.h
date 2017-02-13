@@ -177,6 +177,7 @@ public:
     int  ScoreHiROM (bool8 skip_header, int32 offset=0);
     int  ScoreLoROM (bool8 skip_header, int32 offset=0);
 
+    uint8 GetByte (uint32 Address);
     bool SpeedHackAdd(int address, int cyclesPerSkip, int16 originalByte1, int16 originalByte2 = -1, int16 originalByte3 = -1, int16 originalByte4 = -1);
     bool SpeedHackSA1Add(int address, int16 originalByte1, int16 originalByte2 = -1, int16 originalByte3 = -1, int16 originalByte4 = -1);
     void ApplySpeedHackPatches();

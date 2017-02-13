@@ -4237,7 +4237,7 @@ static void Op42 (void)
 {
     bool doSkip = false;
 
-    //printf ("42: %x %x\n", CPU.PC - 1, SNESGameFixes.SpeedHackSA1Address[0]);
+    //printf ("  !!Op42: %x %x\n", CPU.PC - 1, SNESGameFixes.SpeedHackSA1Address[0]);
 
     int foundHackIndex = -1;
     // Search for the appropriate speed hack
@@ -4277,9 +4277,16 @@ static void Op42 (void)
 
     if (doSkip)
     {
-        //printf ("S");
-        SA1.isInIdleLoop = true;
-        //SA1.Executing = false;
+         //printf ("  SA1 DoSkip, Ctr = %d\n", SA1.WaitCounter);
+       
+        if (SA1.WaitCounter == 0)
+        {
+            //printf ("  !!SA1 Sleep, WaitAddr = %x, %x\n", SA1.WaitByteAddress1, SA1.WaitByteAddress2);
+            //SA1.isInIdleLoop = true;
+            SA1.Executing = false;
+        }
+        else
+            SA1.WaitCounter--;
     }
     
 }

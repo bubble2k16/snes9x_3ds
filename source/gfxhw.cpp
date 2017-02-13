@@ -172,6 +172,7 @@ bool layerDrawn[10];
 //-------------------------------------------------------------------
 void S9xDrawBackdropHardware(bool sub, int depth)
 {
+	t3dsStartTiming(25, "DrawBKClr");
     uint32 starty = GFX.StartY;
     uint32 endy = GFX.EndY;
 
@@ -285,7 +286,7 @@ void S9xDrawBackdropHardware(bool sub, int depth)
 		
 		gpu3dsDrawVertexes();
 	}
-
+	t3dsEndTiming(25);
 
 }
 
@@ -3275,10 +3276,10 @@ void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth, int alphaTest)
 		
 		for (int clip = 0; clip < clipcount; clip++)*/
 		{
-			uint32 Left;
-			uint32 Right;
-			uint32 m7Left;
-			uint32 m7Right;
+			int Left;
+			int Right;
+			int m7Left;
+			int m7Right;
 
 			//if (!GFX.pCurrentClip->Count [0])
 			{
@@ -3294,7 +3295,11 @@ void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth, int alphaTest)
 					continue;
 			}*/
  
- 			#define CLIP_10_BIT_SIGNED(a)  (((a) << 19) >> 19)
+			// Bug fix: Used the original CLIP_10_BIT_SIGNED from Snes9x
+			// This fixes the intro for Super Chase HQ.
+			#define CLIP_10_BIT_SIGNED(a) \
+				((a) & ((1 << 10) - 1)) + (((((a) & (1 << 13)) ^ (1 << 13)) - (1 << 13)) >> 3)
+
  			int yy = Y;
 
 			// Bug fix: The mode 7 flipping problem.
@@ -3320,6 +3325,9 @@ void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth, int alphaTest)
 		    int AA1 = p->MatrixA * xx1; 
 		    int CC1 = p->MatrixC * xx1; 
 
+			//if (Y == GFX.StartY)
+			//	printf ("xx0=%d, xx1=%d, yy=%d, AA0=%d, CC0=%d, AA1=%d, CC1=%d, BB=%d, DD=%d\n", xx0, xx1, yy, AA0, CC0, AA1, CC1, BB, DD);
+
 		    /*int tx0 = ((AA0 + BB) / 256); 
 		    int ty0 = ((CC0 + DD) / 256); 
 		    int tx1 = ((AA1 + BB) / 256); 
@@ -3332,7 +3340,8 @@ void S9xDrawBackgroundMode7Hardware(int bg, bool8 sub, int depth, int alphaTest)
 			//if (Y==GFX.StartY)
 			//	printf ("%d %d X=%d,%d Y=%d T=%d,%d %d,%d\n", sub, depth, Left, Right, Y, tx0, ty0, tx1, ty1);
 			//if (Y % 4 == 0)
-			//printf ("Y=%d D=%d T=%d,%d %d,%d\n", Y, depth, tx0 / 8, ty0 / 8, tx1 / 8, ty1 / 8);
+			//if (Y == GFX.StartY || Y == GFX.EndY)
+			//	printf ("Y=%d D=%d T=%4.1f,%4.1f %4.1f,%4.1f\n", Y, depth, tx0, ty0, tx1, ty1);
 
 			//gpu3dsAddMode7ScanlineVertexes(Left, Y+depth, Right, Y+1+depth, tx0, ty0, tx1, ty1, 0);
 			gpu3dsAddMode7LineVertexes(Left, Y+depth, Right, Y+1+depth, tx0, ty0, tx1, ty1);
@@ -3408,7 +3417,11 @@ void S9xDrawBackgroundMode7HardwareRepeatTile0(int bg, bool8 sub, int depth)
 					continue;
 			}*/
  
- 			#define CLIP_10_BIT_SIGNED(a)  (((a) << 19) >> 19)
+			// Bug fix: Used the original CLIP_10_BIT_SIGNED from Snes9x
+			// This fixes the intro for Super Chase HQ.
+			#define CLIP_10_BIT_SIGNED(a) \
+				((a) & ((1 << 10) - 1)) + (((((a) & (1 << 13)) ^ (1 << 13)) - (1 << 13)) >> 3)
+			 
  			int yy = Y;
  			yy = yy + CLIP_10_BIT_SIGNED(VOffset - CentreY);
 
@@ -3423,6 +3436,9 @@ void S9xDrawBackgroundMode7HardwareRepeatTile0(int bg, bool8 sub, int depth)
 		    int AA1 = p->MatrixA * xx1; 
 		    int CC1 = p->MatrixC * xx1; 
 
+			//if (Y == GFX.StartY)
+			//	printf ("AA0=%d, CC0=%d, AA1=%d, CC1=%d, BB=%d, DD=%d\n", AA0, CC0, AA1, CC1, BB, DD);
+
 		    /*int tx0 = ((AA0 + BB) / 256); 
 		    int ty0 = ((CC0 + DD) / 256); 
 		    int tx1 = ((AA1 + BB) / 256); 
@@ -3434,8 +3450,8 @@ void S9xDrawBackgroundMode7HardwareRepeatTile0(int bg, bool8 sub, int depth)
 
 			//if (Y==GFX.StartY)
 			//	printf ("%d %d X=%d,%d Y=%d T=%d,%d %d,%d\n", sub, depth, Left, Right, Y, tx0, ty0, tx1, ty1);
-			//if (Y % 4 == 0)
-			//	printf ("Y=%d T=%d,%d %d,%d\n", Y, tx0 / 8, ty0 / 8, tx1 / 8, ty1 / 8);
+			//if (Y == GFX.StartY || Y == GFX.EndY)
+			//	printf ("Y=%d D=%d T=%4.2f,%4.2f %4.2f,%4.2f\n", Y, depth, tx0 / 8, ty0 / 8, tx1 / 8, ty1 / 8);
 
 			// This is used for repeating tile 0.
 			// So the texture is completely within the 0-1024 boundary,
@@ -3684,6 +3700,7 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 		}
 
 
+	//printf ("Mode: %d (%d-%d), %s\n", PPU.BGMode, GFX.StartY, GFX.EndY, sub ? "S" : "M");
 	//printf ("BG Enable %d%d%d%d%d (%s)\n", BG0, BG1, BG2, BG3, OB, sub ? "S" : "M");
 	
 	//if (GFX.StartY == 0)
@@ -3797,6 +3814,7 @@ void S9xRenderScreenHardware (bool8 sub, bool8 force_no_add, uint8 D)
 
 				
 			DRAW_OBJS(0);
+			//printf ("M7Repeat:%d EXTBG:%d\n", PPU.Mode7Repeat, IPPU.Mode7EXTBGFlag);
 			//printf ("$2131 = %x, $2133 = %x (%s)\n", GFX.r2131, Memory.FillRAM [0x2133], sub ? "S" : "M");
 			if (IPPU.Mode7EXTBGFlag)
 			{
@@ -4260,7 +4278,7 @@ void S9xUpdateScreenHardware ()
 	gpu3dsSetTextureEnvironmentReplaceTexture0();
 	gpu3dsBindTextureSnesMode7Full(GPU_TEXUNIT0);
 	gpu3dsSetRenderTargetToMainScreenTexture();
-	gpu3dsAddTileVertexes(0, 0, 220, 220, 0, 0, 1024, 1024, 0);
+	gpu3dsAddTileVertexes(0, 0, 220, 220, 437, 894, 587, 1025, 0);
 	gpu3dsDrawVertexes();
 	*/
 	

@@ -339,6 +339,9 @@ void S9xSetByteToRegister (uint8 Byte, uint8* SetAddress, uint32 Address)
 		case CMemory::MAP_SA1RAM:
 			*(Memory.SRAM + (Address & 0xffff)) = Byte;
 			SA1.Executing = !SA1.Waiting;
+			SA1.WaitCounter = 3;
+			//if (SA1.Executing)
+			//	printf("Write SA1RAM - Wake SA1\n");
 			break;
 		
 		case CMemory::MAP_C4:
@@ -479,6 +482,9 @@ void S9xSetWordToRegister(uint16 Word, uint8 *SetAddress, uint32 Address)
 			*(Memory.SRAM + (Address & 0xffff)) = (uint8) Word;
 			*(Memory.SRAM + ((Address + 1) & 0xffff)) = (uint8) (Word >> 8);
 			SA1.Executing = !SA1.Waiting;
+			SA1.WaitCounter = 3;
+			//if (SA1.Executing)
+			//	printf("Write SA1RAM - Wake SA1\n");
 			break;
 	
 		case CMemory::MAP_C4:
