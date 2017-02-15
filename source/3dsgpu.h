@@ -247,6 +247,9 @@ bool gpu3dsInitialize();
 void gpu3dsInitializeMode7Vertexes();
 void gpu3dsFinalize();
 
+void gpu3dsSetParallaxBarrier(bool enable);
+void gpu3dsCheckSlider();
+
 SGPUTexture *gpu3dsCreateTextureInLinearMemory(int width, int height, GPU_TEXCOLOR pixelFormat);
 SGPUTexture *gpu3dsCreateTextureInVRAM(int width, int height, GPU_TEXCOLOR pixelFormat);
 void gpu3dsDestroyTextureFromLinearMemory(SGPUTexture *texture);

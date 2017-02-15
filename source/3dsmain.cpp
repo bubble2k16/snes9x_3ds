@@ -1928,6 +1928,7 @@ void snesEmulatorLoop()
 	{
         t3dsStartTiming(1, "aptMainLoop");
 
+        gpu3dsCheckSlider();
         Memory.ApplySpeedHackPatches();
         startFrameTick = svcGetSystemTick();
 

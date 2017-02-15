@@ -519,6 +519,7 @@ int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
             break;
         }
 
+        gpu3dsCheckSlider();
         hidScanInput();
         thisKeysHeld = hidKeysHeld();
 

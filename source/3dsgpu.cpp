@@ -243,6 +243,35 @@ inline void gpu3dsSetAttributeBuffers(
 
 }
 
+
+
+//---------------------------------------------------------
+// Enables / disables the parallax barrier
+// Taken from RetroArch
+//---------------------------------------------------------
+void gpu3dsSetParallaxBarrier(bool enable)
+{
+   u32 reg_state = enable ? 0x00010001: 0x0;
+   GSPGPU_WriteHWRegs(0x202000, &reg_state, 4);
+}
+
+
+//---------------------------------------------------------
+// Sets the 2D screen mode based on the 3D slider.
+// Taken from RetroArch.
+//---------------------------------------------------------
+void gpu3dsCheckSlider()
+{
+    float sliderVal = *(float*)0x1FF81080;
+
+    if (sliderVal == 0.0)
+        gpu3dsSetParallaxBarrier(false);
+    else if (sliderVal < 0.5)
+        gpu3dsSetParallaxBarrier(false);
+    else
+        gpu3dsSetParallaxBarrier(true);
+}
+
 void gpu3dsEnableDepthTestAndWriteColorAlphaOnly()
 {
 	GPU_SetDepthTestAndWriteMask(true, GPU_GEQUAL, (GPU_WRITEMASK)(GPU_WRITE_COLOR | GPU_WRITE_ALPHA));
@@ -685,16 +714,13 @@ bool gpu3dsInitialize()
     gfxInit	(GPU3DS.screenFormat, GPU3DS.screenFormat, false);
 	GPU_Init(NULL);
 
-    gfxSetFramebufferInfo(GFX_TOP, 0);
-    gfxSetFramebufferInfo(GFX_BOTTOM, 0);
 	gfxSet3D(true);
 
-/*
     gfxTopRightFramebuffers[0] = gfxTopLeftFramebuffers[0];
     gfxTopRightFramebuffers[1] = gfxTopLeftFramebuffers[1];
     gfxOldTopRightFramebuffers[0] = gfxTopRightFramebuffers[0];
     gfxOldTopRightFramebuffers[1] = gfxTopRightFramebuffers[1];
-*/
+
     // Create the frame and depth buffers for the top screen.
     //
     GPU3DS.frameBufferFormat = GPU_RGBA8;
@@ -905,8 +931,8 @@ void gpu3dsFinalize()
     // Restore the old frame buffers so that gfxExit can properly
     // free them.
     //
-    //gfxTopRightFramebuffers[0] = gfxOldTopRightFramebuffers[0];
-    //gfxTopRightFramebuffers[1] = gfxOldTopRightFramebuffers[1];
+    gfxTopRightFramebuffers[0] = gfxOldTopRightFramebuffers[0];
+    gfxTopRightFramebuffers[1] = gfxOldTopRightFramebuffers[1];
 	gfxExit();
 
 }
