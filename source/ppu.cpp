@@ -3337,12 +3337,18 @@ void S9xSuperFXExec ()
 	if ((Memory.FillRAM [0x3000 + GSU_SFR] & FLG_G) &&
 	    (Memory.FillRAM [0x3000 + GSU_SCMR] & 0x18) == 0x18)
 	{
+		/*
 	    if (!Settings.WinterGold||Settings.StarfoxHack)
 		FxEmulate (~0);
 	    else
-		FxEmulate ((Memory.FillRAM [0x3000 + GSU_CLSR] & 1) ? 700 : 350);
+		FxEmulate ((Memory.FillRAM [0x3000 + GSU_CLSR] & 1) ? 700 : 350); */
+
+		FxEmulate ((Memory.FillRAM [0x3000 + GSU_CLSR] & 1) ? 
+			SuperFX.speedPerLine * 2 : SuperFX.speedPerLine);
+		
 	    int GSUStatus = Memory.FillRAM [0x3000 + GSU_SFR] |
 			    (Memory.FillRAM [0x3000 + GSU_SFR + 1] << 8);
+				
 	    if ((GSUStatus & (FLG_G | FLG_IRQ)) == FLG_IRQ)
 	    {
 		// Trigger a GSU IRQ.

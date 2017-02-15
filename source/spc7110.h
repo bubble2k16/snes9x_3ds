@@ -89,8 +89,10 @@
 #ifndef _spc7110_h
 #define _spc7110_h
 #include "port.h"
+#include "spc7110dec.h"
 
 #define DECOMP_BUFFER_SIZE	0x10000
+
 
 extern void (*LoadUp7110)(char*);
 extern void (*CleanUp7110)(void);
@@ -187,6 +189,8 @@ typedef struct SPC7110EmuVars
 } SPC7110Regs;
 extern SPC7110Regs s7r;
 extern S7RTC rtc_f9;
+extern SPC7110Decomp decomp;
+
 // These are defined in spc7110.cpp
 bool8 S9xSaveSPC7110RTC (S7RTC *rtc_f9);
 bool8 S9xLoadSPC7110RTC (S7RTC *rtc_f9);

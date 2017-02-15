@@ -112,7 +112,10 @@ void S9xAddCheat (bool8 enable, bool8 save_current_value,
 	Cheat.c [Cheat.num_cheats].enabled = TRUE;
 	if (save_current_value)
 	{
-	    Cheat.c [Cheat.num_cheats].saved_byte = S9xGetByte (address);
+        // Critical timing bug fix. Using cheats should not interfere
+        // with timing cycles.
+        //
+	    Cheat.c [Cheat.num_cheats].saved_byte = S9xGetByteNoCycles (address);
 	    Cheat.c [Cheat.num_cheats].saved = TRUE;
 	}
     Cheat.c [Cheat.num_cheats].cheat_code[0] = 0;
@@ -130,7 +133,10 @@ void S9xAddCheatWithCode (bool8 enable, bool8 save_current_value,
 	Cheat.c [Cheat.num_cheats].enabled = enable;
 	if (save_current_value)
 	{
-	    Cheat.c [Cheat.num_cheats].saved_byte = S9xGetByte (address);
+        // Critical timing bug fix. Using cheats should not interfere
+        // with timing cycles.
+        //
+	    Cheat.c [Cheat.num_cheats].saved_byte = S9xGetByteNoCycles (address);
 	    Cheat.c [Cheat.num_cheats].saved = TRUE;
 	}
     strncpy(Cheat.c [Cheat.num_cheats].name, name, 49);
@@ -180,15 +186,20 @@ void S9xRemoveCheat (uint32 which1)
 {
     if (Cheat.c [which1].saved)
     {
-	uint32 address = Cheat.c [which1].address;
+        uint32 address = Cheat.c [which1].address;
 
-	int block = (address >> MEMMAP_SHIFT) & MEMMAP_MASK;
-	uint8 *ptr = Memory.Map [block];
-	    
-	if (ptr >= (uint8 *) CMemory::MAP_LAST)
-	    *(ptr + (address & 0xffff)) = Cheat.c [which1].saved_byte;
-	else
-	    S9xSetByte (Cheat.c [which1].saved_byte, address);
+        int block = (address >> MEMMAP_SHIFT) & MEMMAP_MASK;
+        uint8 *ptr = Memory.Map [block];
+            
+        if (ptr >= (uint8 *) CMemory::MAP_LAST)
+            *(ptr + (address & 0xffff)) = Cheat.c [which1].saved_byte;
+        else
+        {
+            // Critical timing bug fix. Using cheats should not interfere
+            // with timing cycles.
+            //
+            S9xSetByteNoCycles (Cheat.c [which1].saved_byte, address);
+        }
     }
 }
 
@@ -197,15 +208,23 @@ void S9xApplyCheat (uint32 which1)
     uint32 address = Cheat.c [which1].address;
 
     if (!Cheat.c [which1].saved)
-	Cheat.c [which1].saved_byte = S9xGetByte (address);
+        // Critical timing bug fix. Using cheats should not interfere
+        // with timing cycles.
+        //
+        Cheat.c [which1].saved_byte = S9xGetByteNoCycles (address);
 
     int block = (address >> MEMMAP_SHIFT) & MEMMAP_MASK;
     uint8 *ptr = Memory.Map [block];
     
     if (ptr >= (uint8 *) CMemory::MAP_LAST)
-	*(ptr + (address & 0xffff)) = Cheat.c [which1].byte;
+	    *(ptr + (address & 0xffff)) = Cheat.c [which1].byte;
     else
-	S9xSetByte (Cheat.c [which1].byte, address);
+    {
+        // Critical timing bug fix. Using cheats should not interfere
+        // with timing cycles.
+        //
+	    S9xSetByteNoCycles (Cheat.c [which1].byte, address);
+    }
     Cheat.c [which1].saved = TRUE;
 }
 

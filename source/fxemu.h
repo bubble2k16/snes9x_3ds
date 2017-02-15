@@ -119,6 +119,9 @@ struct FxInit_s
     uint8 *	pvRam;		/* Pointer to GSU-RAM */
     uint32	nRomBanks;	/* Number of 32kb-banks in Cart-ROM */
     uint8 *	pvRom;		/* Pointer to Cart-ROM */
+
+    uint32	speedPerLine;
+    bool8	  oneLineDone;
 };
 
 /* Reset the FxChip */

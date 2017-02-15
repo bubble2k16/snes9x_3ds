@@ -352,7 +352,9 @@ void S9xSetByteToRegister (uint8 Byte, uint8* SetAddress, uint32 Address)
 #ifdef SPC7110_DEBUG
 			printf("Writing Byte at %06X\n", Address);
 #endif
-			s7r.bank50[(Address & 0xffff)]= (uint8) Byte;
+			// Based on Snes9x 1.52
+			//s7r.bank50[(Address & 0xffff)]= (uint8) Byte;
+			// Cannot write to $50:xxxx for SPC7110.
 			break;
 	
 		case CMemory::MAP_OBC_RAM:
@@ -475,10 +477,13 @@ void S9xSetWordToRegister(uint16 Word, uint8 *SetAddress, uint32 Address)
 #ifdef SPC7110_DEBUG
 			printf("Writing Word at %06X\n", Address);
 #endif
-			s7r.bank50[(Address & 0xffff)]= (uint8) Word;
-			s7r.bank50[((Address + 1) & 0xffff)]= (uint8) Word;
+			// Based on Snes9x 1.52
+			//s7r.bank50[(Address & 0xffff)]= (uint8) Word;
+			//s7r.bank50[((Address + 1) & 0xffff)]= (uint8) Word;
+			// Cannot write to $50:xxxx for SPC7110.
 			break;
-			case CMemory::MAP_SA1RAM:
+			
+		case CMemory::MAP_SA1RAM:
 			*(Memory.SRAM + (Address & 0xffff)) = (uint8) Word;
 			*(Memory.SRAM + ((Address + 1) & 0xffff)) = (uint8) (Word >> 8);
 			SA1.Executing = !SA1.Waiting;

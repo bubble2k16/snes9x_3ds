@@ -164,6 +164,13 @@ SPC7110Regs s7r;			//SPC7110 registers, about 33KB
 S7RTC rtc_f9;				//FEOEZ (and Shounen Jump no SHou) RTC
 void	S9xUpdateRTC ();	//S-RTC function hacked to work with the RTC
 
+#define memory_cartrom_size()		Memory.CalculatedSize
+#define memory_cartrom_read(a)		Memory.ROM[(a)]
+
+#include "spc7110dec.cpp"
+
+SPC7110Decomp decomp;
+
 //Emulate power on state
 void S9xSpc7110Init()
 {
@@ -545,26 +552,29 @@ uint8 S9xGetSPC7110(uint16 Address)
 	case 0x4800:
 		{
 			unsigned short count=s7r.reg4809|(s7r.reg480A<<8);
-			uint32 i, j;
+			/*uint32 i, j;
 			j=(s7r.reg4805|(s7r.reg4806<<8));
 			j*=s7r.AlignBy;
-			i=j;
+			i=j;*/
 			if(count >0)
 				count--;
 			else count = 0xFFFF;
 			s7r.reg4809=0x00ff&count;
 			s7r.reg480A=(0xff00&count)>>8;
-			i+=s7r.bank50Internal;
-			i%=DECOMP_BUFFER_SIZE;
-			s7r.reg4800=s7r.bank50[i];
+			//i+=s7r.bank50Internal;
+			//i%=DECOMP_BUFFER_SIZE;
+			//s7r.reg4800=s7r.bank50[i];
+			s7r.reg4800 = decomp.read();
 			
-			s7r.bank50Internal++;
-			s7r.bank50Internal%=DECOMP_BUFFER_SIZE;
+			//s7r.bank50Internal++;
+			//s7r.bank50Internal%=DECOMP_BUFFER_SIZE;
 #ifdef SPC7110_DEBUG
 			printf("Returned %02X\n", s7r.reg4800);
 #endif
 		}
+
 		return s7r.reg4800;
+
 	//table register low
 	case 0x4801: return s7r.reg4801;
 	//table register middle
@@ -923,6 +933,14 @@ uint8 S9xGetSPC7110(uint16 Address)
 	}
 }
 }
+
+
+unsigned datarom_addr(unsigned addr) {
+  unsigned size = memory_cartrom_size() - 0x100000;
+  while(addr >= size) addr -= size;
+  return addr + 0x100000;
+}
+
 void S9xSetSPC7110 (uint8 data, uint16 Address)
 {
 #ifdef SPC7110_DEBUG
@@ -956,9 +974,23 @@ void S9xSetSPC7110 (uint8 data, uint16 Address)
 	//offset high, starts decompression
 	case 0x4806:
 		s7r.reg4806=data;
-		(*Copy7110)();
+		//(*Copy7110)();
+		{
+			unsigned table   = (s7r.reg4801 + (s7r.reg4802 << 8) + (s7r.reg4803 << 16));
+			unsigned index   = (s7r.reg4804 << 2);
+			//unsigned length  = (r4809 + (r480a << 8));
+			unsigned addr    = datarom_addr(table + index);
+			unsigned mode    = (memory_cartrom_read(addr + 0));
+			unsigned offset  = (memory_cartrom_read(addr + 1) << 16)
+							+ (memory_cartrom_read(addr + 2) <<  8)
+							+ (memory_cartrom_read(addr + 3) <<  0);
+
+			decomp.init(mode, offset, (s7r.reg4805 + (s7r.reg4806 << 8)) << mode);
+		}
+
 		s7r.bank50Internal=0;
 		s7r.reg480C&=0x7F;
+
 		break;
 
 	//DMA channel register (Is it used??)
@@ -2040,6 +2072,8 @@ void S9xSpc7110Reset()
 	s7r.AlignBy=1;
 	s7r.bank50Internal=0;
 	memset(s7r.bank50,0x00,DECOMP_BUFFER_SIZE);
+
+	decomp.reset();
 }
 
 

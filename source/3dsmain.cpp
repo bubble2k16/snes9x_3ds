@@ -28,13 +28,14 @@
 #include "3dsmenu.h"
 #include "3dsui.h"
 #include "3dsfont.h"
+#include "3dsconfig.h"
 
 #include "lodepng.h"
 
 
 typedef struct
 {
-    int     MaxFrameSkips = 4;              // 0 - disable,
+    int     MaxFrameSkips = 1;              // 0 - disable,
                                             // 1 - enable (max 1 consecutive skipped frame)
                                             // 2 - enable (max 2 consecutive skipped frames)
                                             // 3 - enable (max 3 consecutive skipped frames)
@@ -246,53 +247,6 @@ void S9xLoadSDD1Data ()
 	{
 		Settings.SDD1Pack=TRUE;
 	}
-
-    /*
-	if(Settings.SDD1Pack==TRUE)
-		return;
-
-    strcpy (index, filename);
-    strcat (index, "\\SDD1GFX.IDX");
-    strcpy (data, filename);
-    strcat (data, "\\SDD1GFX.DAT");
-
-    FILE *fs = fopen (index, "rb");
-    int len = 0;
-
-    if (fs)
-    {
-        // Index is stored as a sequence of entries, each entry being
-        // 12 bytes consisting of:
-        // 4 byte key: (24bit address & 0xfffff * 16) | translated block
-        // 4 byte ROM offset
-        // 4 byte length
-        fseek (fs, 0, SEEK_END);
-        len = ftell (fs);
-        rewind (fs);
-        Memory.SDD1Index = (uint8 *) malloc (len);
-        fread (Memory.SDD1Index, 1, len, fs);
-        fclose (fs);
-        Memory.SDD1Entries = len / 12;
-
-        if (!(fs = fopen (data, "rb")))
-        {
-            free ((char *) Memory.SDD1Index);
-            Memory.SDD1Index = NULL;
-            Memory.SDD1Entries = 0;
-        }
-        else
-        {
-            fseek (fs, 0, SEEK_END);
-            len = ftell (fs);
-            rewind (fs);
-            Memory.SDD1Data = (uint8 *) malloc (len);
-            fread (Memory.SDD1Data, 1, len, fs);
-            fclose (fs);
-
-            qsort (Memory.SDD1Index, Memory.SDD1Entries, 12,
-                   S9xCompareSDD1IndexEntries);
-        }
-    }*/
 }
 
 const char * S9xGetFilename (const char *ex)
@@ -711,7 +665,7 @@ SMenuItem optionMenu[] = {
     MENU_MAKE_HEADER2   ("Audio"),
     MENU_MAKE_GAUGE     (14000, "  Volume Amplification", 0, 8, 4),
     MENU_MAKE_DISABLED  (""),
-    MENU_MAKE_HEADER2   ("Turbo Buttons"),
+    MENU_MAKE_HEADER2   ("Turbo (Auto-Fire) Buttons"),
     MENU_MAKE_CHECKBOX  (13000, "  Button A", 0),
     MENU_MAKE_CHECKBOX  (13001, "  Button B", 0),
     MENU_MAKE_CHECKBOX  (13002, "  Button X", 0),
@@ -896,137 +850,68 @@ bool settingsUpdateAllSettings(bool updateGameSettings = true)
 }
 
 
-
-//----------------------------------------------------------------------
-// Save settings specific to game.
-//----------------------------------------------------------------------
-bool settingsWriteMode = 0;
-void settingsReadWrite(FILE *fp, char *format, int *value, int minValue, int maxValue)
-{
-    //if (strlen(format) == 0)
-    //    return;
-
-    if (settingsWriteMode)
-    {
-        if (value != NULL)
-        {
-            //printf ("Writing %s %d\n", format, *value);
-        	fprintf(fp, format, *value);
-        }
-        else
-        {
-            //printf ("Writing %s\n", format);
-        	fprintf(fp, format);
-
-        }
-    }
-    else
-    {
-        if (value != NULL)
-        {
-            fscanf(fp, format, value);
-            if (*value < minValue)
-                *value = minValue;
-            if (*value > maxValue)
-                *value = maxValue;
-            //printf ("Scanned %d\n", *value);
-        }
-        else
-        {
-            fscanf(fp, format);
-            //printf ("skipped line\n");
-        }
-    }
-}
-
-char dummyString[1024];
-void settingsReadWriteString(FILE *fp, char *writeFormat, char *readFormat, char *value)
-{
-    //if (strlen(format) == 0)
-    //    return;
-
-    if (settingsWriteMode)
-    {
-        if (value != NULL)
-        {
-            //printf ("Writing %s %d\n", format, *value);
-        	fprintf(fp, writeFormat, value);
-        }
-        else
-        {
-            //printf ("Writing %s\n", format);
-        	fprintf(fp, writeFormat);
-        }
-    }
-    else
-    {
-        if (value != NULL)
-        {
-            fscanf(fp, readFormat, value);
-            char c;
-            fscanf(fp, "%c", &c);
-            //printf ("Scanned %s\n", value);
-        }
-        else
-        {
-            fscanf(fp, readFormat);
-            char c;
-            fscanf(fp, "%c", &c);
-            //fscanf(fp, "%s", dummyString);
-            //printf ("skipped line\n");
-        }
-    }
-}
-
-
 //----------------------------------------------------------------------
 // Read/write all possible game specific settings.
 //----------------------------------------------------------------------
-void settingsReadWriteFullListByGame(FILE *fp)
+bool settingsReadWriteFullListByGame(bool writeMode)
 {
-    settingsReadWrite(fp, "#v1\n", NULL, 0, 0);
-    settingsReadWrite(fp, "# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
+    bool success = config3dsOpenFile(S9xGetFilename(".cfg"), writeMode);
+    if (!success)
+        return false;
+
+    config3dsReadWriteInt32("#v1\n", NULL, 0, 0);
+    config3dsReadWriteInt32("# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
 
     // set default values first.
-    if (!settingsWriteMode)
+    if (!writeMode)
     {
         settings3DS.PaletteFix = 0;
         settings3DS.SRAMSaveInterval = 0;
     }
 
-    settingsReadWrite(fp, "Frameskips=%d\n", &settings3DS.MaxFrameSkips, 0, 4);
-    settingsReadWrite(fp, "Framerate=%d\n", &settings3DS.ForceFrameRate, 0, 2);
-    settingsReadWrite(fp, "TurboA=%d\n", &settings3DS.Turbo[0], 0, 1);
-    settingsReadWrite(fp, "TurboB=%d\n", &settings3DS.Turbo[1], 0, 1);
-    settingsReadWrite(fp, "TurboX=%d\n", &settings3DS.Turbo[2], 0, 1);
-    settingsReadWrite(fp, "TurboY=%d\n", &settings3DS.Turbo[3], 0, 1);
-    settingsReadWrite(fp, "TurboL=%d\n", &settings3DS.Turbo[4], 0, 1);
-    settingsReadWrite(fp, "TurboR=%d\n", &settings3DS.Turbo[5], 0, 1);
-    settingsReadWrite(fp, "Vol=%d\n", &settings3DS.Volume, 0, 8);
-    settingsReadWrite(fp, "PalFix=%d\n", &settings3DS.PaletteFix, 0, 3);
-    settingsReadWrite(fp, "SRAMInterval=%d\n", &settings3DS.SRAMSaveInterval, 0, 4);
+    config3dsReadWriteInt32("Frameskips=%d\n", &settings3DS.MaxFrameSkips, 0, 4);
+    config3dsReadWriteInt32("Framerate=%d\n", &settings3DS.ForceFrameRate, 0, 2);
+    config3dsReadWriteInt32("TurboA=%d\n", &settings3DS.Turbo[0], 0, 1);
+    config3dsReadWriteInt32("TurboB=%d\n", &settings3DS.Turbo[1], 0, 1);
+    config3dsReadWriteInt32("TurboX=%d\n", &settings3DS.Turbo[2], 0, 1);
+    config3dsReadWriteInt32("TurboY=%d\n", &settings3DS.Turbo[3], 0, 1);
+    config3dsReadWriteInt32("TurboL=%d\n", &settings3DS.Turbo[4], 0, 1);
+    config3dsReadWriteInt32("TurboR=%d\n", &settings3DS.Turbo[5], 0, 1);
+    config3dsReadWriteInt32("Vol=%d\n", &settings3DS.Volume, 0, 8);
+    config3dsReadWriteInt32("PalFix=%d\n", &settings3DS.PaletteFix, 0, 3);
+    config3dsReadWriteInt32("SRAMInterval=%d\n", &settings3DS.SRAMSaveInterval, 0, 4);
 
     // All new options should come here!
+
+    config3dsCloseFile();
+    return true;
 }
 
 
 //----------------------------------------------------------------------
 // Read/write all possible game specific settings.
 //----------------------------------------------------------------------
-void settingsReadWriteFullListGlobal(FILE *fp)
+bool settingsReadWriteFullListGlobal(bool writeMode)
 {
-    settingsReadWrite(fp, "#v1\n", NULL, 0, 0);
-    settingsReadWrite(fp, "# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
+    bool success = config3dsOpenFile("./snes9x_3ds.cfg", writeMode);
+    if (!success)
+        return false;
+    
+    config3dsReadWriteInt32("#v1\n", NULL, 0, 0);
+    config3dsReadWriteInt32("# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
 
-    settingsReadWrite(fp, "ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 7);
-    settingsReadWrite(fp, "HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
-    settingsReadWrite(fp, "Font=%d\n", &settings3DS.Font, 0, 1);
+    config3dsReadWriteInt32("ScreenStretch=%d\n", &settings3DS.ScreenStretch, 0, 7);
+    config3dsReadWriteInt32("HideUnnecessaryBottomScrText=%d\n", &settings3DS.HideUnnecessaryBottomScrText, 0, 1);
+    config3dsReadWriteInt32("Font=%d\n", &settings3DS.Font, 0, 2);
 
     // Fixes the bug where we have spaces in the directory name
-    settingsReadWriteString(fp, "Dir=%s\n", "Dir=%1000[^\n]s\n", cwd);
-    settingsReadWriteString(fp, "ROM=%s\n", "ROM=%1000[^\n]s\n", romFileNameLastSelected);
+    config3dsReadWriteString("Dir=%s\n", "Dir=%1000[^\n]s\n", cwd);
+    config3dsReadWriteString("ROM=%s\n", "ROM=%1000[^\n]s\n", romFileNameLastSelected);
 
     // All new options should come here!
+
+    config3dsCloseFile();
+    return true;
 }
 
 //----------------------------------------------------------------------
@@ -1039,35 +924,9 @@ bool settingsSave(bool includeGameSettings = true)
     ui3dsDrawStringWithNoWrapping(50, 140, 270, 154, 0x3f7fff, HALIGN_CENTER, "Saving settings to SD card...");
 
     if (includeGameSettings)
-    {
-        FILE *fp = fopen(S9xGetFilename(".cfg"), "w+");
-        //printf ("write fp = %x\n", (uint32)fp);
-        if (fp != NULL)
-        {
-            settingsWriteMode = true;
-            settingsReadWriteFullListByGame(fp);
-            fclose(fp);
-        }
-        else
-        {
-            ui3dsDrawRect(50, 140, 270, 154, 0x000000);
-            return false;
-        }
-    }
+        settingsReadWriteFullListByGame(true);
 
-    FILE *fp = fopen("./snes9x_3ds.cfg", "w+");
-    //printf ("write fp = %x\n", (uint32)fp);
-    if (fp != NULL)
-    {
-        settingsWriteMode = true;
-        settingsReadWriteFullListGlobal(fp);
-        fclose(fp);
-    }
-    else
-    {
-        ui3dsDrawRect(50, 140, 270, 154, 0x000000);
-        return false;
-    }
+    settingsReadWriteFullListGlobal(true);
     ui3dsDrawRect(50, 140, 270, 154, 0x000000);
 
     return true;
@@ -1078,33 +937,18 @@ bool settingsSave(bool includeGameSettings = true)
 //----------------------------------------------------------------------
 bool settingsLoad(bool includeGameSettings = true)
 {
-    FILE *fp = fopen("./snes9x_3ds.cfg", "r");
-    //printf ("fp = %x\n", (uint32)fp);
-    if (fp != NULL)
-    {
-        settingsWriteMode = false;
-        settingsReadWriteFullListGlobal(fp);
-        settingsUpdateAllSettings(false);
-        fclose(fp);
-    }
-    else
+    bool success = settingsReadWriteFullListGlobal(false);
+    if (!success)
         return false;
+    settingsUpdateAllSettings(false);
 
     if (includeGameSettings)
     {
-        fp = fopen(S9xGetFilename(".cfg"), "r");
-        //printf ("fp = %x\n", (uint32)fp);
-        if (fp != NULL)
+        success = settingsReadWriteFullListByGame(false);
+        if (success)
         {
-            settingsWriteMode = false;
-            settingsReadWriteFullListByGame(fp);
-
             if (settingsUpdateAllSettings())
                 settingsSave();
-
-            // Bug fix: Oops... forgot to close this file!
-            //
-            fclose(fp);
             return true;
         }
         else
@@ -1114,6 +958,7 @@ bool settingsLoad(bool includeGameSettings = true)
             // For the rest of the settings, we use whatever has been
             // set in the previous game.
             //
+            settings3DS.MaxFrameSkips = 1;
             settings3DS.ForceFrameRate = 0;
             settings3DS.Volume = 4;
 
@@ -1991,46 +1836,6 @@ void emulatorFinalize()
 bool firstFrame = true;
 
 
-// Get the morton interleave offset of the pixel
-// within the 8x8 tile.
-//
-static inline u32 G3D_MortonInterleave(u32 x, u32 y)
-{
-	u32 i = (x & 7) | ((y & 7) << 8); // ---- -210
-	i = (i ^ (i << 2)) & 0x1313;      // ---2 --10
-	i = (i ^ (i << 1)) & 0x1515;      // ---2 -1-0
-	i = (i | (i >> 7)) & 0x3F;
-	return i;
-}
-
-/*
-void G3D_SetTexturePixel16(sf2d_texture *texture, int x, int y, u16 new_color)
-{
-	y = (texture->pow2_h - 1 - y);
-
-    u32 coarse_y = y & ~7;
-    u32 coarse_x = x & ~7;
-    u32 offset = G3D_MortonInterleave(x, y) +
-        coarse_x * 8 +
-        coarse_y * texture->pow2_w;
-    ((u16 *)texture->data)[offset] = new_color;
-}
-*/
-
-void G3D_SetTexturePixel16(SGPUTexture *texture, int x, int y, u16 new_color)
-{
-	y = (texture->Height - 1 - y);
-
-    u32 coarse_y = y & ~7;
-    u32 coarse_x = x & ~7;
-    u32 offset = G3D_MortonInterleave(x, y) +
-        coarse_x * 8 +
-        coarse_y * texture->Width;
-    if (offset < 1024 * 1024)
-        ((u16 *)texture->PixelData)[offset] = new_color;
-}
-
-
 
 char frameCountBuffer[70];
 void updateFrameCount()
@@ -2340,383 +2145,6 @@ void snesEmulatorLoop()
     snd3dsStopPlaying();
 }
 
-/*
-void testGPU()
-{
-    bool firstFrame = true;
-
-    if (!gpu3dsInitialize())
-    {
-        printf ("Unabled to initialized GPU\n");
-        exit(0);
-    }
-
-    u32 *gpuCommandBuffer;
-    u32 gpuCommandBufferSize;
-    u32 gpuCommandBufferOffset;
-    GPUCMD_GetBuffer(&gpuCommandBuffer, &gpuCommandBufferSize, &gpuCommandBufferOffset);
-    printf ("Buffer: %d %d\n", gpuCommandBufferSize, gpuCommandBufferOffset);
-
-    SGPUTexture *tex1 = gpu3dsCreateTextureInLinearMemory(1024, 1024, GPU_RGBA5551);
-
-    for (int y=0; y<16; y++)
-    {
-        for (int x=0; x<8; x++)
-        {
-             uint16 c1 = 0x1f - (x + y) & 0x1f;
-             uint8 alpha = (x + y) < 5 ? 0 : 1;
-             uint32 c = c1 << 11 | c1 << 5 | c1 << 1 | alpha;
-             G3D_SetTexturePixel16(tex1, x, y, c);
-        }
-    }
-
-    float fc = 0;
-    float rad = 0;
-
-    gpu3dsResetState();
-
-    int testMode = 12;
-
-
- 	while (aptMainLoop())
-	{
-        bool showTestMode = false;
-        if (frameCount60 == 0) showTestMode = true;
-        updateFrameCount();
-        if (showTestMode) printf ("Test Mode: %d\n", testMode);
-
-        gpu3dsStartNewFrame();
-
-        //----------------------------------------------------
-        // Draw the game screen.
-        //----------------------------------------------------
-        t3dsStartTiming(1, "Start Frame");
-        gpu3dsDisableAlphaBlending();
-        gpu3dsDisableDepthTest();
-        gpu3dsSetRenderTargetToMainScreenTexture();
-        gpu3dsUseShader(2);
-        gpu3dsSetTextureEnvironmentReplaceColor();
-        gpu3dsDrawRectangle(0, 0, 256, 240, 0, 0x000000ff);
-        gpu3dsSetTextureEnvironmentReplaceTexture0();
-        gpu3dsBindTexture(tex1, GPU_TEXUNIT0);
-        gpu3dsDisableStencilTest();
-        //gpu3dsClearRenderTarget();
-        t3dsEndTiming(1);
-
-
-        t3dsStartTiming(2, "Draw Tiles");
-        //gpu3dsDisableDepthTestAndWriteRedOnly();
-        gpu3dsDisableDepthTest();
-
-        if (testMode <= 7)
-        {
-            int ystep = 1;
-            if (testMode <= 3)
-                ystep = 8;
-
-            int subTestMode = testMode % 4;
-            for (int i=0; i<4; i++)
-            {
-                for (int y=0; y<224; y += ystep)
-                {
-                    for (int x=0; x<32; x++)
-                    {
-                        if (subTestMode == 0)
-                        {
-                            // render full
-                            gpu3dsAddTileVertexes(
-                                x * 8 + fc * i, (y + fc * i) + ((i % 2) * 0x4000),
-                                x * 8 + 8 + fc * i, (y + ystep + fc * i) + ((i % 2) * 0x4000),
-                                0, y % 8, 8.0f, y % 8 + ystep,
-                                (i << 14)
-                                );
-                        }
-                        else if (subTestMode == 1)
-                        {
-                            // render alternate tiles with texturePos = -1
-                            gpu3dsAddTileVertexes(
-                                x * 8 + fc * i, (y + fc * i) + ((i % 2) * 0x4000),
-                                x * 8 + 8 + fc * i, (y + ystep + fc * i) + ((i % 2) * 0x4000),
-                                0, y % 8, 8.0f, y % 8 + ystep,
-                                (x % 2 == 0) ? - 1: (i << 14)
-                                );
-                        }
-                        else if (subTestMode == 2)
-                        {
-                            if (x % 2 == 0)
-                            // render alternate tiles
-                            gpu3dsAddTileVertexes(
-                                x * 8 + fc * i, (y + fc * i) + ((i % 2) * 0x4000),
-                                x * 8 + 8 + fc * i, (y + ystep + fc * i) + ((i % 2) * 0x4000),
-                                0, y % 8, 8.0f, y % 8 + ystep,
-                                (i << 14)
-                                );
-                        }
-                        else if (subTestMode == 3)
-                        {
-                            // render all tiles with texturePos = -1
-                            gpu3dsAddTileVertexes(
-                                x * 8 + fc * i, (y + fc * i) + ((i % 2) * 0x4000),
-                                x * 8 + 8 + fc * i, (y + ystep + fc * i) + ((i % 2) * 0x4000),
-                                0, y % 8, 8.0f, y % 8 + ystep,
-                                -1
-                                );
-                        }
-                    }
-                }
-            }
-            gpu3dsDrawVertexes();
-        }
-        else if (testMode == 8)
-        {
-            // render 4 256x224 colored rectangles
-            gpu3dsSetTextureEnvironmentReplaceColor();
-            gpu3dsEnableDepthTest();
-            gpu3dsEnableAlphaBlending();
-            for (int i = 0; i < 4; i++)
-                gpu3dsAddRectangleVertexes(0, 0, 256, 224, 0, 0xff0000af);  // red rectangle
-            gpu3dsDrawVertexes();
-        }
-        else if (testMode == 9)
-        {
-            // render 4*224 256x1 colored rectangles with alpha
-            gpu3dsSetTextureEnvironmentReplaceColor();
-            gpu3dsEnableDepthTest();
-            gpu3dsEnableAlphaBlending();
-            for (int i = 0; i < 4; i++)
-                for (int y = 0; y < 224; y++)
-                    gpu3dsAddRectangleVertexes(0, y, 256, y + 1, 0, 0x000003f + (y << 8));  // blue rectangle
-            gpu3dsDrawVertexes();
-        }
-        else if (testMode == 10)
-        {
-            // render 4*224 256x1 colored rectangles with no alpha
-            gpu3dsSetTextureEnvironmentReplaceColor();
-            gpu3dsEnableDepthTest();
-            gpu3dsDisableAlphaBlending();
-            for (int i = 0; i < 4; i++)
-                for (int y = 0; y < 224; y++)
-                    gpu3dsAddRectangleVertexes(0, y, 256, y + 1, 0, 0x000003f + (y << 16));  // green rectangle
-            gpu3dsDrawVertexes();
-        }
-        else if (testMode == 11)
-        {
-            // Render into the stencil
-            //
-            gpu3dsSetRenderTargetToDepthTexture();
-            gpu3dsSetTextureEnvironmentReplaceColor();
-            gpu3dsDisableDepthTest();
-            gpu3dsDisableAlphaBlending();
-            gpu3dsDisableAlphaTest();
-            gpu3dsDisableStencilTest();
-            gpu3dsDrawRectangle(0, 0, 256, 256, 0, 0xff);
-            gpu3dsDrawRectangle(100, 100, 200, 200, 0, 0xff000000);  // red rectangle
-            gpu3dsEnableStencilTest(GPU_EQUAL, 0x1, 0x1);
-
-            // render 4*224 256x1 colored rectangles with no alpha
-            gpu3dsSetRenderTargetToMainScreenTexture();
-            gpu3dsSetTextureEnvironmentReplaceColor();
-            gpu3dsDisableDepthTest();
-            gpu3dsDisableAlphaBlending();
-            for (int i = 0; i < 4; i++)
-                for (int y = 0; y < 230; y++)
-                    gpu3dsAddRectangleVertexes(0, y, 256, y + 1, 0, 0x000003f + (y << 16));  // green rectangle
-            gpu3dsDrawVertexes();
-
-            gpu3dsDisableStencilTest();
-
-        }
-        else if (testMode == 12)
-        {
-            //gpu3dsSetRenderTargetToOBJLayer();
-            gpu3dsSetTextureEnvironmentReplaceColor();
-            gpu3dsDisableDepthTest();
-            gpu3dsDisableAlphaTest();
-            gpu3dsDrawRectangle(0, 0, 256, 240, 0, 0xffff0000);
-
-            gpu3dsBindTexture(tex1, GPU_TEXUNIT0);
-            gpu3dsSetTextureEnvironmentReplaceTexture0();
-            gpu3dsEnableDepthTest();
-            gpu3dsEnableAlphaTestNotEqualsZero();
-            gpu3dsEnableAlphaBlending();
-            for (int x = 0; x < 256; x += 8)
-            {
-                gpu3dsSetTextureEnvironmentReplaceTexture0WithConstantAlpha( (x / 64) * 64);
-                for (int y = 0; y < 240; y += 8)
-                {
-                    gpu3dsAddTileVertexes(x, y, x+8, y+8, 0, 0, 8, 8, 0);
-                }
-                gpu3dsDrawVertexes();
-            }
-
-            // render 4 256x224 textured rectangles
-            static int objPart = 1;
-            gpu3dsSetRenderTargetToMainScreenTexture();
-
-            gpu3dsSetTextureEnvironmentReplaceTexture0();
-            //gpu3dsBindTextureOBJLayer(GPU_TEXUNIT0);
-            gpu3dsDisableDepthTest();
-            gpu3dsEnableAlphaTestEquals((objPart % 4) * 64);
-            objPart = (objPart + 1) % 4;
-            gpu3dsDisableAlphaBlending();
-            for (int i = 0; i < 4; i++)
-                gpu3dsAddTileVertexes(0, 0, 256, 240, 0, 0, 256, 240, 0);
-            gpu3dsDrawVertexes();
-        }
-        else if (testMode == 13)
-        {
-            // do nothing
-            //
-
-        }
-
-        t3dsEndTiming(2);
-
-        t3dsStartTiming(3, "End Frame");
-        t3dsEndTiming(3);
-
-        //----------------------------------------------------
-        // Draw the texture to the frame buffer. And
-        // swap the screens to show.
-        //----------------------------------------------------
-        t3dsStartTiming(5, "Texture to frame");
-        //gpu3dsDisableDepthTestAndWriteColorAlphaOnly();
-        gpu3dsDisableDepthTest();
-
-        gpu3dsSetRenderTargetToTopFrameBuffer();
-        gpu3dsUseShader(1);
-        gpu3dsDisableAlphaBlending();
-        gpu3dsDisableDepthTest();
-        gpu3dsDisableAlphaTest();
-        gpu3dsBindTextureMainScreen(GPU_TEXUNIT0);
-        gpu3dsSetTextureEnvironmentReplaceTexture0();
-        gpu3dsAddQuadVertexes(0, 0, 256, 224, 0, 0, 256, 224, 0.1f);
-        gpu3dsDrawVertexes();
-        t3dsEndTiming(5);
-
-
-        gpu3dsFlush();
-        //svcSleepThread(1000000 * 100);
-
-        t3dsStartTiming(6, "Transfer");
-        gpu3dsTransferToScreenBuffer();
-        t3dsEndTiming(6);
-
-        t3dsStartTiming(7, "Swap Buffers");
-        gpu3dsSwapScreenBuffers();
-        t3dsEndTiming(7);
-
-
-        //fc = (fc + 0.1);
-        if (fc > 60)
-            fc = 0;
-        rad += 0.2f;
-
-        // quit after any key is pressed.
-        uint32 keysDown = readJoypadButtons();
-
-        if (keysDown & KEY_A)
-        {
-            testMode = (testMode + 1) % 14;
-        }
-        if (keysDown & KEY_B)
-            break;
-
-    }
-
-    gpu3dsFinalize();
-    exit(0);
-}
-*/
-
-/*
-void S9xSetEnvRate (Channel *ch, unsigned long rate, int direction, int target);
-
-void testAPU()
-{
-    snesInitialize();
-    gpu3dsInitialize();
-    Channel ch;
-
-    printf ("ATTACK:\n");
-    ch.state = SOUND_ATTACK;
-    S9xSetEnvRate(&ch, 6, -1, 0);
-    printf ("erate: %d\n", ch.erate);
-
-    S9xSetEnvRate(&ch, 4100, -1, 0);
-    printf ("erate: %d\n", ch.erate);
-
-    printf ("DECAY:\n");
-    ch.state = SOUND_DECAY;
-    S9xSetEnvRate(&ch, 37, -1, 0);
-    printf ("erate: %d\n", ch.erate);
-
-    S9xSetEnvRate(&ch, 1200, -1, 0);
-    printf ("erate: %d\n", ch.erate);
-
-    printf ("SUSTAIN:\n");
-    ch.state = SOUND_SUSTAIN;
-    S9xSetEnvRate(&ch, 18, -1, 0);
-    printf ("erate: %d\n", ch.erate);
-
-    S9xSetEnvRate(&ch, 38000, -1, 0);
-    printf ("erate: %d\n", ch.erate);
-
-    printf ("RELEASE:\n");
-    ch.state = SOUND_RELEASE;
-    S9xSetEnvRate(&ch, 8, -1, 0);
-    printf ("erate: %d\n", ch.erate);
-
-    while (aptMainLoop()) {
-
-    }
-}
-
-
-int duplicateCount[65536 * 16];
-void testTileCache()
-{
-    bool firstFrame = true;
-
-    if (!gpu3dsInitialize())
-    {
-        printf ("Unabled to initialized GPU\n");
-        exit(0);
-    }
-
-
-    // Test tile cache to ensure that there will never be two hashes
-    // pointing to the same tile
-    //
-    for (int i = 0; i < 200000; i++)
-    {
-        int tileAddr = rand() % 65536;
-        int pal = rand() % 16;
-
-        int tp = cacheGetTexturePositionFast(tileAddr, pal);
-
-        printf ("i=%d ta=%04x p=%d => tp:%d\n", i, tileAddr, pal, tp);
-
-        if (i > 8192)
-        {
-        for (int t = 0; t < 16383; t++)
-            duplicateCount[t] = 0;
-        for (int t = 0; t < 65536 * 16; t++)
-        {
-            int testtp = GPU3DS.vramCacheHashToTexturePosition[t];
-            duplicateCount[testtp]++;
-        }
-        for (int t = 1; t < 16383; t++)
-        {
-            if (duplicateCount[t] >= 2)
-            {
-                printf ("tp dup:%d\n", t);
-            }
-        }
-        }
-    }
-}
-*/
 
 int main()
 {
