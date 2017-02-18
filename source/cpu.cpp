@@ -101,6 +101,7 @@
 #include "sdd1.h"
 #include "spc7110.h"
 #include "obc1.h"
+#include "bsx.h"
 
 
 #ifndef ZSNES_FX
@@ -191,6 +192,9 @@ void S9xReset (void)
     memset (Memory.VRAM, 0x00, 0x10000);
     memset (Memory.RAM, 0x55, 0x20000);
 
+	if (Settings.BS)
+		S9xResetBSX();
+
 	if(Settings.SPC7110)
 		S9xSpc7110Reset();
     S9xResetCPU ();
@@ -222,6 +226,9 @@ void S9xSoftReset (void)
     ZeroMemory (Memory.FillRAM, 0x8000);
     memset (Memory.VRAM, 0x00, 0x10000);
  //   memset (Memory.RAM, 0x55, 0x20000);
+
+	if (Settings.BS)
+		S9xResetBSX();
 
 	if(Settings.SPC7110)
 		S9xSpc7110Reset();

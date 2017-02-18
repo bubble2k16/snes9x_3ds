@@ -114,6 +114,7 @@
 #include "sdd1.h"
 #include "spc7110.h"
 #include "seta.h"
+#include "bsx.h"
 
 #include "unzip.h"
 
@@ -412,8 +413,11 @@ bool8 CMemory::Init ()
 	memset (VRAM, 0, 0x10000);
 	memset (ROM, 0, MAX_ROM_SIZE + 0x200 + 0x8000);
     
-	BSRAM	= (uint8 *) malloc (0x80000);
-	memset (BSRAM, 0, 0x80000);
+	// From Snes9x v1.52
+	//BSRAM	= (uint8 *) malloc (0x80000);
+	//memset (BSRAM, 0, 0x80000);
+	BIOSROM = ROM + 0x300000; // BS
+	BSRAM   = ROM + 0x400000; // BS
 
 	FillRAM = NULL;
 	
@@ -506,11 +510,11 @@ void CMemory::Deinit ()
 		ROM = NULL;
     }
 	
-	if(BSRAM)
+	/*if(BSRAM)
 	{
 		free((char*) BSRAM);
 		BSRAM=NULL;
-	}
+	}*/
 
     if (IPPU.TileCache [TILE_2BIT])
     {
@@ -1329,6 +1333,8 @@ void CMemory::InitROM (bool8 Interleaved)
     ::SRAM = SRAM;
     memset (ROMId, 0, 5);
     memset (CompanyId, 0, 3);
+
+	S9xInitBSX(); // Set BS header before parsing
 
 	ParseSNESHeader(RomHeader);
 	

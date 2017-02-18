@@ -13,18 +13,8 @@
 #include "snes9x.h"
 #include "memmap.h"
 #include "3dsgpu.h"
-
-// Compiled shaders
-//
-#include "shaderfast_shbin.h"
-#include "shaderfast2_shbin.h"
-#include "shaderfast3_shbin.h"
-#include "shaderfastm7_shbin.h"
-
-#include "shaderslow_shbin.h"
-#include "shaderslow2_shbin.h"
-#include "shaderslow3_shbin.h"
-#include "shaderslowm7_shbin.h"
+#include "3dsfiles.h"
+#include "3dsimpl.h"
 
 #ifndef M_PI
 #define	M_PI		3.14159265358979323846
@@ -38,7 +28,7 @@ extern u8* gfxTopLeftFramebuffers[2];
 u8* gfxOldTopRightFramebuffers[2];
 
 extern "C" void gfxSetFramebufferInfo(gfxScreen_t screen, u8 id);
-
+extern "C" void gfxWriteFramebufferInfo(gfxScreen_t screen);
 
 /*
 For reference only:
@@ -79,124 +69,25 @@ GX_TRANSFER_FORMAT {
 #define LINEARFREE_SAFE(x)  if (x) linearFree(x);
 
 
-void cacheInit()
-{
-    //printf ("Cache %8x\n", &vramCacheFrameNumber);
-    //memset(&vramCacheFrameNumber, 0, MAX_HASH * 4);
-    memset(&GPU3DS.vramCacheHashToTexturePosition, 0, (MAX_HASH + 1) * 2);
-
-    // Fixes issue in Thunder Spirits where the tileaddr + pal
-    // gives the texturePos of 0, but gets overwritten by other tiles
-    //
-    GPU3DS.vramCacheTexturePositionToHash[0] = 0;
-    for (int i = 1; i < MAX_TEXTURE_POSITIONS; i++)
-        GPU3DS.vramCacheTexturePositionToHash[i] = MAX_HASH;
-    GPU3DS.newCacheTexturePosition = 2;
-}
-
-/*
-int cacheGetTexturePosition(int hash)
-{
-    int pos = GPU3DS.vramCacheHashToTexturePosition[hash];
-
-    if (pos == 0)
-    {
-
-        pos = GPU3DS.newCacheTexturePosition;
-
-        //vramCacheFrameNumber[hash] = 0;
-
-        GPU3DS.vramCacheTexturePositionToHash[GPU3DS.vramCacheHashToTexturePosition[hash]] = 0;
-        GPU3DS.vramCacheHashToTexturePosition[GPU3DS.vramCacheTexturePositionToHash[pos]] = 0;
-
-        GPU3DS.vramCacheHashToTexturePosition[hash] = pos;
-        GPU3DS.vramCacheTexturePositionToHash[pos] = hash;
-
-        GPU3DS.newCacheTexturePosition++;
-        if (GPU3DS.newCacheTexturePosition >= MAX_TEXTURE_POSITIONS)
-            GPU3DS.newCacheTexturePosition = 1;
-    }
-
-    return pos;
-}
-*/
-
-int cacheGetMode7TexturePosition(int tileNumber)
-{
-    int y = tileNumber >> 8;
-    int x = tileNumber & 0xff;
-    return (y * 1024 + x);
-
-}
-
-
-// Memory Usage = 2.00 MB   for texture cache
-#define TEXTURE_SIZE                    1024
-
 //------------------------------------------------------------------------
 // Increased buffer size to 1MB for screens with heavy effects (multiple wavy backgrounds and line-by-line windows).
 // Memory Usage = 2.00 MB   for GPU command buffer
 #define COMMAND_BUFFER_SIZE             0x200000
 
-// Memory Usage = 0.26 MB   for 4-point rectangle (triangle strip) vertex buffer
-#define RECTANGLE_BUFFER_SIZE           0x40000
 
-//------------------------------------------------------------------------
-// Memory Usage = 8.00 MB   for 6-point quad vertex buffer (Citra only)
-#define CITRA_VERTEX_BUFFER_SIZE        0x800000
-
-// Memory Usage = Not used (Real 3DS only)
-#define CITRA_TILE_BUFFER_SIZE          0x200
-
-// Memory usage = 2.00 MB   for 6-point full texture mode 7 update buffer
-#define CITRA_M7_BUFFER_SIZE            0x200000
-
-// Memory usage = 0.39 MB   for 2-point mode 7 scanline draw
-#define CITRA_MODE7_LINE_BUFFER_SIZE    0x60000
-
-
-//------------------------------------------------------------------------
-// Memory Usage = 0.06 MB   for 6-point quad vertex buffer (Real 3DS only)
-#define REAL3DS_VERTEX_BUFFER_SIZE      0x1000
-
-// Memory Usage = 3.00 MB   for 2-point rectangle vertex buffer (Real 3DS only)
-#define REAL3DS_TILE_BUFFER_SIZE        0x300000
-
-// Memory usage = 0.78 MB   for 2-point full texture mode 7 update buffer
-#define REAL3DS_M7_BUFFER_SIZE          0xC0000
-
-// Memory usage = 0.13 MB   for 2-point mode 7 scanline draw
-#define REAL3DS_MODE7_LINE_BUFFER_SIZE  0x20000
-
-
-
-/*
-sf2d_rendertarget *snesMainScreenTarget;
-sf2d_rendertarget *snesSubScreenTarget;
-sf2d_texture *snesTileCacheTexture;
-*/
-
-SGPUTexture *snesMainScreenTarget;
-SGPUTexture *snesSubScreenTarget;
-//SGPUTexture *snesOBJLayerTarget;
-//SGPUTexture *snesOBJDepth;
-
-SGPUTexture *snesTileCacheTexture;
-SGPUTexture *snesMode7FullTexture;
-SGPUTexture *snesMode7TileCacheTexture;
-SGPUTexture *snesMode7Tile0Texture;
-
-SGPUTexture *snesDepthForScreens;
-SGPUTexture *snesDepthForOtherTextures;
 
 
 u32 *gpuCommandBuffer1;
 u32 *gpuCommandBuffer2;
 int gpuCommandBufferSize = 0;
 int gpuCurrentCommandBuffer = 0;
+SGPU3DS GPU3DS;
 
-
-void gpu3dsSetMode7UpdateFrameCountUniform();
+int renderTargetVertexShaderRegister = 0;
+int renderTargetGeometryShaderRegister = 0;
+int textureVertexShaderRegister = 0;
+int textureGeometryShaderRegister = 0;
+int textureOffsetVertexShaderRegister = 0;
 
 
 u32 vertexListBufferOffsets[1] = { 0 };
@@ -273,20 +164,27 @@ void gpu3dsCheckSlider()
         gfxTopRightFramebuffers[0] = gfxTopLeftFramebuffers[0];
         gfxTopRightFramebuffers[1] = gfxTopLeftFramebuffers[1];
         
-        if (sliderVal == 0.0)
+        if (sliderVal == 0)
+        {
             gpu3dsSetParallaxBarrier(false);
-        else if (sliderVal < 0.25)
+        }
+        else if (sliderVal < 0.3)
         {
             gfxTopRightFramebuffers[0] = gfxOldTopRightFramebuffers[0];
             gfxTopRightFramebuffers[1] = gfxOldTopRightFramebuffers[1];
             gpu3dsSetParallaxBarrier(false);
         }
-        else if (sliderVal < 0.5)
+        else if (sliderVal < 0.6)
             gpu3dsSetParallaxBarrier(false);
         else
             gpu3dsSetParallaxBarrier(true);
-        gfxSetFramebufferInfo(GFX_TOP, 0);
+
+        u8* fb = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, NULL, NULL);
+        int b = fb == gfxTopLeftFramebuffers[0] ? 0 : 1;
+        gfxSetFramebufferInfo(GFX_TOP, b);
+        gfxWriteFramebufferInfo(GFX_TOP);
     }
+    prevSliderVal = sliderVal;
 }
 
 void gpu3dsEnableDepthTestAndWriteColorAlphaOnly()
@@ -506,7 +404,7 @@ void gpu3dsSwapVertexListForNextFrame(SVertexList *list)
 }
 
 
-inline void gpu3dsDrawVertexList(SVertexList *list, GPU_Primitive_t type, bool repeatLastDraw, int storeVertexListIndex, int storeIndex)
+void gpu3dsDrawVertexList(SVertexList *list, GPU_Primitive_t type, bool repeatLastDraw, int storeVertexListIndex, int storeIndex)
 {
     if (!repeatLastDraw)
     {
@@ -578,7 +476,7 @@ inline void gpu3dsDrawVertexList(SVertexList *list, GPU_Primitive_t type, bool r
 }
 
 
-inline void gpu3dsDrawMode7VertexList(SVertexList *list, GPU_Primitive_t type, int fromIndex, int tileCount)
+void gpu3dsDrawVertexList(SVertexList *list, GPU_Primitive_t type, int fromIndex, int tileCount)
 {
     if (tileCount > 0)
     {
@@ -599,125 +497,7 @@ inline void gpu3dsDrawMode7VertexList(SVertexList *list, GPU_Primitive_t type, i
 }
 
 
-void gpu3dsInitializeMode7Vertex(int idx, int x, int y)
-{
-    int x0 = 0;
-    int y0 = 0;
 
-    if (x < 64)
-    {
-        x0 = x * 8;
-        y0 = (y * 2 + 1) * 8;
-    }
-    else
-    {
-        x0 = (x - 64) * 8;
-        y0 = (y * 2) * 8;
-    }
-
-    int x1 = x0 + 8;
-    int y1 = y0 + 8;
-
-    if (GPU3DS.isReal3DS)
-    {
-        SMode7TileVertex *m7vertices = &((SMode7TileVertex *)GPU3DS.mode7TileVertexes.List) [idx];
-
-        m7vertices[0].Position = (SVector4i){x0, y0, 0, -1};
-        //m7vertices[1].Position = (SVector4i){x1, y1, 0, -1};
-
-        m7vertices[0].TexCoord = (STexCoord2i){0, 0};
-        //m7vertices[1].TexCoord = (STexCoord2i){8, 8};
-
-    }
-    else
-    {
-        SMode7TileVertex *m7vertices = &((SMode7TileVertex *)GPU3DS.mode7TileVertexes.List) [idx * 6];
-
-        m7vertices[0].Position = (SVector4i){x0, y0, 0, -1};
-        m7vertices[1].Position = (SVector4i){x1, y0, 0, -1};
-        m7vertices[2].Position = (SVector4i){x0, y1, 0, -1};
-
-        m7vertices[3].Position = (SVector4i){x1, y1, 0, -1};
-        m7vertices[4].Position = (SVector4i){x0, y1, 0, -1};
-        m7vertices[5].Position = (SVector4i){x1, y0, 0, -1};
-
-        m7vertices[0].TexCoord = (STexCoord2i){0, 0};
-        m7vertices[1].TexCoord = (STexCoord2i){8, 0};
-        m7vertices[2].TexCoord = (STexCoord2i){0, 8};
-
-        m7vertices[3].TexCoord = (STexCoord2i){8, 8};
-        m7vertices[4].TexCoord = (STexCoord2i){0, 8};
-        m7vertices[5].TexCoord = (STexCoord2i){8, 0};
-
-    }
-}
-
-void gpu3dsInitializeMode7VertexForTile0(int idx, int x, int y)
-{
-    int x0 = x;
-    int y0 = y;
-
-    int x1 = x0 + 8;
-    int y1 = y0 + 8;
-
-    if (GPU3DS.isReal3DS)
-    {
-        SMode7TileVertex *m7vertices = &((SMode7TileVertex *)GPU3DS.mode7TileVertexes.List) [idx];
-
-        m7vertices[0].Position = (SVector4i){x0, y0, 0, 0x3fff};
-        //m7vertices[1].Position = (SVector4i){x1, y1, 0, 0};
-
-        m7vertices[0].TexCoord = (STexCoord2i){0, 0};
-        //m7vertices[1].TexCoord = (STexCoord2i){8, 8};
-
-    }
-    else
-    {
-        SMode7TileVertex *m7vertices = &((SMode7TileVertex *)GPU3DS.mode7TileVertexes.List) [idx * 6];
-
-        m7vertices[0].Position = (SVector4i){x0, y0, 0, 0x3fff};
-        m7vertices[1].Position = (SVector4i){x1, y0, 0, 0x3fff};
-        m7vertices[2].Position = (SVector4i){x0, y1, 0, 0x3fff};
-
-        m7vertices[3].Position = (SVector4i){x1, y1, 0, 0x3fff};
-        m7vertices[4].Position = (SVector4i){x0, y1, 0, 0x3fff};
-        m7vertices[5].Position = (SVector4i){x1, y0, 0, 0x3fff};
-
-        m7vertices[0].TexCoord = (STexCoord2i){0, 0};
-        m7vertices[1].TexCoord = (STexCoord2i){8, 0};
-        m7vertices[2].TexCoord = (STexCoord2i){0, 8};
-
-        m7vertices[3].TexCoord = (STexCoord2i){8, 8};
-        m7vertices[4].TexCoord = (STexCoord2i){0, 8};
-        m7vertices[5].TexCoord = (STexCoord2i){8, 0};
-
-    }
-}
-
-void gpu3dsInitializeMode7Vertexes()
-{
-    GPU3DS.mode7FrameCount = 3;
-    gpu3dsSetMode7UpdateFrameCountUniform();
-    for (int f = 0; f < 2; f++)
-    {
-        int idx = 0;
-        for (int section = 0; section < 4; section++)
-        {
-            for (int y = 0; y < 32; y++)
-                for (int x = 0; x < 128; x++)
-                    gpu3dsInitializeMode7Vertex(idx++, x, y);
-        }
-
-        gpu3dsInitializeMode7VertexForTile0(16384, 0, 0);
-        gpu3dsInitializeMode7VertexForTile0(16385, 0, 8);
-        gpu3dsInitializeMode7VertexForTile0(16386, 8, 0);
-        gpu3dsInitializeMode7VertexForTile0(16387, 8, 8);
-
-        gpu3dsSwapVertexListForNextFrame(&GPU3DS.mode7TileVertexes);
-    }
-}
-
-extern char cwd[];
 
 bool gpu3dsInitialize()
 {
@@ -731,10 +511,16 @@ bool gpu3dsInitialize()
 
 	gfxSet3D(true);
 
-    gfxTopRightFramebuffers[0] = gfxTopLeftFramebuffers[0];
-    gfxTopRightFramebuffers[1] = gfxTopLeftFramebuffers[1];
     gfxOldTopRightFramebuffers[0] = gfxTopRightFramebuffers[0];
     gfxOldTopRightFramebuffers[1] = gfxTopRightFramebuffers[1];
+    for (int i = 0; i < 400 * 240 * 4; i++)
+    {
+        gfxOldTopRightFramebuffers[0][i] = 0;
+        gfxOldTopRightFramebuffers[1][i] = 0;
+    }
+
+    gfxTopRightFramebuffers[0] = gfxTopLeftFramebuffers[0];
+    gfxTopRightFramebuffers[1] = gfxTopLeftFramebuffers[1];
 
     // Create the frame and depth buffers for the top screen.
     //
@@ -769,7 +555,7 @@ bool gpu3dsInitialize()
 #ifdef RELEASE
     GPU3DS.isReal3DS = true;
 #else
-    if (cwd[0] != '/')
+    if (file3dsGetCurrentDir()[0] != '/')
         GPU3DS.isReal3DS = true;
     else
         GPU3DS.isReal3DS = false;
@@ -778,103 +564,31 @@ bool gpu3dsInitialize()
     // Initialize the projection matrix for the top / bottom
     // screens
     //
-	matrix_init_orthographic(GPU3DS.projectionTopScreen,
+	matrix3dsInitOrthographic(GPU3DS.projectionTopScreen,
         0.0f, 400.0f, 0.0f, 240.0f, 0.0f, 1.0f);
-	matrix_init_orthographic(GPU3DS.projectionBottomScreen,
+	matrix3dsInitOrthographic(GPU3DS.projectionBottomScreen,
         0.0f, 320.0f, 0.0f, 240.0f, 0.0f, 1.0f);
 
-	// Load up and initialize any shaders
-	//
-    if (GPU3DS.isReal3DS)
+    // Initialize all shaders to empty
+    //
+    for (int i = 0; i < 10; i++)
     {
-        gpu3dsLoadShader(0, (u32 *)shaderfast_shbin, shaderfast_shbin_size, 6);
-    	gpu3dsLoadShader(1, (u32 *)shaderslow_shbin, shaderslow_shbin_size, 0);     // copy to screen
-    	gpu3dsLoadShader(2, (u32 *)shaderfast2_shbin, shaderfast2_shbin_size, 6);   // draw tiles
-        gpu3dsLoadShader(3, (u32 *)shaderfastm7_shbin, shaderfastm7_shbin_size, 3); // mode 7 shader
-    }
-    else
-    {
-    	gpu3dsLoadShader(0, (u32 *)shaderslow_shbin, shaderslow_shbin_size, 0);
-    	gpu3dsLoadShader(1, (u32 *)shaderslow_shbin, shaderslow_shbin_size, 0);     // copy to screen
-        gpu3dsLoadShader(2, (u32 *)shaderslow2_shbin, shaderslow2_shbin_size, 0);   // draw tiles
-        gpu3dsLoadShader(3, (u32 *)shaderslowm7_shbin, shaderslowm7_shbin_size, 0); // mode 7 shader
+        GPU3DS.shaders[i].dvlb = NULL;
     }
 
     // Initialize texture offsets for hi-res
     //
     gpu3dsSetTextureOffset(0, 0);
 
-    // Create all the necessary textures
-    //
-    snesTileCacheTexture = gpu3dsCreateTextureInLinearMemory(1024, 1024, GPU_RGBA5551);
-    snesMode7TileCacheTexture = gpu3dsCreateTextureInLinearMemory(128, 128, GPU_RGBA4);
-
-    // This requires 16x16 texture as a minimum
-    snesMode7Tile0Texture = gpu3dsCreateTextureInVRAM(16, 16, GPU_RGBA4);    //
-    snesMode7FullTexture = gpu3dsCreateTextureInVRAM(1024, 1024, GPU_RGBA4); // 2.000 MB
-
-    // Main screen requires 8-bit alpha, otherwise alpha blending will not work well
-    snesMainScreenTarget = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);      // 0.250 MB
-    snesSubScreenTarget = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);       // 0.250 MB
-
-    // Depth texture for the sub / main screens.
-    // Performance: Create depth buffers in VRAM improves GPU performance!
-    //              Games like Axelay, F-Zero (EUR) now run close to full speed!
-    //
-    snesDepthForScreens = gpu3dsCreateTextureInVRAM(256, 256, GPU_RGBA8);       // 0.250 MB
-    snesDepthForOtherTextures = gpu3dsCreateTextureInVRAM(512, 512, GPU_RGBA8); // 1.000 MB
-
-    if (snesTileCacheTexture == NULL || snesMode7FullTexture == NULL ||
-        snesMode7TileCacheTexture == NULL || snesMode7Tile0Texture == NULL ||
-        snesMainScreenTarget == NULL || snesSubScreenTarget == NULL ||
-        //snesOBJLayerTarget == NULL || snesOBJDepth == NULL ||
-        snesDepthForScreens == NULL  || snesDepthForOtherTextures == NULL)
-    {
-        printf ("Unable to allocate textures\n");
-        return false;
-    }
-
 #ifndef RELEASE
     printf ("gpu3dsInitialize - Allocate buffers\n");
 #endif
-
-    if (GPU3DS.isReal3DS)
-    {
-        gpu3dsAllocVertexList(&GPU3DS.rectangleVertexes, RECTANGLE_BUFFER_SIZE, sizeof(SVertexColor), 2, SVERTEXCOLOR_ATTRIBFORMAT);
-        gpu3dsAllocVertexList(&GPU3DS.mode7TileVertexes, sizeof(SMode7TileVertex) * 16400 * 1 * 2 + 0x200, sizeof(SMode7TileVertex), 2, SMODE7TILEVERTEX_ATTRIBFORMAT);
-        gpu3dsAllocVertexList(&GPU3DS.quadVertexes, REAL3DS_VERTEX_BUFFER_SIZE, sizeof(STileVertex), 2, STILEVERTEX_ATTRIBFORMAT);
-        gpu3dsAllocVertexList(&GPU3DS.tileVertexes, REAL3DS_TILE_BUFFER_SIZE, sizeof(STileVertex), 2, STILEVERTEX_ATTRIBFORMAT);
-        gpu3dsAllocVertexList(&GPU3DS.mode7LineVertexes, REAL3DS_MODE7_LINE_BUFFER_SIZE, sizeof(SMode7LineVertex), 2, SMODE7LINEVERTEX_ATTRIBFORMAT);
-    }
-    else
-    {
-        gpu3dsAllocVertexList(&GPU3DS.rectangleVertexes, RECTANGLE_BUFFER_SIZE, sizeof(SVertexColor), 2, SVERTEXCOLOR_ATTRIBFORMAT);
-        gpu3dsAllocVertexList(&GPU3DS.mode7TileVertexes, sizeof(SMode7TileVertex) * 16400 * 6 * 2 + 0x200, sizeof(SMode7TileVertex), 2, SMODE7TILEVERTEX_ATTRIBFORMAT);
-        gpu3dsAllocVertexList(&GPU3DS.quadVertexes, CITRA_VERTEX_BUFFER_SIZE, sizeof(STileVertex), 2, STILEVERTEX_ATTRIBFORMAT);
-        gpu3dsAllocVertexList(&GPU3DS.tileVertexes, CITRA_TILE_BUFFER_SIZE, sizeof(STileVertex), 2, STILEVERTEX_ATTRIBFORMAT);
-        gpu3dsAllocVertexList(&GPU3DS.mode7LineVertexes, CITRA_MODE7_LINE_BUFFER_SIZE, sizeof(SMode7LineVertex), 2, SMODE7LINEVERTEX_ATTRIBFORMAT);
-    }
-
-    if (GPU3DS.quadVertexes.ListBase == NULL ||
-        GPU3DS.tileVertexes.ListBase == NULL ||
-        GPU3DS.rectangleVertexes.ListBase == NULL ||
-        GPU3DS.mode7TileVertexes.ListBase == NULL ||
-        GPU3DS.mode7LineVertexes.ListBase == NULL)
-    {
-        printf ("Unable to allocate vertex list buffers \n");
-        return false;
-    }
-
-    gpu3dsInitializeMode7Vertexes();
 
 #ifndef RELEASE
     printf ("gpu3dsInitialize - Set GPU statuses\n");
 #endif
 
-	//sf2d_pool_reset();
 	GPUCMD_SetBufferOffset(0);
-
-	gpu3dsUseShader(0);
 
 	GPU_DepthMap(-1.0f, 0.0f);
 	GPU_SetDepthTestAndWriteMask(false, GPU_GEQUAL, GPU_WRITE_ALL);
@@ -910,24 +624,15 @@ bool gpu3dsInitialize()
 
 void gpu3dsFinalize()
 {
-    gpu3dsDeallocVertexList(&GPU3DS.mode7TileVertexes);
-    gpu3dsDeallocVertexList(&GPU3DS.rectangleVertexes);
-    gpu3dsDeallocVertexList(&GPU3DS.quadVertexes);
-    gpu3dsDeallocVertexList(&GPU3DS.tileVertexes);
-    gpu3dsDeallocVertexList(&GPU3DS.mode7LineVertexes);
-
-    gpu3dsDestroyTextureFromLinearMemory(snesTileCacheTexture);
-    gpu3dsDestroyTextureFromLinearMemory(snesMode7TileCacheTexture);
-
-    gpu3dsDestroyTextureFromVRAM(snesMode7Tile0Texture);
-    gpu3dsDestroyTextureFromVRAM(snesMode7FullTexture);
-    gpu3dsDestroyTextureFromVRAM(snesMainScreenTarget);
-    gpu3dsDestroyTextureFromVRAM(snesSubScreenTarget);
-
-    // Small bug fix. Previously forgot to destroy textures.
+    // Bug fix: Free up all shaders' DVLB
     //
-    gpu3dsDestroyTextureFromVRAM(snesDepthForOtherTextures);
-    gpu3dsDestroyTextureFromVRAM(snesDepthForScreens);
+    // Initialize all shaders to empty
+    //
+    for (int i = 0; i < 10; i++)
+    {
+        if (GPU3DS.shaders[i].dvlb)
+            DVLB_Free(GPU3DS.shaders[i].dvlb);
+    }
 
     // Bug fix: free the frame buffers!
     if (GPU3DS.frameBuffer) vramFree(GPU3DS.frameBuffer);
@@ -949,7 +654,6 @@ void gpu3dsFinalize()
     gfxTopRightFramebuffers[0] = gfxOldTopRightFramebuffers[0];
     gfxTopRightFramebuffers[1] = gfxOldTopRightFramebuffers[1];
 	gfxExit();
-
 }
 
 void gpu3dsEnableAlphaTestNotEqualsZero()
@@ -979,280 +683,6 @@ void gpu3dsDisableAlphaTest()
 }
 
 
-void gpu3dsCacheToTexturePosition(
-    uint8 *snesTilePixels,
-	uint16 *snesPalette,
-    uint16 texturePosition)
-{
-    int tx = texturePosition % 128;
-    int ty = (texturePosition / 128) & 0x7f;
-    texturePosition = (127 - ty) * 128 + tx;    // flip vertically.
-    uint32 base = texturePosition * 64;
-
-    uint16 *tileTexture = (uint16 *)snesTileCacheTexture->PixelData;
-
-    #define GET_TILE_PIXEL(x)   (snesTilePixels[x] == 0 ? 0 : snesPalette[snesTilePixels[x]])
-    tileTexture [base + 0] = GET_TILE_PIXEL(56);
-    tileTexture [base + 1] = GET_TILE_PIXEL(57);
-    tileTexture [base + 4] = GET_TILE_PIXEL(58);
-    tileTexture [base + 5] = GET_TILE_PIXEL(59);
-    tileTexture [base + 16] = GET_TILE_PIXEL(60);
-    tileTexture [base + 17] = GET_TILE_PIXEL(61);
-    tileTexture [base + 20] = GET_TILE_PIXEL(62);
-    tileTexture [base + 21] = GET_TILE_PIXEL(63);
-
-    tileTexture [base + 2] = GET_TILE_PIXEL(48);
-    tileTexture [base + 3] = GET_TILE_PIXEL(49);
-    tileTexture [base + 6] = GET_TILE_PIXEL(50);
-    tileTexture [base + 7] = GET_TILE_PIXEL(51);
-    tileTexture [base + 18] = GET_TILE_PIXEL(52);
-    tileTexture [base + 19] = GET_TILE_PIXEL(53);
-    tileTexture [base + 22] = GET_TILE_PIXEL(54);
-    tileTexture [base + 23] = GET_TILE_PIXEL(55);
-
-    tileTexture [base + 8] = GET_TILE_PIXEL(40);
-    tileTexture [base + 9] = GET_TILE_PIXEL(41);
-    tileTexture [base + 12] = GET_TILE_PIXEL(42);
-    tileTexture [base + 13] = GET_TILE_PIXEL(43);
-    tileTexture [base + 24] = GET_TILE_PIXEL(44);
-    tileTexture [base + 25] = GET_TILE_PIXEL(45);
-    tileTexture [base + 28] = GET_TILE_PIXEL(46);
-    tileTexture [base + 29] = GET_TILE_PIXEL(47);
-
-    tileTexture [base + 10] = GET_TILE_PIXEL(32);
-    tileTexture [base + 11] = GET_TILE_PIXEL(33);
-    tileTexture [base + 14] = GET_TILE_PIXEL(34);
-    tileTexture [base + 15] = GET_TILE_PIXEL(35);
-    tileTexture [base + 26] = GET_TILE_PIXEL(36);
-    tileTexture [base + 27] = GET_TILE_PIXEL(37);
-    tileTexture [base + 30] = GET_TILE_PIXEL(38);
-    tileTexture [base + 31] = GET_TILE_PIXEL(39);
-
-    tileTexture [base + 32] = GET_TILE_PIXEL(24);
-    tileTexture [base + 33] = GET_TILE_PIXEL(25);
-    tileTexture [base + 36] = GET_TILE_PIXEL(26);
-    tileTexture [base + 37] = GET_TILE_PIXEL(27);
-    tileTexture [base + 48] = GET_TILE_PIXEL(28);
-    tileTexture [base + 49] = GET_TILE_PIXEL(29);
-    tileTexture [base + 52] = GET_TILE_PIXEL(30);
-    tileTexture [base + 53] = GET_TILE_PIXEL(31);
-
-    tileTexture [base + 34] = GET_TILE_PIXEL(16);
-    tileTexture [base + 35] = GET_TILE_PIXEL(17);
-    tileTexture [base + 38] = GET_TILE_PIXEL(18);
-    tileTexture [base + 39] = GET_TILE_PIXEL(19);
-    tileTexture [base + 50] = GET_TILE_PIXEL(20);
-    tileTexture [base + 51] = GET_TILE_PIXEL(21);
-    tileTexture [base + 54] = GET_TILE_PIXEL(22);
-    tileTexture [base + 55] = GET_TILE_PIXEL(23);
-
-    tileTexture [base + 40] = GET_TILE_PIXEL(8);
-    tileTexture [base + 41] = GET_TILE_PIXEL(9);
-    tileTexture [base + 44] = GET_TILE_PIXEL(10);
-    tileTexture [base + 45] = GET_TILE_PIXEL(11);
-    tileTexture [base + 56] = GET_TILE_PIXEL(12);
-    tileTexture [base + 57] = GET_TILE_PIXEL(13);
-    tileTexture [base + 60] = GET_TILE_PIXEL(14);
-    tileTexture [base + 61] = GET_TILE_PIXEL(15);
-
-    tileTexture [base + 42] = GET_TILE_PIXEL(0);
-    tileTexture [base + 43] = GET_TILE_PIXEL(1);
-    tileTexture [base + 46] = GET_TILE_PIXEL(2);
-    tileTexture [base + 47] = GET_TILE_PIXEL(3);
-    tileTexture [base + 58] = GET_TILE_PIXEL(4);
-    tileTexture [base + 59] = GET_TILE_PIXEL(5);
-    tileTexture [base + 62] = GET_TILE_PIXEL(6);
-    tileTexture [base + 63] = GET_TILE_PIXEL(7);
-
-}
-
-
-void gpu3dsCacheToMode7TexturePosition(
-    uint8 *snesTilePixels,
-	uint16 *snesPalette,
-    uint16 texturePosition,
-    uint32 *paletteMask)
-{
-    int tx = texturePosition % 16;              // should never be >= 16
-    int ty = (texturePosition / 16) & 0xf;      // should never be >= 16
-    texturePosition = (15 - ty) * 16 + tx;      // flip vertically.
-    uint32 base = texturePosition * 64;
-
-    uint16 *tileTexture = (uint16 *)snesMode7TileCacheTexture->PixelData;
-	uint32 charPaletteMask = 0;
-
-    #define GET_TILE_PIXEL(x)   (snesTilePixels[x * 2] == 0 ? 0 : snesPalette[snesTilePixels[x * 2]]); charPaletteMask |= (1 << (snesTilePixels[x * 2] >> 3));
-    tileTexture [base + 0] = GET_TILE_PIXEL(56);
-    tileTexture [base + 1] = GET_TILE_PIXEL(57);
-    tileTexture [base + 4] = GET_TILE_PIXEL(58);
-    tileTexture [base + 5] = GET_TILE_PIXEL(59);
-    tileTexture [base + 16] = GET_TILE_PIXEL(60);
-    tileTexture [base + 17] = GET_TILE_PIXEL(61);
-    tileTexture [base + 20] = GET_TILE_PIXEL(62);
-    tileTexture [base + 21] = GET_TILE_PIXEL(63);
-
-    tileTexture [base + 2] = GET_TILE_PIXEL(48);
-    tileTexture [base + 3] = GET_TILE_PIXEL(49);
-    tileTexture [base + 6] = GET_TILE_PIXEL(50);
-    tileTexture [base + 7] = GET_TILE_PIXEL(51);
-    tileTexture [base + 18] = GET_TILE_PIXEL(52);
-    tileTexture [base + 19] = GET_TILE_PIXEL(53);
-    tileTexture [base + 22] = GET_TILE_PIXEL(54);
-    tileTexture [base + 23] = GET_TILE_PIXEL(55);
-
-    tileTexture [base + 8] = GET_TILE_PIXEL(40);
-    tileTexture [base + 9] = GET_TILE_PIXEL(41);
-    tileTexture [base + 12] = GET_TILE_PIXEL(42);
-    tileTexture [base + 13] = GET_TILE_PIXEL(43);
-    tileTexture [base + 24] = GET_TILE_PIXEL(44);
-    tileTexture [base + 25] = GET_TILE_PIXEL(45);
-    tileTexture [base + 28] = GET_TILE_PIXEL(46);
-    tileTexture [base + 29] = GET_TILE_PIXEL(47);
-
-    tileTexture [base + 10] = GET_TILE_PIXEL(32);
-    tileTexture [base + 11] = GET_TILE_PIXEL(33);
-    tileTexture [base + 14] = GET_TILE_PIXEL(34);
-    tileTexture [base + 15] = GET_TILE_PIXEL(35);
-    tileTexture [base + 26] = GET_TILE_PIXEL(36);
-    tileTexture [base + 27] = GET_TILE_PIXEL(37);
-    tileTexture [base + 30] = GET_TILE_PIXEL(38);
-    tileTexture [base + 31] = GET_TILE_PIXEL(39);
-
-    tileTexture [base + 32] = GET_TILE_PIXEL(24);
-    tileTexture [base + 33] = GET_TILE_PIXEL(25);
-    tileTexture [base + 36] = GET_TILE_PIXEL(26);
-    tileTexture [base + 37] = GET_TILE_PIXEL(27);
-    tileTexture [base + 48] = GET_TILE_PIXEL(28);
-    tileTexture [base + 49] = GET_TILE_PIXEL(29);
-    tileTexture [base + 52] = GET_TILE_PIXEL(30);
-    tileTexture [base + 53] = GET_TILE_PIXEL(31);
-
-    tileTexture [base + 34] = GET_TILE_PIXEL(16);
-    tileTexture [base + 35] = GET_TILE_PIXEL(17);
-    tileTexture [base + 38] = GET_TILE_PIXEL(18);
-    tileTexture [base + 39] = GET_TILE_PIXEL(19);
-    tileTexture [base + 50] = GET_TILE_PIXEL(20);
-    tileTexture [base + 51] = GET_TILE_PIXEL(21);
-    tileTexture [base + 54] = GET_TILE_PIXEL(22);
-    tileTexture [base + 55] = GET_TILE_PIXEL(23);
-
-    tileTexture [base + 40] = GET_TILE_PIXEL(8);
-    tileTexture [base + 41] = GET_TILE_PIXEL(9);
-    tileTexture [base + 44] = GET_TILE_PIXEL(10);
-    tileTexture [base + 45] = GET_TILE_PIXEL(11);
-    tileTexture [base + 56] = GET_TILE_PIXEL(12);
-    tileTexture [base + 57] = GET_TILE_PIXEL(13);
-    tileTexture [base + 60] = GET_TILE_PIXEL(14);
-    tileTexture [base + 61] = GET_TILE_PIXEL(15);
-
-    tileTexture [base + 42] = GET_TILE_PIXEL(0);
-    tileTexture [base + 43] = GET_TILE_PIXEL(1);
-    tileTexture [base + 46] = GET_TILE_PIXEL(2);
-    tileTexture [base + 47] = GET_TILE_PIXEL(3);
-    tileTexture [base + 58] = GET_TILE_PIXEL(4);
-    tileTexture [base + 59] = GET_TILE_PIXEL(5);
-    tileTexture [base + 62] = GET_TILE_PIXEL(6);
-    tileTexture [base + 63] = GET_TILE_PIXEL(7);
-
-    *paletteMask = charPaletteMask;
-}
-
-
-void gpu3dsCacheToMode7Tile0TexturePosition(
-    uint8 *snesTilePixels,
-	uint16 *snesPalette,
-    uint16 texturePosition,
-    uint32 *paletteMask)
-{
-    int tx = texturePosition % 16;              // should never be >= 16
-    int ty = (texturePosition / 16) & 0xf;      // should never be >= 16
-    texturePosition = (15 - ty) * 16 + tx;      // flip vertically.
-    uint32 base = texturePosition * 64;
-
-    uint16 *tileTexture = (uint16 *)snesMode7Tile0Texture->PixelData;
-	uint32 charPaletteMask = 0;
-
-    #define GET_TILE_PIXEL(x)   (snesTilePixels[x * 2] == 0 ? 0 : snesPalette[snesTilePixels[x * 2]]); charPaletteMask |= (1 << (snesTilePixels[x * 2] >> 3));
-    tileTexture [base + 0] = GET_TILE_PIXEL(56);
-    tileTexture [base + 1] = GET_TILE_PIXEL(57);
-    tileTexture [base + 4] = GET_TILE_PIXEL(58);
-    tileTexture [base + 5] = GET_TILE_PIXEL(59);
-    tileTexture [base + 16] = GET_TILE_PIXEL(60);
-    tileTexture [base + 17] = GET_TILE_PIXEL(61);
-    tileTexture [base + 20] = GET_TILE_PIXEL(62);
-    tileTexture [base + 21] = GET_TILE_PIXEL(63);
-
-    tileTexture [base + 2] = GET_TILE_PIXEL(48);
-    tileTexture [base + 3] = GET_TILE_PIXEL(49);
-    tileTexture [base + 6] = GET_TILE_PIXEL(50);
-    tileTexture [base + 7] = GET_TILE_PIXEL(51);
-    tileTexture [base + 18] = GET_TILE_PIXEL(52);
-    tileTexture [base + 19] = GET_TILE_PIXEL(53);
-    tileTexture [base + 22] = GET_TILE_PIXEL(54);
-    tileTexture [base + 23] = GET_TILE_PIXEL(55);
-
-    tileTexture [base + 8] = GET_TILE_PIXEL(40);
-    tileTexture [base + 9] = GET_TILE_PIXEL(41);
-    tileTexture [base + 12] = GET_TILE_PIXEL(42);
-    tileTexture [base + 13] = GET_TILE_PIXEL(43);
-    tileTexture [base + 24] = GET_TILE_PIXEL(44);
-    tileTexture [base + 25] = GET_TILE_PIXEL(45);
-    tileTexture [base + 28] = GET_TILE_PIXEL(46);
-    tileTexture [base + 29] = GET_TILE_PIXEL(47);
-
-    tileTexture [base + 10] = GET_TILE_PIXEL(32);
-    tileTexture [base + 11] = GET_TILE_PIXEL(33);
-    tileTexture [base + 14] = GET_TILE_PIXEL(34);
-    tileTexture [base + 15] = GET_TILE_PIXEL(35);
-    tileTexture [base + 26] = GET_TILE_PIXEL(36);
-    tileTexture [base + 27] = GET_TILE_PIXEL(37);
-    tileTexture [base + 30] = GET_TILE_PIXEL(38);
-    tileTexture [base + 31] = GET_TILE_PIXEL(39);
-
-    tileTexture [base + 32] = GET_TILE_PIXEL(24);
-    tileTexture [base + 33] = GET_TILE_PIXEL(25);
-    tileTexture [base + 36] = GET_TILE_PIXEL(26);
-    tileTexture [base + 37] = GET_TILE_PIXEL(27);
-    tileTexture [base + 48] = GET_TILE_PIXEL(28);
-    tileTexture [base + 49] = GET_TILE_PIXEL(29);
-    tileTexture [base + 52] = GET_TILE_PIXEL(30);
-    tileTexture [base + 53] = GET_TILE_PIXEL(31);
-
-    tileTexture [base + 34] = GET_TILE_PIXEL(16);
-    tileTexture [base + 35] = GET_TILE_PIXEL(17);
-    tileTexture [base + 38] = GET_TILE_PIXEL(18);
-    tileTexture [base + 39] = GET_TILE_PIXEL(19);
-    tileTexture [base + 50] = GET_TILE_PIXEL(20);
-    tileTexture [base + 51] = GET_TILE_PIXEL(21);
-    tileTexture [base + 54] = GET_TILE_PIXEL(22);
-    tileTexture [base + 55] = GET_TILE_PIXEL(23);
-
-    tileTexture [base + 40] = GET_TILE_PIXEL(8);
-    tileTexture [base + 41] = GET_TILE_PIXEL(9);
-    tileTexture [base + 44] = GET_TILE_PIXEL(10);
-    tileTexture [base + 45] = GET_TILE_PIXEL(11);
-    tileTexture [base + 56] = GET_TILE_PIXEL(12);
-    tileTexture [base + 57] = GET_TILE_PIXEL(13);
-    tileTexture [base + 60] = GET_TILE_PIXEL(14);
-    tileTexture [base + 61] = GET_TILE_PIXEL(15);
-
-    tileTexture [base + 42] = GET_TILE_PIXEL(0);
-    tileTexture [base + 43] = GET_TILE_PIXEL(1);
-    tileTexture [base + 46] = GET_TILE_PIXEL(2);
-    tileTexture [base + 47] = GET_TILE_PIXEL(3);
-    tileTexture [base + 58] = GET_TILE_PIXEL(4);
-    tileTexture [base + 59] = GET_TILE_PIXEL(5);
-    tileTexture [base + 62] = GET_TILE_PIXEL(6);
-    tileTexture [base + 63] = GET_TILE_PIXEL(7);
-
-    *paletteMask = charPaletteMask;
-}
-/*
-sf2d_texture *gpu3dsCreateTexture(int width, int height, sf2d_texfmt pixel_format, sf2d_place place)
-{
-    return sf2d_create_texture(width, height, pixel_format, place);
-}
-*/
 
 int gpu3dsGetPixelSize(GPU_TEXCOLOR pixelFormat)
 {
@@ -1345,8 +775,8 @@ SGPUTexture *gpu3dsCreateTextureInVRAM(int width, int height, GPU_TEXCOLOR pixel
     if (vpHeight > 512) vpHeight = 512;
 
 
-	matrix_init_orthographic(texture->Projection, 0.0f, vpWidth, vpHeight, 0.0f, 0.0f, 1.0f);
-	matrix_rotate_z(texture->Projection, M_PI / 2.0f);
+	matrix3dsInitOrthographic(texture->Projection, 0.0f, vpWidth, vpHeight, 0.0f, 0.0f, 1.0f);
+	matrix3dsRotateZ(texture->Projection, M_PI / 2.0f);
 
     GX_MemoryFill(
         (u32*)texture->PixelData, 0x00000000,
@@ -1369,53 +799,6 @@ void gpu3dsDestroyTextureFromVRAM(SGPUTexture *texture)
 }
 
 
-// Changes the texture pixel format (but it must be the same 
-// size as the original pixel format). No errors will be thrown
-// if the format is incorrect.
-//
-void gpu3dsSetMode7TexturesPixelFormatToRGB5551()
-{
-	snesMode7FullTexture->PixelFormat = GPU_RGBA5551;
-    snesMode7Tile0Texture->PixelFormat = GPU_RGBA5551;
-    snesMode7TileCacheTexture->PixelFormat = GPU_RGBA5551;
-}
-
-void gpu3dsSetMode7TexturesPixelFormatToRGB4444()
-{
-	snesMode7FullTexture->PixelFormat = GPU_RGBA4;
-    snesMode7Tile0Texture->PixelFormat = GPU_RGBA4;
-    snesMode7TileCacheTexture->PixelFormat = GPU_RGBA4;
-}
-
-// Clear the render targets by drawing black to them.
-//
-void gpu3dsClearAllRenderTargets()
-{
-    gpu3dsSetRenderTargetToMainScreenTexture();
-    gpu3dsDrawRectangle(0, 0, 256, 256, 0, 0xff);
-    gpu3dsSetRenderTargetToSubScreenTexture();
-    gpu3dsDrawRectangle(0, 0, 256, 256, 0, 0xff);
-    gpu3dsFlush();
-    gpu3dsWaitForPreviousFlush();
-}
-
-void gpu3dsClearTexture(SGPUTexture *texture)
-{
-    //if (GPU3DS.targetDepthBuffer != NULL)
-    /*
-    why doesn't this work in Citra??? It's the same as the
-    GX_MemoryFill above!
-    {
-        GX_MemoryFill(
-            (u32*)texture->PixelData, 0x000000ff,
-            (u32*)&((u8*)texture->PixelData)[texture->BufferSize - 1],
-            GX_FILL_TRIGGER | GX_FILL_32BIT_DEPTH,
-            NULL, 0x00000000, NULL, 0);
-        gspWaitForPSC0();
-        printf ("clear: %x %d\n", texture->PixelData, texture->BufferSize);
-    } */
-}
-
 
 void gpu3dsStartNewFrame()
 {
@@ -1424,10 +807,7 @@ void gpu3dsStartNewFrame()
 
     gpuCurrentCommandBuffer = 1 - gpuCurrentCommandBuffer;
 
-    gpu3dsSwapVertexListForNextFrame(&GPU3DS.quadVertexes);
-    gpu3dsSwapVertexListForNextFrame(&GPU3DS.tileVertexes);
-    gpu3dsSwapVertexListForNextFrame(&GPU3DS.rectangleVertexes);
-    gpu3dsSwapVertexListForNextFrame(&GPU3DS.mode7LineVertexes);
+    impl3dsPrepareForNewFrame();
 
     if (gpuCurrentCommandBuffer == 0)
     {
@@ -1437,8 +817,6 @@ void gpu3dsStartNewFrame()
     {
 	    GPU_Reset(NULL, gpuCommandBuffer2, gpuCommandBufferSize);
     }
-
-
 }
 
 
@@ -1446,14 +824,6 @@ void gpu3dsStartNewFrame()
 
 void gpu3dsUseShader(int shaderIndex)
 {
-    /*
-    if (currentShaderIndex != shaderIndex)
-    {
-        sf2d_use_shader(shaderIndex);
-        currentShaderIndex = shaderIndex;
-    }
-*/
-
     if (GPU3DS.currentShader != shaderIndex)
     {
         GPU3DS.currentShader = shaderIndex;
@@ -1461,25 +831,44 @@ void gpu3dsUseShader(int shaderIndex)
 
         if (!GPU3DS.currentRenderTarget)
         {
-            GPU_SetFloatUniform(GPU_VERTEX_SHADER, 0, (u32 *)GPU3DS.projectionTopScreen, 4);
-            GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, 10, (u32 *)GPU3DS.projectionTopScreen, 4);
+            GPU_SetFloatUniform(GPU_VERTEX_SHADER, renderTargetVertexShaderRegister, (u32 *)GPU3DS.projectionTopScreen, 4);
+            GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, renderTargetGeometryShaderRegister, (u32 *)GPU3DS.projectionTopScreen, 4);
         }
         else
         {
-            GPU_SetFloatUniform(GPU_VERTEX_SHADER, 0, (u32 *)GPU3DS.currentRenderTarget->Projection, 4);
-            GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, 10, (u32 *)GPU3DS.projectionTopScreen, 4);
+            GPU_SetFloatUniform(GPU_VERTEX_SHADER, renderTargetVertexShaderRegister, (u32 *)GPU3DS.currentRenderTarget->Projection, 4);
+            GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, renderTargetGeometryShaderRegister, (u32 *)GPU3DS.projectionTopScreen, 4);
         }
-
-        gpu3dsSetMode7UpdateFrameCountUniform();
 
         if (GPU3DS.currentTexture != NULL)
         {
-            GPU_SetFloatUniform(GPU_VERTEX_SHADER, 4, (u32 *)GPU3DS.currentTexture->TextureScale, 1);
-            GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, 14, (u32 *)GPU3DS.currentTexture->TextureScale, 1);
+            GPU_SetFloatUniform(GPU_VERTEX_SHADER, textureVertexShaderRegister, (u32 *)GPU3DS.currentTexture->TextureScale, 1);
+            GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, textureGeometryShaderRegister, (u32 *)GPU3DS.currentTexture->TextureScale, 1);
         }
-        GPU_SetFloatUniform(GPU_VERTEX_SHADER, 6, (u32 *)GPU3DS.textureOffset, 1);
+
+        GPU_SetFloatUniform(GPU_VERTEX_SHADER, textureOffsetVertexShaderRegister, (u32 *)GPU3DS.textureOffset, 1);
 
     }
+}
+
+
+void gpu3dsInitializeShaderRegistersForRenderTarget(int vertexShaderRegister, int geometryShaderRegister)
+{
+    renderTargetVertexShaderRegister = vertexShaderRegister;
+    renderTargetGeometryShaderRegister = geometryShaderRegister;
+}
+
+
+void gpu3dsInitializeShaderRegistersForTexture(int vertexShaderRegister, int geometryShaderRegister)
+{
+    textureVertexShaderRegister = vertexShaderRegister;
+    textureGeometryShaderRegister = geometryShaderRegister;
+}
+
+
+void gpu3dsInitializeShaderRegistersForTextureOffset(int vertexShaderRegister)
+{
+    textureOffsetVertexShaderRegister = vertexShaderRegister;
 }
 
 
@@ -1506,34 +895,6 @@ void gpu3dsLoadShader(int shaderIndex, u32 *shaderBinary,
         printf ("  Geometry shader loaded: %x\n", GPU3DS.shaders[shaderIndex].shaderProgram.geometryShader);
 #endif
     }
-
-	GPU3DS.shaders[shaderIndex].projectionRegister =
-		shaderInstanceGetUniformLocation(GPU3DS.shaders[shaderIndex].shaderProgram.vertexShader,
-        "projection");
-#ifndef RELEASE
-    printf ("  Uniform: projection: %d\n", GPU3DS.shaders[shaderIndex].projectionRegister);
-#endif
-
-	GPU3DS.shaders[shaderIndex].projectionRegister =
-		shaderInstanceGetUniformLocation(GPU3DS.shaders[shaderIndex].shaderProgram.geometryShader,
-        "projection1");
-#ifndef RELEASE
-    printf ("  Uniform (g): projection: %d\n", GPU3DS.shaders[shaderIndex].projectionRegister);
-#endif
-
-	int textureScaleRegister =
-		shaderInstanceGetUniformLocation(GPU3DS.shaders[shaderIndex].shaderProgram.vertexShader,
-        "textureScale");
-#ifndef RELEASE
-    printf ("  Uniform: textureScale: %d\n", textureScaleRegister);
-#endif
-
-	int textureScale1Register =
-		shaderInstanceGetUniformLocation(GPU3DS.shaders[shaderIndex].shaderProgram.geometryShader,
-        "textureScale1");
-#ifndef RELEASE
-    printf ("  Uniform (g): textureScale: %d\n", textureScale1Register);
-#endif
 }
 
 void gpu3dsEnableAlphaBlending()
@@ -1661,8 +1022,8 @@ void gpu3dsSetRenderTargetToTopFrameBuffer()
 {
     if (GPU3DS.currentRenderTarget != NULL)
     {
-        GPU_SetFloatUniform(GPU_VERTEX_SHADER, 0, (u32 *)GPU3DS.projectionTopScreen, 4);
-        GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, 10, (u32 *)GPU3DS.projectionTopScreen, 4);
+        GPU_SetFloatUniform(GPU_VERTEX_SHADER, renderTargetVertexShaderRegister, (u32 *)GPU3DS.projectionTopScreen, 4);
+        GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, renderTargetGeometryShaderRegister, (u32 *)GPU3DS.projectionTopScreen, 4);
 
         GPU3DS.currentRenderTarget = NULL;
 
@@ -1682,9 +1043,8 @@ void gpu3dsSetRenderTargetToTexture(SGPUTexture *texture, SGPUTexture *depthText
     if (GPU3DS.currentRenderTarget != texture || GPU3DS.currentRenderTargetDepth != depthTexture)
     {
         // Upload saved uniform
-        GPU_SetFloatUniform(GPU_VERTEX_SHADER, 0, (u32 *)texture->Projection, 4);
-        GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, 10, (u32 *)texture->Projection, 4);
-        //matrix_gpu_set_uniform(texture->Projection, GPU3DS.shaders[GPU3DS.currentShader].projectionRegister);
+        GPU_SetFloatUniform(GPU_VERTEX_SHADER, renderTargetVertexShaderRegister, (u32 *)texture->Projection, 4);
+        GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, renderTargetGeometryShaderRegister, (u32 *)texture->Projection, 4);
 
         GPU3DS.currentRenderTarget = texture;
         GPU3DS.currentRenderTargetDepth = depthTexture;
@@ -1710,9 +1070,8 @@ void gpu3dsSetRenderTargetToTexture(SGPUTexture *texture, SGPUTexture *depthText
 void gpu3dsSetRenderTargetToTextureSpecific(SGPUTexture *texture, SGPUTexture *depthTexture, int addressOffset, int width, int height)
 {
     // Upload saved uniform
-    GPU_SetFloatUniform(GPU_VERTEX_SHADER, 0, (u32 *)texture->Projection, 4);
-    GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, 10, (u32 *)texture->Projection, 4);
-    //matrix_gpu_set_uniform(texture->Projection, GPU3DS.shaders[GPU3DS.currentShader].projectionRegister);
+    GPU_SetFloatUniform(GPU_VERTEX_SHADER, renderTargetVertexShaderRegister, (u32 *)texture->Projection, 4);
+    GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, renderTargetGeometryShaderRegister, (u32 *)texture->Projection, 4);
 
     GPU3DS.currentRenderTarget = texture;
     GPU3DS.currentRenderTargetDepth = depthTexture;
@@ -1723,38 +1082,6 @@ void gpu3dsSetRenderTargetToTextureSpecific(SGPUTexture *texture, SGPUTexture *d
         0, 0, width, height);
 
     GPUCMD_AddSingleParam(0x000F0117, GPUREG_COLORBUFFER_FORMAT_VALUES[texture->PixelFormat]); //color buffer format
-}
-
-
-void gpu3dsSetRenderTargetToMainScreenTexture()
-{
-    gpu3dsSetRenderTargetToTexture(snesMainScreenTarget, snesDepthForScreens);
-}
-
-void gpu3dsSetRenderTargetToSubScreenTexture()
-{
-    gpu3dsSetRenderTargetToTexture(snesSubScreenTarget, snesDepthForScreens);
-}
-
-//void gpu3dsSetRenderTargetToOBJLayer()
-//{
-    //gpu3dsSetRenderTargetToTexture(snesOBJLayerTarget, snesOBJDepth);
-//}
-
-void gpu3dsSetRenderTargetToDepthTexture()
-{
-    gpu3dsSetRenderTargetToTexture(snesDepthForScreens, snesDepthForOtherTextures);
-}
-
-void gpu3dsSetRenderTargetToMode7FullTexture(int pixelOffset, int width, int height)
-{
-    gpu3dsSetRenderTargetToTextureSpecific(snesMode7FullTexture, snesDepthForOtherTextures,
-        pixelOffset * gpu3dsGetPixelSize(snesMode7FullTexture->PixelFormat), width, height);
-}
-
-void gpu3dsSetRenderTargetToMode7Tile0Texture()
-{
-    gpu3dsSetRenderTargetToTexture(snesMode7Tile0Texture, snesDepthForOtherTextures);
 }
 
 
@@ -1882,7 +1209,7 @@ void gpu3dsSwapScreenBuffers()
 }
 
 
-inline void gpu3dsBindTextureWithParams(SGPUTexture *texture, GPU_TEXUNIT unit, u32 param)
+void gpu3dsBindTextureWithParams(SGPUTexture *texture, GPU_TEXUNIT unit, u32 param)
 {
     if (GPU3DS.currentTexture != texture || GPU3DS.currentParams != param)
     {
@@ -1907,8 +1234,8 @@ inline void gpu3dsBindTextureWithParams(SGPUTexture *texture, GPU_TEXUNIT unit, 
             texture->PixelFormat
         );
 
-        GPU_SetFloatUniform(GPU_VERTEX_SHADER, 4, (u32 *)texture->TextureScale, 1);
-        GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, 14, (u32 *)texture->TextureScale, 1);
+        GPU_SetFloatUniform(GPU_VERTEX_SHADER, textureVertexShaderRegister, (u32 *)texture->TextureScale, 1);
+        GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, textureGeometryShaderRegister, (u32 *)texture->TextureScale, 1);
 
         GPU3DS.currentTexture = texture;
         GPU3DS.currentParams = param;
@@ -1923,138 +1250,6 @@ void gpu3dsBindTexture(SGPUTexture *texture, GPU_TEXUNIT unit)
 
 
 
-void gpu3dsSetMode7UpdateFrameCountUniform()
-{
-    int updateFrame = GPU3DS.mode7FrameCount;
-    GPU3DS.mode7UpdateFrameCount[0] = ((float)updateFrame) - 0.5f;      // set 'w' to updateFrame
-
-    GPU_SetFloatUniform(GPU_VERTEX_SHADER, 5, (u32 *)GPU3DS.mode7UpdateFrameCount, 1);
-    GPU_SetFloatUniform(GPU_GEOMETRY_SHADER, 15, (u32 *)GPU3DS.mode7UpdateFrameCount, 1);
-}
-
-
-void gpu3dsCopyVRAMTilesIntoMode7TileVertexes(uint8 *VRAM)
-{
-    for (int i = 0; i < 16384; i++)
-    {
-        gpu3dsSetMode7TileTexturePos(i, VRAM[i * 2]);
-        gpu3dsSetMode7TileModifiedFlag(i);
-    }
-    IPPU.Mode7CharDirtyFlagCount = 1;
-    for (int i = 0; i < 256; i++)
-    {
-        IPPU.Mode7CharDirtyFlag[i] = 2;
-    }
-}
-
-void gpu3dsIncrementMode7UpdateFrameCount()
-{
-    gpu3dsSwapVertexListForNextFrame(&GPU3DS.mode7TileVertexes);
-    GPU3DS.mode7FrameCount ++;
-
-    if (GPU3DS.mode7FrameCount == 0x3fff)
-    {
-        GPU3DS.mode7FrameCount = 1;
-    }
-
-    // Bug fix: Clears the updateFrameCount of both sets
-    // of mode7TileVertexes!
-    //
-    if (GPU3DS.mode7FrameCount <= 2)
-    {
-        for (int i = 0; i < 16384; )
-        {
-            gpu3dsSetMode7TileModifiedFlag(i++, -1);
-            gpu3dsSetMode7TileModifiedFlag(i++, -1);
-            gpu3dsSetMode7TileModifiedFlag(i++, -1);
-            gpu3dsSetMode7TileModifiedFlag(i++, -1);
-
-            gpu3dsSetMode7TileModifiedFlag(i++, -1);
-            gpu3dsSetMode7TileModifiedFlag(i++, -1);
-            gpu3dsSetMode7TileModifiedFlag(i++, -1);
-            gpu3dsSetMode7TileModifiedFlag(i++, -1);
-        }
-    }
-
-    gpu3dsSetMode7UpdateFrameCountUniform();
-}
-
-
-void gpu3dsBindTextureDepthForScreens(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTexture(snesDepthForScreens, unit);
-}
-
-
-void gpu3dsBindTextureSnesMode7TileCache(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTexture(snesMode7TileCacheTexture, unit);
-}
-
-void gpu3dsBindTextureSnesMode7Tile0CacheRepeat(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTextureWithParams(snesMode7Tile0Texture, unit,
-        GPU_TEXTURE_MAG_FILTER(GPU_NEAREST)
-        | GPU_TEXTURE_MIN_FILTER(GPU_NEAREST)
-        | GPU_TEXTURE_WRAP_S(GPU_REPEAT)
-        | GPU_TEXTURE_WRAP_T(GPU_REPEAT));
-}
-
-void gpu3dsBindTextureSnesMode7Full(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTextureWithParams(snesMode7FullTexture, unit,
-        GPU_TEXTURE_MAG_FILTER(GPU_NEAREST)
-        | GPU_TEXTURE_MIN_FILTER(GPU_NEAREST)
-        | GPU_TEXTURE_WRAP_S(GPU_CLAMP_TO_BORDER)
-        | GPU_TEXTURE_WRAP_T(GPU_CLAMP_TO_BORDER));
-}
-
-void gpu3dsBindTextureSnesMode7FullRepeat(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTextureWithParams(snesMode7FullTexture, unit,
-        GPU_TEXTURE_MAG_FILTER(GPU_NEAREST)
-        | GPU_TEXTURE_MIN_FILTER(GPU_NEAREST)
-        | GPU_TEXTURE_WRAP_S(GPU_REPEAT)
-        | GPU_TEXTURE_WRAP_T(GPU_REPEAT));
-}
-
-
-void gpu3dsBindTextureSnesTileCache(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTexture(snesTileCacheTexture, unit);
-}
-
-void gpu3dsBindTextureSnesTileCacheForHires(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTextureWithParams(snesTileCacheTexture, unit,
-	    GPU_TEXTURE_MAG_FILTER(GPU_NEAREST)
-        | GPU_TEXTURE_MIN_FILTER(GPU_NEAREST)
-		| GPU_TEXTURE_WRAP_S(GPU_CLAMP_TO_BORDER)
-		| GPU_TEXTURE_WRAP_T(GPU_CLAMP_TO_BORDER)
-    );
-}
-
-void gpu3dsBindTextureMainScreen(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTextureWithParams(snesMainScreenTarget, unit,
-        GPU_TEXTURE_MAG_FILTER(GPU_LINEAR)
-        | GPU_TEXTURE_MIN_FILTER(GPU_LINEAR)
-        | GPU_TEXTURE_WRAP_S(GPU_CLAMP_TO_BORDER)
-        | GPU_TEXTURE_WRAP_T(GPU_CLAMP_TO_BORDER));
-}
-
-void gpu3dsBindTextureSubScreen(GPU_TEXUNIT unit)
-{
-    gpu3dsBindTexture(snesSubScreenTarget, unit);
-}
-
-
-//void gpu3dsBindTextureOBJLayer(GPU_TEXUNIT unit)
-//{
-//    //gpu3dsBindTexture(snesOBJLayerTarget, unit);
-//}
-
-
 void gpu3dsScissorTest(GPU_SCISSORMODE mode, uint32 x, uint32 y, uint32 w, uint32 h)
 {
     GPU_SetScissorTest(mode, x, y, w, h);
@@ -2062,135 +1257,9 @@ void gpu3dsScissorTest(GPU_SCISSORMODE mode, uint32 x, uint32 y, uint32 w, uint3
 
 
 
-void gpu3dsDrawRectangle(int x0, int y0, int x1, int y1, int depth, u32 color)
-{
-    /*
-    if (GPU3DS.isReal3DS)
-    {
-        SVertexColor *vertices = GPU3DS.rectangleVertexList;
-        if (!vertices) return;
-
-        vertices[0].Position = (SVector4i){x0, y0, depth, 1};
-        vertices[1].Position = (SVector4i){x1, y1, depth, 1};
-
-        u32 swappedColor = ((color & 0xff) << 24) | ((color & 0xff00) << 8) | ((color & 0xff0000) >> 8) | ((color & 0xff000000) >> 24);
-        vertices[0].Color = swappedColor;
-        vertices[1].Color = swappedColor;
-
-        gpu3dsSetAttributeBuffers(
-            2, // number of attributes
-            (u32*)vertices,
-            GPU_ATTRIBFMT(0, 4, GPU_SHORT) | GPU_ATTRIBFMT(1, 4, GPU_UNSIGNED_BYTE)
-        );
-
-        GPU3DS.rectangleVertexList = (SVertexColor *) gpu3dsAlignTo0x80(&GPU3DS.rectangleVertexList[2]);
-
-        GPU_DrawArray(GPU_GEOMETRY_PRIM, 0, 2);
-        somethingWasDrawn = true;
-
-    }
-    else
-    {
-        SVertexColor *vertices = GPU3DS.rectangleVertexList;
-        if (!vertices) return;
-
-        vertices[0].Position = (SVector4i){x0, y0, depth, 1};
-        vertices[1].Position = (SVector4i){x1, y0, depth, 1};
-        vertices[2].Position = (SVector4i){x0, y1, depth, 1};
-        vertices[3].Position = (SVector4i){x1, y1, depth, 1};
-
-        u32 swappedColor = ((color & 0xff) << 24) | ((color & 0xff00) << 8) | ((color & 0xff0000) >> 8) | ((color & 0xff000000) >> 24);
-        vertices[0].Color = swappedColor;
-        vertices[1].Color = swappedColor;
-        vertices[2].Color = swappedColor;
-        vertices[3].Color = swappedColor;
-
-        gpu3dsSetAttributeBuffers(
-            2, // number of attributes
-            (u32*)vertices,
-            GPU_ATTRIBFMT(0, 4, GPU_SHORT) | GPU_ATTRIBFMT(1, 4, GPU_UNSIGNED_BYTE)
-        );
-
-        GPU3DS.rectangleVertexList = (SVertexColor *) gpu3dsAlignTo0x80(&GPU3DS.rectangleVertexList[4]);
-
-        GPU_DrawArray(GPU_TRIANGLE_STRIP, 0, 4);
-        somethingWasDrawn = true;
-    }
-    */
-
-    gpu3dsAddRectangleVertexes (x0, y0, x1, y1, depth, color);
-    gpu3dsDrawVertexList(&GPU3DS.rectangleVertexes, GPU_GEOMETRY_PRIM, false, -1, -1);
-}
-
-
-void gpu3dsAddRectangleVertexes(int x0, int y0, int x1, int y1, int depth, u32 color)
-{
-    if (GPU3DS.isReal3DS)
-    {
-        SVertexColor *vertices = &((SVertexColor *) GPU3DS.rectangleVertexes.List)[GPU3DS.rectangleVertexes.Count];
-
-        vertices[0].Position = (SVector4i){x0, y0, depth, 1};
-        vertices[1].Position = (SVector4i){x1, y1, depth, 1};
-
-        u32 swappedColor = ((color & 0xff) << 24) | ((color & 0xff00) << 8) | ((color & 0xff0000) >> 8) | ((color & 0xff000000) >> 24);
-        vertices[0].Color = swappedColor;
-        vertices[1].Color = swappedColor;
-
-        GPU3DS.rectangleVertexes.Count += 2;
-    }
-    else
-    {
-        SVertexColor *vertices = &((SVertexColor *) GPU3DS.rectangleVertexes.List)[GPU3DS.rectangleVertexes.Count];
-
-        vertices[0].Position = (SVector4i){x0, y0, depth, 1};
-        vertices[1].Position = (SVector4i){x1, y0, depth, 1};
-        vertices[2].Position = (SVector4i){x0, y1, depth, 1};
-        vertices[3].Position = (SVector4i){x1, y1, depth, 1};
-        vertices[4].Position = (SVector4i){x1, y0, depth, 1};
-        vertices[5].Position = (SVector4i){x0, y1, depth, 1};
-
-        u32 swappedColor = ((color & 0xff) << 24) | ((color & 0xff00) << 8) | ((color & 0xff0000) >> 8) | ((color & 0xff000000) >> 24);
-        vertices[0].Color = swappedColor;
-        vertices[1].Color = swappedColor;
-        vertices[2].Color = swappedColor;
-        vertices[3].Color = swappedColor;
-        vertices[4].Color = swappedColor;
-        vertices[5].Color = swappedColor;
-
-        GPU3DS.rectangleVertexes.Count += 6;
-    }
-}
-
-
-void gpu3dsDrawVertexes(bool repeatLastDraw, int storeIndex)
-{
-    gpu3dsDrawVertexList(&GPU3DS.quadVertexes, GPU_TRIANGLES, repeatLastDraw, 0, storeIndex);
-    gpu3dsDrawVertexList(&GPU3DS.tileVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw, 1, storeIndex);
-    gpu3dsDrawVertexList(&GPU3DS.rectangleVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw, 2, storeIndex);
-}
-
-
-void gpu3dsDrawMode7Vertexes(int fromIndex, int tileCount)
-{
-    if (GPU3DS.isReal3DS)
-        gpu3dsDrawMode7VertexList(&GPU3DS.mode7TileVertexes, GPU_GEOMETRY_PRIM, fromIndex, tileCount);
-    else
-        gpu3dsDrawMode7VertexList(&GPU3DS.mode7TileVertexes, GPU_TRIANGLES, fromIndex, tileCount);
-
-}
-
-void gpu3dsDrawMode7LineVertexes(bool repeatLastDraw, int storeIndex)
-{
-    if (GPU3DS.isReal3DS)
-        gpu3dsDrawVertexList(&GPU3DS.mode7LineVertexes, GPU_GEOMETRY_PRIM, repeatLastDraw, 3, storeIndex);
-    else
-        gpu3dsDrawVertexList(&GPU3DS.mode7LineVertexes, GPU_TRIANGLES, repeatLastDraw, 3, storeIndex);
-}
-
-
 void gpu3dsSetTextureOffset(float u, float v)
 {
     GPU3DS.textureOffset[3] = u;
     GPU3DS.textureOffset[2] = v;
-    GPU_SetFloatUniform(GPU_VERTEX_SHADER, 6, (u32 *)GPU3DS.textureOffset, 1);    
+    GPU_SetFloatUniform(GPU_VERTEX_SHADER, textureOffsetVertexShaderRegister, (u32 *)GPU3DS.textureOffset, 1);    
 }

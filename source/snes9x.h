@@ -432,6 +432,10 @@ struct SSettings{
 	bool8  NoPatch;
 	bool8  ForceInterleaveGD24;
 
+    // Added from Snes9x v1.52
+    bool8  BSXItself;
+    bool8  BSXBootup;
+
 #ifdef DEBUG_MAXCOUNT
     unsigned int MaxCount;
 #endif

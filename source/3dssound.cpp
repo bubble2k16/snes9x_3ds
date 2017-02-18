@@ -11,21 +11,37 @@
 #include "3dsgpu.h"
 #include "3dssound.h"
 #include "3dsopt.h"
+#include "3dssnes9x.h"
+#include "3dsimpl.h"
 
 #define LEFT_CHANNEL        10
 #define RIGHT_CHANNEL       11
-//#define DUMMY_CHANNEL       12
 
 
+SSND3DS snd3DS;
 
 int debugSoundCounter = 0;
 int csndTicksPerSecond = 268033000LL;           // use this for 32000 Khz
-//int csndTicksPerSecond = 268100000LL;           // use this for 21600 Khz
+
+int snd3dsSampleRate = 44100;
+int snd3dsSamplesPerLoop = 735;
 
 
+//---------------------------------------------------------
+// Gets the current playing sample position.
+//
+// The problem is that the existing CSND library
+// is unable to provide the actual playing sample
+// position from the hardware. So we have to compute
+// this manually. 
+//
+// But computing it this way may cause skews in sound
+// generation over time, so the csndTicksPerSecond
+// has to be correct to minimize skewing.
+//---------------------------------------------------------
 u64 snd3dsGetSamplePosition() {
 	u64 delta = (svcGetSystemTick() - snd3DS.startTick);
-	u64 samplePosition = delta * SAMPLE_RATE / csndTicksPerSecond;
+	u64 samplePosition = delta * snd3dsSampleRate / csndTicksPerSecond;
 
     snd3DS.samplePosition = samplePosition;
 	return samplePosition;
@@ -33,10 +49,16 @@ u64 snd3dsGetSamplePosition() {
 
 int blockCount = 0;
 
+
+//---------------------------------------------------------
+// Mix the samples.
+//
+// This is usually called from within 3dssound.cpp.
+// It should only be called externall from other 
+// files when running in Citra.
+//---------------------------------------------------------
 void snd3dsMixSamples()
 {
-    #define SAMPLES_TO_GENERATE         256
-
     #define MIN_FORWARD_BLOCKS          8
     #define MAX_FORWARD_BLOCKS          16
 
@@ -44,8 +66,7 @@ void snd3dsMixSamples()
     bool generateSound = false;
     if (snd3DS.isPlaying && !snd3DS.generateSilence)
     {
-        S9xSetAPUDSPReplay ();
-        S9xMixSamplesIntoTempBuffer(SAMPLES_TO_GENERATE * 2);
+        impl3dsGenerateSoundSamples();
         generateSound = true;
     }
     t3dsEndTiming(44);
@@ -56,15 +77,15 @@ void snd3dsMixSamples()
     {
         u64 nowSamplePosition = snd3dsGetSamplePosition();
         u64 deltaTimeAhead = snd3DS.upToSamplePosition - nowSamplePosition;
-        long blocksAhead = deltaTimeAhead / SAMPLES_TO_GENERATE;
+        long blocksAhead = deltaTimeAhead / snd3dsSamplesPerLoop;
 
         if (blocksAhead < MIN_FORWARD_BLOCKS)
         {
             // buffer is about to underrun.
             //
             generateAtSamplePosition =
-                ((u64)((nowSamplePosition + SAMPLES_TO_GENERATE - 1) / SAMPLES_TO_GENERATE)) * SAMPLES_TO_GENERATE +
-                MIN_FORWARD_BLOCKS * SAMPLES_TO_GENERATE;
+                ((u64)((nowSamplePosition + snd3dsSamplesPerLoop - 1) / snd3dsSamplesPerLoop)) * snd3dsSamplesPerLoop +
+                MIN_FORWARD_BLOCKS * snd3dsSamplesPerLoop;
             break;
         }
         else if (blocksAhead < MAX_FORWARD_BLOCKS)
@@ -87,49 +108,27 @@ void snd3dsMixSamples()
     }
 
     snd3DS.startSamplePosition = generateAtSamplePosition;
-    snd3DS.upToSamplePosition = generateAtSamplePosition + SAMPLES_TO_GENERATE;
+    snd3DS.upToSamplePosition = generateAtSamplePosition + snd3dsSamplesPerLoop;
     t3dsEndTiming(41);
 
-
-
     t3dsStartTiming(42, "Mix-ApplyMstVol");
-    int p = generateAtSamplePosition % BUFFER_SIZE;
+    int p = generateAtSamplePosition % snd3dsSampleRate;
 
     if (snd3DS.audioType==1)
     {
         if (generateSound)
         {
-            S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(&snd3DS.leftBuffer[p], &snd3DS.rightBuffer[p], SAMPLES_TO_GENERATE * 2);
+            impl3dsOutputSoundSamples(&snd3DS.leftBuffer[p], &snd3DS.rightBuffer[p]);
         }
         else
         {
-            for (int i = 0; i < SAMPLES_TO_GENERATE; i++)
+            for (int i = 0; i < snd3dsSamplesPerLoop; i++)
             {
                 snd3DS.leftBuffer[p + i] = 0;
                 snd3DS.rightBuffer[p + i] = 0;
             }
         }
-        /*FILE *fp = fopen("sample.dat", "ab");
-        for (int i = 0; i < SAMPLES_TO_GENERATE; i++)
-        {
-            printf ("%7d ", snd3DS.leftBuffer[p + i]);
-            fwrite (&snd3DS.leftBuffer[p + i], 2, 1, fp);
-        }
-        fclose(fp);*/
     }
-    /*else
-    {
-        if (generateSound)
-            S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffersNDSP(&snd3DS.fullBuffers[p], SAMPLES_TO_GENERATE * 2);
-        else
-        {
-            for (int i = 0; i < SAMPLES_TO_GENERATE; i++)
-            {
-                snd3DS.leftBuffer[p + i] = 0;
-                snd3DS.rightBuffer[p + i] = 0;
-            }
-        }
-    }*/
     t3dsEndTiming(42);
 
     // Now that we have the samples, we have to copy it back into our buffers
@@ -138,28 +137,37 @@ void snd3dsMixSamples()
     t3dsStartTiming(43, "Mix-Flush");
     blockCount++;
     if (blockCount % MIN_FORWARD_BLOCKS == 0)
-        GSPGPU_FlushDataCache(snd3DS.fullBuffers, BUFFER_SIZE * 2 * 2);
+        GSPGPU_FlushDataCache(snd3DS.fullBuffers, snd3dsSampleRate * 2 * 2);
     t3dsEndTiming(43);
 }
 
-void snd3dsDSPThread(void *p)
+
+//---------------------------------------------------------
+// This function is the entry point to the sound mixing
+// thread.
+//---------------------------------------------------------
+void snd3dsMixingThread(void *p)
 {
     snd3DS.upToSamplePosition = snd3dsGetSamplePosition();
     snd3DS.startSamplePosition = snd3DS.upToSamplePosition;
     //svcExitThread();
     //return;
 
-    while (!snd3DS.terminateDSPThread)
+    while (!snd3DS.terminateMixingThread)
     {
         if (!GPU3DS.isReal3DS)
             svcSleepThread(1000000 * 1);
         snd3dsMixSamples();
     }
-    snd3DS.terminateDSPThread = -1;
+    snd3DS.terminateMixingThread = -1;
     svcExitThread();
 }
 
 
+//---------------------------------------------------------
+// Triggers the CSND to play the sound from the
+// buffers.
+//---------------------------------------------------------
 Result snd3dsPlaySound(int chn, u32 flags, u32 sampleRate, float vol, float pan, void* data0, void* data1, u32 size)
 {
 	u32 paddr0 = 0, paddr1 = 0;
@@ -200,6 +208,10 @@ Result snd3dsPlaySound(int chn, u32 flags, u32 sampleRate, float vol, float pan,
     CSND_SetPlayState(chn, 1);
 }
 
+
+//---------------------------------------------------------
+// Start playing the samples.
+//---------------------------------------------------------
 void snd3dsStartPlaying()
 {
     if (!snd3DS.isPlaying)
@@ -209,8 +221,8 @@ void snd3dsStartPlaying()
         // not play immediately upon calling. This seems to solve the left
         // channel louder than right channel problem.
         //
-        snd3dsPlaySound(LEFT_CHANNEL, SOUND_REPEAT | SOUND_FORMAT_16BIT, SAMPLE_RATE, 1.0f, -1.0f, (u32*)snd3DS.leftBuffer, (u32*)snd3DS.leftBuffer, BUFFER_SIZE * 2);
-        snd3dsPlaySound(RIGHT_CHANNEL, SOUND_REPEAT | SOUND_FORMAT_16BIT, SAMPLE_RATE, 1.0f, 1.0f, (u32*)snd3DS.rightBuffer, (u32*)snd3DS.rightBuffer, BUFFER_SIZE * 2);
+        snd3dsPlaySound(LEFT_CHANNEL, SOUND_REPEAT | SOUND_FORMAT_16BIT, snd3dsSampleRate, 1.0f, -1.0f, (u32*)snd3DS.leftBuffer, (u32*)snd3DS.leftBuffer, snd3dsSampleRate * 2);
+        snd3dsPlaySound(RIGHT_CHANNEL, SOUND_REPEAT | SOUND_FORMAT_16BIT, snd3dsSampleRate, 1.0f, 1.0f, (u32*)snd3DS.rightBuffer, (u32*)snd3DS.rightBuffer, snd3dsSampleRate * 2);
 
         // Flush CSND command buffers
         csndExecCmds(true);
@@ -221,6 +233,10 @@ void snd3dsStartPlaying()
     }
 }
 
+
+//---------------------------------------------------------
+// Stop playing the samples.
+//---------------------------------------------------------
 void snd3dsStopPlaying()
 {
     if (snd3DS.isPlaying)
@@ -235,11 +251,26 @@ void snd3dsStopPlaying()
 }
 
 
+//---------------------------------------------------------
+// Set the sampling rate.
+//
+// This function should be called by the 
+// impl3dsInitializeCore function. It CANNOT be called
+// after the snd3dsInitialize function is called.
+//---------------------------------------------------------
+void snd3dsSetSampleRate(int sampleRate, int samplesPerLoop)
+{
+    snd3dsSampleRate = sampleRate;
+    snd3dsSamplesPerLoop = samplesPerLoop;
+}
 
 
+//---------------------------------------------------------
+// Initialize the CSND library.
+//---------------------------------------------------------
 bool snd3dsInitialize()
 {
-    S9xSetPlaybackRate(32000);
+    S9xSetPlaybackRate(snd3dsSampleRate);
 
     snd3DS.isPlaying = false;
     snd3DS.audioType = 0;
@@ -261,31 +292,14 @@ bool snd3dsInitialize()
     {
         printf ("Unable to initialize 3DS CSND service\n");
         return false;
-        /*
-        //-----------------------------------------------
-          NDSP isn't really fully tested yet.
-        -----------------------------------------------
-        ret = ndspInit();
-        printf ("Trying to initialize NDSP, ret = %x\n", ret);
-
-        if (!R_FAILED(ret))
-        {
-            snd3DS.audioType = 2;
-            printf ("NDSP Initialized\n");
-        }
-        else
-        {
-            printf ("Unable to initialize 3DS CSND/NDSP service\n");
-            return false;
-        }*/
     }
 
     // Initialize the sound buffers
     //
-    snd3DS.fullBuffers = (short *)linearAlloc(BUFFER_SIZE * 2 * 2);
+    snd3DS.fullBuffers = (short *)linearAlloc(snd3dsSampleRate * 2 * 2);
 	snd3DS.leftBuffer = &snd3DS.fullBuffers[0];
-	snd3DS.rightBuffer = &snd3DS.fullBuffers[BUFFER_SIZE];
-    memset(snd3DS.fullBuffers, 0, sizeof(BUFFER_SIZE * 2 * 2));
+	snd3DS.rightBuffer = &snd3DS.fullBuffers[snd3dsSampleRate];
+    memset(snd3DS.fullBuffers, 0, sizeof(snd3dsSampleRate * 2 * 2));
 
     if (!snd3DS.fullBuffers)
     {
@@ -316,7 +330,7 @@ bool snd3dsInitialize()
         // Both left/right channels
         ndspChnReset(0);
         ndspChnSetInterp(0, NDSP_INTERP_LINEAR);
-        ndspChnSetRate(0, SAMPLE_RATE);
+        ndspChnSetRate(0, snd3dsSampleRate);
         ndspChnSetFormat(0, NDSP_FORMAT_STEREO_PCM16);
         ndspChnSetMix(0, stereoMix);
 #ifndef RELEASE
@@ -324,7 +338,7 @@ bool snd3dsInitialize()
 #endif
         memset(&snd3DS.waveBuf, 0, sizeof(ndspWaveBuf));
         snd3DS.waveBuf.data_vaddr = (u32*)snd3DS.fullBuffers;
-        snd3DS.waveBuf.nsamples = BUFFER_SIZE;
+        snd3DS.waveBuf.nsamples = snd3dsSampleRate;
         snd3DS.waveBuf.looping  = true;
         snd3DS.waveBuf.status = NDSP_WBUF_FREE;
 
@@ -335,7 +349,7 @@ bool snd3dsInitialize()
     }
 
     // SNES DSP thread
-    snd3DS.terminateDSPThread = false;
+    snd3DS.terminateMixingThread = false;
 
     if (GPU3DS.isReal3DS)
     {
@@ -348,13 +362,13 @@ bool snd3dsInitialize()
 #endif
 
 #ifndef RELEASE
-        printf ("snd3dsInit - DSP Stack: %x\n", snd3DS.dspThreadStack);
-        printf ("snd3dsInit - DSP ThreadFunc: %x\n", &snd3dsDSPThread);
+        printf ("snd3dsInit - DSP Stack: %x\n", snd3DS.mixingThreadStack);
+        printf ("snd3dsInit - DSP ThreadFunc: %x\n", &snd3dsMixingThread);
 #endif
         IAPU.DSPReplayIndex = 0;
         IAPU.DSPWriteIndex = 0;
-        ret = svcCreateThread(&snd3DS.dspThreadHandle, snd3dsDSPThread, 0,
-            (u32*)(snd3DS.dspThreadStack+0x4000), 0x18, 1);
+        ret = svcCreateThread(&snd3DS.mixingThreadHandle, snd3dsMixingThread, 0,
+            (u32*)(snd3DS.mixingThreadStack+0x4000), 0x18, 1);
         if (ret)
         {
             printf("Unable to start DSP thread: %x\n", ret);
@@ -363,7 +377,7 @@ bool snd3dsInitialize()
             return false;
         }
 #ifndef RELEASE
-        printf ("snd3dsInit - Create DSP thread %x\n", snd3DS.dspThreadHandle);
+        printf ("snd3dsInit - Create DSP thread %x\n", snd3DS.mixingThreadHandle);
 #endif
     }
 
@@ -375,19 +389,21 @@ bool snd3dsInitialize()
 }
 
 
-
+//---------------------------------------------------------
+// Finalize the CSND library.
+//---------------------------------------------------------
 void snd3dsFinalize()
 {
-     snd3DS.terminateDSPThread = true;
+     snd3DS.terminateMixingThread = true;
 
-     if (snd3DS.dspThreadHandle)
+     if (snd3DS.mixingThreadHandle)
      {
          // Wait (at most 1 second) for the sound thread to finish,
 #ifndef RELEASE
-         printf ("Join dspThreadHandle\n");
+         printf ("Join mixingThreadHandle\n");
 #endif
-         svcWaitSynchronization(snd3DS.dspThreadHandle, 1000 * 1000000);
-         svcCloseHandle(snd3DS.dspThreadHandle);
+         svcWaitSynchronization(snd3DS.mixingThreadHandle, 1000 * 1000000);
+         svcCloseHandle(snd3DS.mixingThreadHandle);
      }
 
     if (snd3DS.fullBuffers)  linearFree(snd3DS.fullBuffers);

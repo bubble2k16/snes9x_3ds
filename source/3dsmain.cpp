@@ -29,52 +29,14 @@
 #include "3dsui.h"
 #include "3dsfont.h"
 #include "3dsconfig.h"
+#include "3dsfiles.h"
+#include "3dsinput.h"
+#include "3dssettings.h"
+#include "3dsimpl.h"
+#include "3dsimpl_tilecache.h"
+#include "3dsimpl_gpu.h"
 
 #include "lodepng.h"
-
-
-typedef struct
-{
-    int     MaxFrameSkips = 1;              // 0 - disable,
-                                            // 1 - enable (max 1 consecutive skipped frame)
-                                            // 2 - enable (max 2 consecutive skipped frames)
-                                            // 3 - enable (max 3 consecutive skipped frames)
-                                            // 4 - enable (max 4 consecutive skipped frames)
-
-    int     HideUnnecessaryBottomScrText = 0;
-                                            // Feature: add new option to disable unnecessary bottom screen text.
-                                            // 0 - Default show FPS and "Touch screen for menu" text, 1 - Hide those text.
-
-    int     Font = 0;                       // 0 - Tempesta, 1 - Ronda, 2 - Arial
-    int     ScreenStretch = 0;              // 0 - no stretch, 1 - stretch full, 2 - aspect fit
-
-    int     ForceFrameRate = 0;             // 0 - Use ROM's Region, 1 - Force 50 fps, 2 - Force 60 fps
-
-    int     StretchWidth, StretchHeight;
-    int     CropPixels;
-
-    int     Turbo[6] = {0, 0, 0, 0, 0, 0};  // Turbo buttons: 0 - No turbo, 1 - Release/Press every alt frame.
-                                            // Indexes: 0 - A, 1 - B, 2 - X, 3 - Y, 4 - L, 5 - R
-
-    int     Volume = 4;                     // 0: 100% Default volume,
-                                            // 1: 125%, 2: 150%, 3: 175%, 4: 200%
-                                            // 5: 225%, 6: 250%, 7: 275%, 8: 300%
-
-    long    TicksPerFrame;                  // Ticks per frame. Will change depending on PAL/NTSC
-
-    int     PaletteFix;                     // Palette In-Frame Changes
-                                            //   1 - Enabled - Default.
-                                            //   2 - Disabled - Style 1.
-                                            //   3 - Disabled - Style 2.
-
-    int     SRAMSaveInterval;               // SRAM Save Interval
-                                            //   1 - 1 second.
-                                            //   2 - 10 seconds
-                                            //   3 - 60 seconds
-                                            //   4 - Never
-
-} S9xSettings3DS;
-
 
 S9xSettings3DS settings3DS;
 
@@ -89,336 +51,13 @@ int framesSkippedCount = 0;
 char *romFileName = 0;
 char romFileNameFullPath[_MAX_PATH];
 char romFileNameLastSelected[_MAX_PATH];
-char cwd[_MAX_PATH];
 
 
-void _splitpath (const char *path, char *drive, char *dir, char *fname, char *ext)
-{
-	*drive = 0;
-
-	const char	*slash = strrchr(path, SLASH_CHAR),
-				*dot   = strrchr(path, '.');
-
-	if (dot && slash && dot < slash)
-		dot = NULL;
-
-	if (!slash)
-	{
-		*dir = 0;
-
-		strcpy(fname, path);
-
-		if (dot)
-		{
-			fname[dot - path] = 0;
-			strcpy(ext, dot + 1);
-		}
-		else
-			*ext = 0;
-	}
-	else
-	{
-		strcpy(dir, path);
-		dir[slash - path] = 0;
-
-		strcpy(fname, slash + 1);
-
-		if (dot)
-		{
-			fname[dot - slash - 1] = 0;
-			strcpy(ext, dot + 1);
-		}
-		else
-			*ext = 0;
-	}
-}
-
-void _makepath (char *path, const char *, const char *dir, const char *fname, const char *ext)
-{
-	if (dir && *dir)
-	{
-		strcpy(path, dir);
-		strcat(path, SLASH_STR);
-	}
-	else
-		*path = 0;
-
-	strcat(path, fname);
-
-	if (ext && *ext)
-	{
-		strcat(path, ".");
-		strcat(path, ext);
-	}
-}
-
-void S9xMessage (int type, int number, const char *message)
-{
-	//printf("%s\n", message);
-}
-
-bool8 S9xInitUpdate (void)
-{
-	return (TRUE);
-}
-
-bool8 S9xDeinitUpdate (int width, int height, bool8 sixteen_bit)
-{
-	return (TRUE);
-}
-
-
-void S9xAutoSaveSRAM (void)
-{
-    // Ensure that the timer is reset
-    //
-    //CPU.AccumulatedAutoSaveTimer = 0;
-    CPU.SRAMModified = false;
-
-    ui3dsDrawRect(50, 140, 270, 154, 0x000000);
-    ui3dsDrawStringWithNoWrapping(50, 140, 270, 154, 0x3f7fff, HALIGN_CENTER, "Saving SRAM to SD card...");
-
-    // Bug fix: Instead of stopping CSND, we generate silence
-    // like we did prior to v0.61
-    //
-    snd3DS.generateSilence = true;
-
-    //int millisecondsToWait = 5;
-    //svcSleepThread ((long)(millisecondsToWait * 1000));
-
-	Memory.SaveSRAM (S9xGetFilename (".srm"));
-
-    ui3dsDrawRect(50, 140, 270, 154, 0x000000);
-
-    // Bug fix: Instead of starting CSND, we continue to mix
-    // like we did prior to v0.61
-    //
-    snd3DS.generateSilence = false;
-}
-
-void S9xGenerateSound ()
-{
-}
-
-
-void S9xExit (void)
-{
-
-}
-
-void S9xSetPalette (void)
-{
-	return;
-}
-
-
-bool8 S9xOpenSoundDevice(int mode, bool8 stereo, int buffer_size)
-{
-	return (TRUE);
-}
-
-void S9xLoadSDD1Data ()
-{
-    //Settings.SDD1Pack=FALSE;
-
-    char filename [_MAX_PATH + 1];
-    char index [_MAX_PATH + 1];
-    char data [_MAX_PATH + 1];
-
-	Settings.SDD1Pack=FALSE;
-    Memory.FreeSDD1Data ();
-
-    if (strncmp (Memory.ROMName, ("Star Ocean"), 10) == 0)
-	{
-		Settings.SDD1Pack=TRUE;
-	}
-    else if(strncmp(Memory.ROMName, ("STREET FIGHTER ALPHA2"), 21)==0)
-	{
-		if(Memory.ROMRegion==1)
-		{
-			Settings.SDD1Pack=TRUE;
-		}
-		else
-		{
-			Settings.SDD1Pack=TRUE;
-		}
-	}
-	else
-	{
-		Settings.SDD1Pack=TRUE;
-	}
-}
-
-const char * S9xGetFilename (const char *ex)
-{
-	static char	s[PATH_MAX + 1];
-	char		drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], fname[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
-
-	_splitpath(Memory.ROMFilename, drive, dir, fname, ext);
-	snprintf(s, PATH_MAX + 1, "%s/%s%s", dir, fname, ex);
-
-	return (s);
-}
-
-const char * S9xGetFilenameInc (const char *ex)
-{
-	static char	s[PATH_MAX + 1];
-	char		drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], fname[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
-
-	unsigned int	i = 0;
-	const char		*d;
-	struct stat		buf;
-
-	_splitpath(Memory.ROMFilename, drive, dir, fname, ext);
-
-	do
-		snprintf(s, PATH_MAX + 1, "%s/%s.%03d%s", dir, fname, i++, ex);
-	while (stat(s, &buf) == 0 && i < 1000);
-
-	return (s);
-}
-
-uint32 n3dsKeysHeld = 0;
-uint32 lastKeysHeld = 0;
-uint32 menuKeyDown = 0;
-uint32 prevSnesJoyPad = 0;
-
-uint32 S9xReadJoypad (int which1_0_to_4)
-{
-    if (which1_0_to_4 != 0)
-        return 0;
-
-    uint32 s9xKeysHeld = n3dsKeysHeld;
-
-    if (menuKeyDown)
-    {
-        // If the key remains pressed after coming back
-        // from the menu, we are going to mask it
-        // until the user releases it.
-        //
-        if (s9xKeysHeld & menuKeyDown)
-        {
-            s9xKeysHeld = s9xKeysHeld & ~menuKeyDown;
-        }
-        else
-            menuKeyDown = 0;
-    }
-
-    uint32 snesJoyPad = 0;
-
-    if (s9xKeysHeld & KEY_UP) snesJoyPad |= SNES_UP_MASK;
-    if (s9xKeysHeld & KEY_DOWN) snesJoyPad |= SNES_DOWN_MASK;
-    if (s9xKeysHeld & KEY_LEFT) snesJoyPad |= SNES_LEFT_MASK;
-    if (s9xKeysHeld & KEY_RIGHT) snesJoyPad |= SNES_RIGHT_MASK;
-    if (s9xKeysHeld & KEY_L) snesJoyPad |= SNES_TL_MASK;
-    if (s9xKeysHeld & KEY_R) snesJoyPad |= SNES_TR_MASK;
-    if (s9xKeysHeld & KEY_SELECT) snesJoyPad |= SNES_SELECT_MASK;
-    if (s9xKeysHeld & KEY_START) snesJoyPad |= SNES_START_MASK;
-    if (s9xKeysHeld & KEY_A) snesJoyPad |= SNES_A_MASK;
-    if (s9xKeysHeld & KEY_B) snesJoyPad |= SNES_B_MASK;
-    if (s9xKeysHeld & KEY_X) snesJoyPad |= SNES_X_MASK;
-    if (s9xKeysHeld & KEY_Y) snesJoyPad |= SNES_Y_MASK;
-
-    // Handle turbo buttons.
-    //
-    #define HANDLE_TURBO(i, mask) if (settings3DS.Turbo[i] && (prevSnesJoyPad & mask) && (snesJoyPad & mask)) snesJoyPad &= ~mask;
-    HANDLE_TURBO(0, SNES_A_MASK);
-    HANDLE_TURBO(1, SNES_B_MASK);
-    HANDLE_TURBO(2, SNES_X_MASK);
-    HANDLE_TURBO(3, SNES_Y_MASK);
-    HANDLE_TURBO(4, SNES_TL_MASK);
-    HANDLE_TURBO(5, SNES_TR_MASK);
-
-    prevSnesJoyPad = snesJoyPad;
-
-    return snesJoyPad;
-}
-
-bool8 S9xReadMousePosition (int which1_0_to_1, int &x, int &y, uint32 &buttons)
-{
-
-}
-
-bool8 S9xReadSuperScopePosition (int &x, int &y, uint32 &buttons)
-{
-
-}
-
-bool JustifierOffscreen()
-{
-	return 0;
-}
-
-void JustifierButtons(uint32& justifiers)
-{
-
-}
-
-char * osd_GetPackDir(void)
-{
-
-    return NULL;
-}
-
-const char *S9xBasename (const char *f)
-{
-    const char *p;
-    if ((p = strrchr (f, '/')) != NULL || (p = strrchr (f, '\\')) != NULL)
-	return (p + 1);
-
-    if (p = strrchr (f, SLASH_CHAR))
-	return (p + 1);
-
-    return (f);
-}
-
-bool8 S9xOpenSnapshotFile (const char *filename, bool8 read_only, STREAM *file)
-{
-
-	char	s[PATH_MAX + 1];
-	char	drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], fname[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
-
-    snprintf(s, PATH_MAX + 1, "%s", filename);
-
-	if ((*file = OPEN_STREAM(s, read_only ? "rb" : "wb")))
-		return (TRUE);
-
-	return (FALSE);
-}
-
-void S9xCloseSnapshotFile (STREAM file)
-{
-	CLOSE_STREAM(file);
-}
-
-void S9xParseArg (char **argv, int &index, int argc)
-{
-
-}
-
-void S9xExtraUsage ()
-{
-
-}
-
-void S9xGraphicsMode ()
-{
-
-}
-void S9xTextMode ()
-{
-
-}
-void S9xSyncSpeed (void)
-{
-}
 
 
 //-------------------------------------------------------
 // Clear top screen with logo.
 //-------------------------------------------------------
-
-
 void clearTopScreenWithLogo()
 {
 	unsigned char* image;
@@ -428,8 +67,6 @@ void clearTopScreenWithLogo()
 
     if (!error && width == 400 && height == 240)
     {
-        // GX_DisplayTransfer needs input buffer in linear RAM
-
         // lodepng outputs big endian rgba so we need to convert
         for (int i = 0; i < 2; i++)
         {
@@ -443,10 +80,6 @@ void clearTopScreenWithLogo()
                     uint32 b = *src++;
                     uint32 a = *src++;
 
-                    //r >>= 3;
-                    //g >>= 3;
-                    //b >>= 3;
-                    //uint16 c = (uint16)((r << 11) | (g << 6) | (b << 1) | 1);
                     uint32 c = ((r << 24) | (g << 16) | (b << 8) | 0xff);
                     fb[x * 240 + (239 - y)] = c;
                 }
@@ -458,76 +91,6 @@ void clearTopScreenWithLogo()
 }
 
 
-
-//-------------------------------------------
-// Reads and processes Joy Pad buttons.
-//-------------------------------------------
-int debugFrameCounter = 0;
-extern int csndTicksPerSecond;
-int adjustableValue = 0x70;
-
-uint32 readJoypadButtons()
-{
-    hidScanInput();
-    n3dsKeysHeld = hidKeysHeld();
-
-    u32 keysDown = (~lastKeysHeld) & n3dsKeysHeld;
-
-#ifndef RELEASE
-    // -----------------------------------------------
-    // For debug only
-    // -----------------------------------------------
-    if (GPU3DS.enableDebug)
-    {
-        keysDown = keysDown & (~lastKeysHeld);
-        if (keysDown || (n3dsKeysHeld & KEY_L))
-        {
-            //printf ("  kd:%x lkh:%x nkh:%x\n", keysDown, lastKeysHeld, n3dsKeysHeld);
-            //Settings.Paused = false;
-        }
-        else
-        {
-            //printf ("  kd:%x lkh:%x nkh:%x\n", keysDown, lastKeysHeld, n3dsKeysHeld);
-            //Settings.Paused = true;
-        }
-    }
-
-    if (keysDown & (KEY_SELECT))
-    {
-        GPU3DS.enableDebug = !GPU3DS.enableDebug;
-        printf ("Debug mode = %d\n", GPU3DS.enableDebug);
-    }
-
-    /*if (keysDown & (KEY_L))
-    {
-        adjustableValue -= 1;
-        printf ("Adjust: %d\n", adjustableValue);
-    }
-    if (keysDown & (KEY_R))
-    {
-        adjustableValue += 1;
-        printf ("Adjust: %d\n", adjustableValue);
-    }*/
-    // -----------------------------------------------
-#endif
-
-    if (keysDown & KEY_TOUCH)
-    {
-        // Save the SRAM if it has been modified before we going
-        // into the menu.
-        //
-        if (CPU.SRAMModified || CPU.AutoSaveTimer)
-        {
-            S9xAutoSaveSRAM();
-        }
-
-        if (GPU3DS.emulatorState == EMUSTATE_EMULATE)
-            GPU3DS.emulatorState = EMUSTATE_PAUSEMENU;
-    }
-    lastKeysHeld = n3dsKeysHeld;
-    return keysDown;
-
-}
 
 
 //----------------------------------------------------------------------
@@ -681,7 +244,6 @@ SMenuItem optionMenu[] = {
 SMenuItem cheatMenu[MAX_CHEATS+1] =
 {
     MENU_MAKE_HEADER2   ("Cheats")
-    /*{ -1         , "Cheats", -1, 0, 0, 0 }*/
 };
 
 char *amplificationText[9] =
@@ -905,7 +467,7 @@ bool settingsReadWriteFullListGlobal(bool writeMode)
     config3dsReadWriteInt32("Font=%d\n", &settings3DS.Font, 0, 2);
 
     // Fixes the bug where we have spaces in the directory name
-    config3dsReadWriteString("Dir=%s\n", "Dir=%1000[^\n]s\n", cwd);
+    config3dsReadWriteString("Dir=%s\n", "Dir=%1000[^\n]s\n", file3dsGetCurrentDir());
     config3dsReadWriteString("ROM=%s\n", "ROM=%1000[^\n]s\n", romFileNameLastSelected);
 
     // All new options should come here!
@@ -996,25 +558,15 @@ bool settingsLoad(bool includeGameSettings = true)
 extern SCheatData Cheat;
 void menuSetupCheats();  // forward declaration
 
-void snesLoadRom()
+void emulatorLoadRom()
 {
     consoleInit(GFX_BOTTOM, NULL);
     gfxSetDoubleBuffering(GFX_BOTTOM, false);
     consoleClear();
     settingsSave(false);
-    snprintf(romFileNameFullPath, _MAX_PATH, "%s%s", cwd, romFileName);
+    snprintf(romFileNameFullPath, _MAX_PATH, "%s%s", file3dsGetCurrentDir(), romFileName);
 
-    bool loaded = Memory.LoadROM(romFileNameFullPath);
-    Memory.LoadSRAM (S9xGetFilename (".srm"));
-
-    gpu3dsInitializeMode7Vertexes();
-    gpu3dsCopyVRAMTilesIntoMode7TileVertexes(Memory.VRAM);
-    cacheInit();
-    //printf ("a\n");
-    // Bug fix: For some reason doing this has a probability of locking up the GPU
-    // so we will comment this out.
-    //gpu3dsClearAllRenderTargets();
-    //printf ("b\n");
+    impl3dsLoadROM(romFileNameFullPath);
 
     GPU3DS.emulatorState = EMUSTATE_EMULATE;
 
@@ -1023,11 +575,6 @@ void snesLoadRom()
     settingsUpdateAllSettings();
     menuSetupCheats();
 
-    //Settings.HWOBJRenderingMode = 1;
-    Settings.HWOBJRenderingMode = 0;
-
-    debugFrameCounter = 0;
-    prevSnesJoyPad = 0;
     snd3DS.generateSilence = false;
 }
 
@@ -1038,87 +585,14 @@ void snesLoadRom()
 SMenuItem fileMenu[1000];
 char romFileNames[1000][_MAX_PATH];
 
-
 int totalRomFileCount = 0;
 
-
-
 //----------------------------------------------------------------------
-// Go up to the parent directory.
-//----------------------------------------------------------------------
-void fileGoToParentDirectory(void)
-{
-    int len = strlen(cwd);
-
-    if (len > 1)
-    {
-        for (int i = len - 2; i>=0; i--)
-        {
-            if (cwd[i] == '/')
-            {
-
-                cwd[i + 1] = 0;
-                break;
-            }
-        }
-    }
-}
-
-
-//----------------------------------------------------------------------
-// Go up to the child directory.
-//----------------------------------------------------------------------
-void fileGoToChildDirectory(char *childDir)
-{
-    strncat(cwd, childDir, _MAX_PATH);
-    strncat(cwd, "/", _MAX_PATH);
-}
-
-
-//----------------------------------------------------------------------
-// Load all ROM file names (up to 512 ROMs)
+// Load all ROM file names (up to 1000 ROMs)
 //----------------------------------------------------------------------
 void fileGetAllFiles(void)
 {
-    std::vector<std::string> files;
-    char buffer[_MAX_PATH];
-
-    struct dirent* dir;
-    DIR* d = opendir(cwd);
-
-    if (strlen(cwd) > 1)
-    {
-        snprintf(buffer, _MAX_PATH, "\x01 ..");
-        files.push_back(buffer);
-    }
-
-    if (d)
-    {
-        while ((dir = readdir(d)) != NULL)
-        {
-            char *dot = strrchr(dir->d_name, '.');
-
-            if (dir->d_name[0] == '.')
-                continue;
-            if (dir->d_type == DT_DIR)
-            {
-                snprintf(buffer, _MAX_PATH, "\x01 %s", dir->d_name);
-                files.push_back(buffer);
-            }
-            if (dir->d_type == DT_REG)
-            {
-                if (!strstr(dir->d_name, ".smc") &&
-                    !strstr(dir->d_name, ".fig") &&
-                    !strstr(dir->d_name, ".sfc"))
-                    continue;
-
-                files.push_back(dir->d_name);
-            }
-        }
-        closedir(d);
-    }
-
-    std::sort(files.begin(), files.end());
+    std::vector<std::string> files = file3dsGetFiles("smc,sfc,fig", 1000);
 
     totalRomFileCount = 0;
 
@@ -1234,7 +708,7 @@ void menuSelectFile(void)
     menu3dsAddTab("Emulator", emulatorNewMenu, emulatorMenuCount);
     menu3dsAddTab("Select ROM", fileMenu, totalRomFileCount);
     menu3dsSetTabSubTitle(0, NULL);
-    menu3dsSetTabSubTitle(1, cwd);
+    menu3dsSetTabSubTitle(1, file3dsGetCurrentDir());
     menu3dsSetCurrentMenuTab(1);
     if (previousFileID >= 0)
         menu3dsSetSelectedItemIndexByID(1, previousFileID);
@@ -1259,21 +733,21 @@ void menuSelectFile(void)
             if (romFileName[0] == 1)
             {
                 if (strcmp(romFileName, "\x01 ..") == 0)
-                    fileGoToParentDirectory();
+                    file3dsGoToParentDirectory();
                 else
-                    fileGoToChildDirectory(&romFileName[2]);
+                    file3dsGoToChildDirectory(&romFileName[2]);
 
                 fileGetAllFiles();
                 menu3dsClearMenuTabs();
                 menu3dsAddTab("Emulator", emulatorNewMenu, emulatorMenuCount);
                 menu3dsAddTab("Select ROM", fileMenu, totalRomFileCount);
                 menu3dsSetCurrentMenuTab(1);
-                menu3dsSetTabSubTitle(1, cwd);
+                menu3dsSetTabSubTitle(1, file3dsGetCurrentDir());
                 selection = -1;
             }
             else
             {
-                snesLoadRom();
+                emulatorLoadRom();
                 return;
             }
         }
@@ -1295,7 +769,7 @@ void menuSelectFile(void)
 
     menu3dsHideMenu();
 
-    snesLoadRom();
+    emulatorLoadRom();
 }
 
 
@@ -1326,7 +800,6 @@ void menuItemChangedCallback(int ID, int value)
 //----------------------------------------------------------------------
 // Menu when the emulator is paused in-game.
 //----------------------------------------------------------------------
-
 void menuPause()
 {
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
@@ -1352,7 +825,7 @@ void menuPause()
     menu3dsSetTabSubTitle(0, NULL);
     menu3dsSetTabSubTitle(1, NULL);
     menu3dsSetTabSubTitle(2, NULL);
-    menu3dsSetTabSubTitle(3, cwd);
+    menu3dsSetTabSubTitle(3, file3dsGetCurrentDir());
     if (previousFileID >= 0)
         menu3dsSetSelectedItemIndexByID(3, previousFileID);
     menu3dsSetCurrentMenuTab(0);
@@ -1386,9 +859,9 @@ void menuPause()
             if (romFileName[0] == 1)
             {
                 if (strcmp(romFileName, "\x01 ..") == 0)
-                    fileGoToParentDirectory();
+                    file3dsGoToParentDirectory();
                 else
-                    fileGoToChildDirectory(&romFileName[2]);
+                    file3dsGoToChildDirectory(&romFileName[2]);
 
                 fileGetAllFiles();
                 menu3dsClearMenuTabs();
@@ -1397,7 +870,7 @@ void menuPause()
                 menu3dsAddTab("Cheats", cheatMenu, cheatMenuCount);
                 menu3dsAddTab("Select ROM", fileMenu, totalRomFileCount);
                 menu3dsSetCurrentMenuTab(3);
-                menu3dsSetTabSubTitle(3, cwd);
+                menu3dsSetTabSubTitle(3, file3dsGetCurrentDir());
             }
             else
             {
@@ -1409,44 +882,44 @@ void menuPause()
         else if (selection >= 2001 && selection <= 2010)
         {
             int slot = selection - 2000;
-            char s[_MAX_PATH];
             char text[200];
            
             sprintf(text, "Saving into slot %d...\nThis may take a while", slot);
-            int result = menu3dsShowDialog("Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
-            sprintf(s, ".%d.frz", slot);
-            Snapshot(S9xGetFilename (s));
+            menu3dsShowDialog("Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
+            bool result = impl3dsSaveState(slot);
             menu3dsHideDialog();
 
-            sprintf(text, "Slot %d save completed.", slot);
-            result = menu3dsShowDialog("Savestates", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
-            menu3dsHideDialog();
+            if (result)
+            {
+                sprintf(text, "Slot %d save completed.", slot);
+                result = menu3dsShowDialog("Savestates", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                menu3dsHideDialog();
+            }
+            else
+            {
+                sprintf(text, "Oops. Unable to save slot %d!", slot);
+                result = menu3dsShowDialog("Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                menu3dsHideDialog();
+            }
 
             menu3dsSetSelectedItemIndexByID(0, 1000);
         }
         else if (selection >= 3001 && selection <= 3010)
         {
             int slot = selection - 3000;
-            char s[_MAX_PATH];
+            char text[200];
 
-            sprintf(s, ".%d.frz", slot);
-            if (S9xLoadSnapshot(S9xGetFilename (s)))
+            bool result = impl3dsLoadState(slot);
+            if (result)
             {
-                gpu3dsInitializeMode7Vertexes();
-                gpu3dsCopyVRAMTilesIntoMode7TileVertexes(Memory.VRAM);
-                debugFrameCounter = 0;
-                // Bug fix: For some reason doing this has a probability of locking up the GPU
-                // so we will comment this out.
-                //gpu3dsClearAllRenderTargets();
                 GPU3DS.emulatorState = EMUSTATE_EMULATE;
                 consoleClear();
-
                 break;
             }
             else
             {
-                sprintf(s, "Oops. Unable to load slot %d!", slot);
-                menu3dsShowDialog("Savestates", s, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                sprintf(text, "Oops. Unable to load slot %d!", slot);
+                menu3dsShowDialog("Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
                 menu3dsHideDialog();
             }
         }
@@ -1457,6 +930,9 @@ void menuPause()
             char ext[256];
             const char *path = NULL;
 
+            // Loop through and look for an non-existing
+            // file name.
+            //
             int i = 1;
             while (i <= 999)
             {
@@ -1467,7 +943,6 @@ void menuPause()
                 path = NULL;
                 i++;
             }
-
 
             bool success = false;
             if (path)
@@ -1496,17 +971,9 @@ void menuPause()
 
             if (result == 1)
             {
-                S9xReset();
-                cacheInit();
-                gpu3dsInitializeMode7Vertexes();
-                gpu3dsCopyVRAMTilesIntoMode7TileVertexes(Memory.VRAM);
-                // Bug fix: For some reason doing this has a probability of locking up the GPU
-                // so we will comment this out.
-                //gpu3dsClearAllRenderTargets();
+                impl3dsResetConsole();
                 GPU3DS.emulatorState = EMUSTATE_EMULATE;
                 consoleClear();
-
-                prevSnesJoyPad = 0;
 
                 break;
             }
@@ -1530,15 +997,6 @@ void menuPause()
 
     menu3dsHideMenu();
 
-    // Gets the last key pressed and saves it into menuKeyDown
-    //
-    while (aptMainLoop())
-    {
-        hidScanInput();
-        menuKeyDown = hidKeysHeld() & (KEY_A | KEY_B | KEY_START);
-        break;
-    }
-
     // Save settings and cheats
     //
     if (menuCopySettings(true))
@@ -1561,7 +1019,7 @@ void menuPause()
     // Loads the new ROM if a ROM was selected.
     //
     if (loadRomBeforeExit)
-        snesLoadRom();
+        emulatorLoadRom();
 
 }
 
@@ -1617,114 +1075,15 @@ void menuSetupCheats()
 }
 
 
-#define P1_ButtonA 1
-#define P1_ButtonB 2
-#define P1_ButtonX 3
-#define P1_ButtonY 4
-#define P1_ButtonL 5
-#define P1_ButtonR 6
-#define P1_Up 7
-#define P1_Down 8
-#define P1_Left 9
-#define P1_Right 10
-#define P1_Select 11
-#define P1_Start 1
-
-
-//-------------------------------------------------------
-// Initialize the SNES 9x engine.
-//-------------------------------------------------------
-bool snesInitialize()
-{
-
-    memset(&Settings, 0, sizeof(Settings));
-    Settings.Paused = false;
-    Settings.BGLayering = TRUE;
-    Settings.SoundBufferSize = 0;
-    Settings.CyclesPercentage = 100;
-    Settings.APUEnabled = Settings.NextAPUEnabled = TRUE;
-    Settings.H_Max = SNES_CYCLES_PER_SCANLINE;
-    Settings.SkipFrames = 0;
-    Settings.ShutdownMaster = TRUE;
-    Settings.FrameTimePAL = 20000;
-    Settings.FrameTimeNTSC = 16667;
-    Settings.FrameTime = Settings.FrameTimeNTSC;
-    Settings.DisableSampleCaching = FALSE;
-    Settings.DisableMasterVolume = FALSE;
-    Settings.Mouse = FALSE;
-    Settings.SuperScope = FALSE;
-    Settings.MultiPlayer5 = FALSE;
-    Settings.ControllerOption = SNES_JOYPAD;
-    Settings.SupportHiRes = FALSE;
-    Settings.NetPlay = FALSE;
-    Settings.ServerName [0] = 0;
-    Settings.ThreadSound = FALSE;
-    Settings.AutoSaveDelay = 60;         // Bug fix to save SRAM within 60 frames (1 second instead of 30 seconds)
-#ifdef _NETPLAY_SUPPORT
-    Settings.Port = NP_DEFAULT_PORT;
-#endif
-    Settings.ApplyCheats = TRUE;
-    Settings.TurboMode = FALSE;
-    Settings.TurboSkipFrames = 15;
-
-    Settings.Transparency = FALSE;
-    Settings.SixteenBit = TRUE;
-    Settings.HBlankStart = (256 * Settings.H_Max) / SNES_HCOUNTER_MAX;
-
-    // Sound related settings.
-    Settings.DisableSoundEcho = FALSE;
-    Settings.SixteenBitSound = TRUE;
-    Settings.SoundPlaybackRate = SAMPLE_RATE;
-    Settings.Stereo = TRUE;
-    Settings.SoundBufferSize = 0;
-    Settings.APUEnabled = Settings.NextAPUEnabled = TRUE;
-    Settings.InterpolatedSound = TRUE;
-    Settings.AltSampleDecode = 0;
-    Settings.SoundEnvelopeHeightReading = 1;
-
-    if(!Memory.Init())
-    {
-        printf ("Unable to initialize memory.\n");
-        return false;
-    }
-
-    if(!S9xInitAPU())
-    {
-        printf ("Unable to initialize APU.\n");
-        return false;
-    }
-
-    if(!S9xGraphicsInit())
-    {
-        printf ("Unable to initialize graphics.\n");
-        return false;
-    }
-
-
-    if(!S9xInitSound (
-        7, Settings.Stereo,
-        Settings.SoundBufferSize))
-    {
-        printf ("Unable to initialize sound.\n");
-        return false;
-    }
-    so.playback_rate = Settings.SoundPlaybackRate;
-    so.stereo = Settings.Stereo;
-    so.sixteen_bit = Settings.SixteenBitSound;
-    so.buffer_size = 32768;
-    so.encoded = FALSE;
-
-
-    return true;
-}
-
-
 //--------------------------------------------------------
-// Initialize the Snes9x engine and everything else.
+// Initialize the emulator engine and everything else.
+// This calls the impl3dsInitializeCore, which executes
+// initialization code specific to the emulation core.
 //--------------------------------------------------------
 void emulatorInitialize()
 {
-    getcwd(cwd, 1023);
+    file3dsInitialize();
+
     romFileNameLastSelected[0] = 0;
 
     if (!gpu3dsInitialize())
@@ -1735,10 +1094,9 @@ void emulatorInitialize()
 
     printf ("Initializing...\n");
 
-    cacheInit();
-    if (!snesInitialize())
+    if (!impl3dsInitializeCore())
     {
-        printf ("Unable to initialize SNES9x\n");
+        printf ("Unable to initialize emulator core\n");
         exit(0);
     }
 
@@ -1763,8 +1121,10 @@ void emulatorInitialize()
     enableExitHook();
 
     settingsLoad(false);
-    if (cwd[0] == 0)
-        getcwd(cwd, 1023);
+
+    // Do this one more time.
+    if (file3dsGetCurrentDir()[0] == 0)
+        file3dsInitialize();
 }
 
 
@@ -1774,6 +1134,8 @@ void emulatorInitialize()
 void emulatorFinalize()
 {
     consoleClear();
+
+    impl3dsFinalize();
 
 #ifndef RELEASE
     printf("gspWaitForP3D:\n");
@@ -1791,21 +1153,6 @@ void emulatorFinalize()
     printf("gpu3dsFinalize:\n");
 #endif
     gpu3dsFinalize();
-
-#ifndef RELEASE
-    printf("S9xGraphicsDeinit:\n");
-#endif
-    S9xGraphicsDeinit();
-
-#ifndef RELEASE
-    printf("S9xDeinitAPU:\n");
-#endif
-    S9xDeinitAPU();
-    
-#ifndef RELEASE
-    printf("Memory.Deinit:\n");
-#endif
-    Memory.Deinit();
 
 #ifndef RELEASE
     printf("ptmSysmExit:\n");
@@ -1836,7 +1183,10 @@ void emulatorFinalize()
 bool firstFrame = true;
 
 
-
+//---------------------------------------------------------
+// Counts the number of frames per second, and prints
+// it to the bottom screen every 60 frames.
+//---------------------------------------------------------
 char frameCountBuffer[70];
 void updateFrameCount()
 {
@@ -1888,9 +1238,12 @@ void updateFrameCount()
 
 
 //----------------------------------------------------------
-// Main SNES emulation loop.
+// This is the main emulation loop. It calls the 
+//    impl3dsRunOneFrame
+//   (which must be implemented for any new core)
+// for the execution of the frame.
 //----------------------------------------------------------
-void snesEmulatorLoop()
+void emulatorLoop()
 {
 	// Main loop
     //GPU3DS.enableDebug = true;
@@ -1911,7 +1264,7 @@ void snesEmulatorLoop()
 
     long startFrameTick = svcGetSystemTick();
 
-    IPPU.RenderThisFrame = true;
+    bool skipDrawingFrame = false;
 
     // Reinitialize the console.
     consoleInit(GFX_BOTTOM, NULL);
@@ -1924,155 +1277,30 @@ void snesEmulatorLoop()
 
     snd3dsStartPlaying();
 
-	while (aptMainLoop())
+	while (true)
 	{
         t3dsStartTiming(1, "aptMainLoop");
 
-        gpu3dsCheckSlider();
-        Memory.ApplySpeedHackPatches();
         startFrameTick = svcGetSystemTick();
+        aptMainLoop();
 
         if (appExiting)
             break;
 
+        gpu3dsCheckSlider();
         updateFrameCount();
 
-        gpu3dsStartNewFrame();
-        gpu3dsEnableAlphaBlending();
+    	input3dsScanInputForEmulation();
+        impl3dsRunOneFrame(firstFrame, skipDrawingFrame);
 
-		readJoypadButtons();
         if (GPU3DS.emulatorState != EMUSTATE_EMULATE)
             break;
 
-		gpu3dsSetRenderTargetToMainScreenTexture();
-	    gpu3dsUseShader(2);             // for drawing tiles
+        firstFrame = false; 
 
-#ifdef RELEASE
-        if (!Settings.SA1)
-            S9xMainLoop();
-        else
-            S9xMainLoopWithSA1();
-#else
-        if (!Settings.Paused)
-        {
-            if (!Settings.SA1)
-                S9xMainLoop();
-            else
-                S9xMainLoopWithSA1();
-        }
-#endif
-/*
-        if (IPPU.RenderThisFrame)
-        {
-            for (int j = 0; j < 10; j++)
-                for (int i = 0; i < 65536; i++)
-                    forSlowSimulation[i] = Memory.VRAM[i] + (i*j);
-        }
-  */
-
-        // ----------------------------------------------
-        // Copy the SNES main/sub screen to the 3DS frame
-        // buffer
-        // (Can this be done in the V_BLANK?)
-        t3dsStartTiming(3, "CopyFB");
-        gpu3dsSetRenderTargetToTopFrameBuffer();
-
-        if (firstFrame)
-        {
-            // Clear the entire frame buffer to black, including the borders
-            //
-            gpu3dsDisableAlphaBlending();
-            gpu3dsSetTextureEnvironmentReplaceColor();
-            gpu3dsDrawRectangle(0, 0, 400, 240, 0, 0x000000ff);
-            gpu3dsEnableAlphaBlending();
-        }
-
-        gpu3dsUseShader(1);             // for copying to screen.
-        gpu3dsDisableAlphaBlending();
-        gpu3dsDisableDepthTest();
-        gpu3dsDisableAlphaTest();
-
-        gpu3dsBindTextureMainScreen(GPU_TEXUNIT0);
-        gpu3dsSetTextureEnvironmentReplaceTexture0();
-        gpu3dsDisableStencilTest();
-
-        int sWidth = settings3DS.StretchWidth;
-        int sHeight = (settings3DS.StretchHeight == -1 ? PPU.ScreenHeight - 1 : settings3DS.StretchHeight);
-        if (sWidth == 04030000)
-            sWidth = sHeight * 4 / 3;
-        else if (sWidth == 01010000)
-        {
-            if (PPU.ScreenHeight < SNES_HEIGHT_EXTENDED)
-            {
-                sWidth = SNES_HEIGHT_EXTENDED * SNES_WIDTH / SNES_HEIGHT;
-                sHeight = SNES_HEIGHT_EXTENDED;
-            }
-            else
-            {
-                sWidth = SNES_WIDTH;
-                sHeight = SNES_HEIGHT_EXTENDED;
-            }
-        }
-
-        int sx0 = (400 - sWidth) / 2;
-        int sx1 = sx0 + sWidth;
-        int sy0 = (240 - sHeight) / 2;
-        int sy1 = sy0 + sHeight;
-
-        gpu3dsAddQuadVertexes(
-            sx0, sy0, sx1, sy1,
-            settings3DS.CropPixels, settings3DS.CropPixels ? settings3DS.CropPixels : 1, 
-            256 - settings3DS.CropPixels, PPU.ScreenHeight - settings3DS.CropPixels, 
-            0.1f);
-        gpu3dsDrawVertexes();
-
-        t3dsEndTiming(3);
-
-        if (!firstFrame)
-        {
-            // ----------------------------------------------
-            // Wait for the rendering to the SNES
-            // main/sub screen for the previous frame
-            // to complete
-            //
-            t3dsStartTiming(5, "Transfer");
-            gpu3dsTransferToScreenBuffer();
-            gpu3dsSwapScreenBuffers();
-            t3dsEndTiming(5);
-
-        }
-        else
-        {
-            firstFrame = false;
-        }
-
-        // ----------------------------------------------
-        // Flush all draw commands of the current frame
-        // to the GPU.
-        t3dsStartTiming(4, "Flush");
-        gpu3dsFlush();
-        t3dsEndTiming(4);
-
-        t3dsEndTiming(1);
-
-
-        // For debugging only.
-        /*if (!GPU3DS.isReal3DS)
-        {
-            snd3dsMixSamples();
-            //snd3dsMixSamples();
-            //printf ("---\n");
-        }*/
-
-        /*
-        // Debugging only
-        snd3dsMixSamples();
-        printf ("\n");
-
-        S9xPrintAPUState ();
-        printf ("----\n");*/
-
-
+        // This either waits for the next frame, or decides to skip
+        // the rendering for the next frame if we are too slow.
+        //
 #ifndef RELEASE
         if (GPU3DS.isReal3DS)
 #endif
@@ -2084,16 +1312,11 @@ void snesEmulatorLoop()
             snesFrameTotalActualTicks += actualTicksThisFrame;  // actual time spent rendering past x frames.
             snesFrameTotalAccurateTicks += settings3DS.TicksPerFrame;  // time supposed to be spent rendering past x frames.
 
-            //printf ("%7.5f - %7.5f = %7.5f ",
-            //    snesFrameTotalActualTime, snesFrameTotalCorrectTime,
-            //    snesFrameTotalActualTime - snesFrameTotalCorrectTime);
-
             int isSlow = 0;
 
 
             long skew = snesFrameTotalAccurateTicks - snesFrameTotalActualTicks;
 
-            //printf ("%ld %ld sk : %ld", snesFrameTotalAccurateTicks, snesFrameTotalActualTicks, skew);
             if (skew < 0)
             {
                 // We've skewed out of the actual frame rate.
@@ -2101,18 +1324,14 @@ void snesEmulatorLoop()
                 //
                 if (skew < -settings3DS.TicksPerFrame/10 && snesFramesSkipped < settings3DS.MaxFrameSkips)
                 {
-                    //printf (" s\n");
-                    // Skewed beyond threshold. So now we skip.
-                    //
-                    IPPU.RenderThisFrame = false;
+                    skipDrawingFrame = true;
                     snesFramesSkipped++;
 
                     framesSkippedCount++;   // this is used for the stats display every 60 frames.
                 }
                 else
                 {
-                    //printf (" -\n");
-                    IPPU.RenderThisFrame = true;
+                    skipDrawingFrame = false;
 
                     if (snesFramesSkipped >= settings3DS.MaxFrameSkips)
                     {
@@ -2127,16 +1346,15 @@ void snesEmulatorLoop()
 
                 float timeDiffInMilliseconds = (float)skew * 1000000 / TICKS_PER_SEC;
 
-                //printf (" +\n");
-                svcSleepThread ((long)(timeDiffInMilliseconds * 1000));
-
-                IPPU.RenderThisFrame = true;
-
                 // Reset the counters.
                 //
                 snesFrameTotalActualTicks = 0;
                 snesFrameTotalAccurateTicks = 0;
                 snesFramesSkipped = 0;
+
+                svcSleepThread ((long)(timeDiffInMilliseconds * 1000));
+
+                skipDrawingFrame = false;
             }
 
         }
@@ -2147,14 +1365,13 @@ void snesEmulatorLoop()
 }
 
 
+//---------------------------------------------------------
+// Main entrypoint.
+//---------------------------------------------------------
 int main()
 {
-    //testAPU();
-    //testGPU();
-    //testTileCache();
     emulatorInitialize();
     clearTopScreenWithLogo();
-
 
     menuSelectFile();
 
@@ -2170,7 +1387,7 @@ int main()
                 break;
 
             case EMUSTATE_EMULATE:
-                snesEmulatorLoop();
+                emulatorLoop();
                 break;
 
             case EMUSTATE_END:

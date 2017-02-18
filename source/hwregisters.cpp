@@ -92,6 +92,7 @@
 #include "memmap.h"
 #include "hwregisters.h"
 #include "apu.h"
+#include "bsx.h"
 
 uint8 S9xGetByteFromRegister (uint8 *GetAddress, uint32 Address)
 {
@@ -154,6 +155,9 @@ uint8 S9xGetByteFromRegister (uint8 *GetAddress, uint32 Address)
 			printf ("DEBUG R(B) %06x\n", Address);
  #endif
 			return OpenBus;
+
+		case CMemory::MAP_BSX:
+			return (S9xGetBSX(Address));
 
 		default:
 		case CMemory::MAP_NONE:
@@ -257,6 +261,8 @@ uint16 S9xGetWordFromRegister (uint8 *GetAddress, uint32 Address)
  #endif
 			return (OpenBus | (OpenBus<<8));
 
+		case CMemory::MAP_BSX:
+			return (S9xGetBSX(Address) | (S9xGetBSX(Address + 1) << 8));
 
 		default:
 		case CMemory::MAP_NONE:
@@ -369,6 +375,10 @@ void S9xSetByteToRegister (uint8 Byte, uint8* SetAddress, uint32 Address)
 			S9xSetST018(Byte,Address);
 			return;
     
+		case CMemory::MAP_BSX:
+			S9xSetBSX(Byte, Address);
+			return;
+
 		default:
 		case CMemory::MAP_NONE:
 #ifdef MK_TRACE_BAD_WRITES
@@ -510,6 +520,12 @@ void S9xSetWordToRegister(uint16 Word, uint8 *SetAddress, uint32 Address)
 		case CMemory::MAP_SETA_RISC:
 			S9xSetST018 (Word & 0xff, Address);
 			S9xSetST018 ((uint8) (Word >> 8),(Address + 1));
+			return;
+
+		case CMemory::MAP_BSX:
+			S9xSetBSX((uint8) Word, Address);
+			S9xSetBSX(Word >> 8, Address + 1);
+
 			return;
 
 		default:

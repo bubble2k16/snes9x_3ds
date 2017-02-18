@@ -1,3 +1,7 @@
+//=============================================================================
+// Basic user interface framework for low-level drawing operations to
+// the bottom screen.
+//=============================================================================
 
 #include <cstdio>
 #include <cstring>

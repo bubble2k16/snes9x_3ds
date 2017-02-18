@@ -453,7 +453,7 @@ void S9xClearIRQ (uint32 source)
     CLEAR_IRQ_SOURCE (source);
 }
 
-extern int debugFrameCounter;
+int debugFrameCounter = 0;
 
 void S9xDoHBlankProcessing ()
 {

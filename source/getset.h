@@ -97,6 +97,7 @@
 #include "spc7110.h"
 #include "obc1.h"
 #include "seta.h"
+#include "bsx.h"
 
 #include "3dsopt.h"
 #include "hwregisters.h"
@@ -411,6 +412,10 @@ INLINE void S9xSetPCBase (uint32 Address)
 #ifdef DEBUGGER
 		printf ("SBP %06x\n", Address);
 #endif
+		
+		case CMemory::MAP_BSX:
+			CPU.PCBase = S9xGetBasePointerBSX(Address);
+			return;
 		
     default:
     case CMemory::MAP_NONE:

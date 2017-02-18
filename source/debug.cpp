@@ -271,11 +271,11 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
     uint32 Cycles = CPU.Cycles;
     uint8 *WaitAddress = CPU.WaitAddress;
 
-    S9xOpcode = S9xGetByte ((Bank << 16) + Address);
+    S9xOpcode = S9xGetByteNoCycles ((Bank << 16) + Address);
     sprintf (Line, "$%02X/%04X %02X ", Bank, Address, S9xOpcode);
-    Operant[0] = S9xGetByte ((Bank << 16) + Address + 1);
-    Operant[1] = S9xGetByte ((Bank << 16) + Address + 2);
-    Operant[2] = S9xGetByte ((Bank << 16) + Address + 3);
+    Operant[0] = S9xGetByteNoCycles ((Bank << 16) + Address + 1);
+    Operant[1] = S9xGetByteNoCycles ((Bank << 16) + Address + 2);
+    Operant[2] = S9xGetByteNoCycles ((Bank << 16) + Address + 3);
 
     switch (AddrModes[S9xOpcode])
     {
@@ -424,7 +424,7 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Operant[0];
 	Word += Registers.D.W;
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-32s[$%02X:%04X]", Line, Registers.DB, Word);
 	Size = 2;
 	break;
@@ -438,7 +438,7 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
 	Word = Operant[0];
 	Word += Registers.D.W;
 	Word += Registers.X.W;
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-32s[$%02X:%04X]", Line, Registers.DB, Word);
 	Size = 2;
 	break;
@@ -451,7 +451,7 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Operant[0];
 	Word += Registers.D.W;
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	Word += Registers.Y.W;
 	sprintf (Line, "%-32s[$%02X:%04X]", Line, Registers.DB, Word);
 	Size = 2;
@@ -465,8 +465,8 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Operant[0];
 	Word += Registers.D.W;
-	Byte = S9xGetByte (Word + 2);
-	Word = S9xGetWord (Word);
+	Byte = S9xGetByteNoCycles (Word + 2);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-32s[$%02X:%04X]", Line, Byte, Word);
 	Size = 2;
 	break;
@@ -479,8 +479,8 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Operant[0];
 	Word += Registers.D.W;
-	Byte = S9xGetByte (Word + 2);
-	Word = S9xGetWord (Word);
+	Byte = S9xGetByteNoCycles (Word + 2);
+	Word = S9xGetWordNoCycles (Word);
 	Word += Registers.Y.W;
 	sprintf (Line, "%-32s[$%02X:%04X]", Line, Byte, Word);
 	Size = 2;
@@ -578,7 +578,7 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Registers.S.W;
 	Word += Operant[0];
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	Word += Registers.Y.W;
 	sprintf (Line, "%-32s[$%02X:%04X]", Line, Registers.DB, Word);
 	Size = 2;
@@ -593,7 +593,7 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
 		     Operant[1],
 		     Operant[0]);
 	Word = (Operant[1] << 8) | Operant[0];
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-32s[$%02X:%04X]", Line, Registers.PB, Word);
 	Size = 3;
 	break;
@@ -607,8 +607,8 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
 		     Operant[1],
 		     Operant[0]);
 	Word = (Operant[1] << 8) | Operant[0];
-	Byte = S9xGetByte (Word + 2);
-	Word = S9xGetWord (Word);
+	Byte = S9xGetByteNoCycles (Word + 2);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-32s[$%02X:%04X]", Line, Byte, Word);
 	Size = 3;
 	break;
@@ -623,7 +623,7 @@ uint8 S9xOPrintLong (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = (Operant[1] << 8) | Operant[0];
 	Word += Registers.X.W;
-	Word = S9xGetWord (ICPU.ShiftedPB + Word);
+	Word = S9xGetWordNoCycles (ICPU.ShiftedPB + Word);
 	sprintf (Line, "%-32s[$%02X:%04X]", Line, Registers.PB, Word);
 	Size = 3;
 	break;
@@ -695,11 +695,11 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
     uint32 Cycles = CPU.Cycles;
     uint8 *WaitAddress = CPU.WaitAddress;
 
-    S9xOpcode = S9xGetByte ((Bank << 16) + Address);
+    S9xOpcode = S9xGetByteNoCycles ((Bank << 16) + Address);
     sprintf (Line, "%02X%04X %02X", Bank, Address, S9xOpcode);
-    Operant[0] = S9xGetByte ((Bank << 16) + Address + 1);
-    Operant[1] = S9xGetByte ((Bank << 16) + Address + 2);
-    Operant[2] = S9xGetByte ((Bank << 16) + Address + 3);
+    Operant[0] = S9xGetByteNoCycles ((Bank << 16) + Address + 1);
+    Operant[1] = S9xGetByteNoCycles ((Bank << 16) + Address + 2);
+    Operant[2] = S9xGetByteNoCycles ((Bank << 16) + Address + 3);
 
     switch (AddrModes[S9xOpcode])
     {
@@ -848,7 +848,7 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Operant[0];
 	Word += Registers.D.W;
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-30s[$%02X:%04X]", Line, Registers.DB, Word);
 	Size = 2;
 	break;
@@ -862,7 +862,7 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
 	Word = Operant[0];
 	Word += Registers.D.W;
 	Word += Registers.X.W;
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-30s[$%02X:%04X]", Line, Registers.DB, Word);
 	Size = 2;
 	break;
@@ -875,7 +875,7 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Operant[0];
 	Word += Registers.D.W;
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	Word += Registers.Y.W;
 	sprintf (Line, "%-30s[$%02X:%04X]", Line, Registers.DB, Word);
 	Size = 2;
@@ -889,8 +889,8 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Operant[0];
 	Word += Registers.D.W;
-	Byte = S9xGetByte (Word + 2);
-	Word = S9xGetWord (Word);
+	Byte = S9xGetByteNoCycles (Word + 2);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-30s[$%02X:%04X]", Line, Byte, Word);
 	Size = 2;
 	break;
@@ -903,8 +903,8 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Operant[0];
 	Word += Registers.D.W;
-	Byte = S9xGetByte (Word + 2);
-	Word = S9xGetWord (Word);
+	Byte = S9xGetByteNoCycles (Word + 2);
+	Word = S9xGetWordNoCycles (Word);
 	Word += Registers.Y.W;
 	sprintf (Line, "%-30s[$%02X:%04X]", Line, Byte, Word);
 	Size = 2;
@@ -1002,7 +1002,7 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = Registers.S.W;
 	Word += Operant[0];
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	Word += Registers.Y.W;
 	sprintf (Line, "%-30s[$%02X:%04X]", Line, Registers.DB, Word);
 	Size = 2;
@@ -1017,7 +1017,7 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
 		     Operant[1],
 		     Operant[0]);
 	Word = (Operant[1] << 8) | Operant[0];
-	Word = S9xGetWord (Word);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-30s[$%02X:%04X]", Line, Registers.PB, Word);
 	Size = 3;
 	break;
@@ -1031,8 +1031,8 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
 		     Operant[1],
 		     Operant[0]);
 	Word = (Operant[1] << 8) | Operant[0];
-	Byte = S9xGetByte (Word + 2);
-	Word = S9xGetWord (Word);
+	Byte = S9xGetByteNoCycles (Word + 2);
+	Word = S9xGetWordNoCycles (Word);
 	sprintf (Line, "%-30s[$%02X:%04X]", Line, Byte, Word);
 	Size = 3;
 	break;
@@ -1047,7 +1047,7 @@ uint8 S9xOPrint (char *Line, uint8 Bank, uint16 Address)
 		     Operant[0]);
 	Word = (Operant[1] << 8) | Operant[0];
 	Word += Registers.X.W;
-	Word = S9xGetWord (ICPU.ShiftedPB + Word);
+	Word = S9xGetWordNoCycles (ICPU.ShiftedPB + Word);
 	sprintf (Line, "%-30s[$%02X:%04X]", Line, Registers.PB, Word);
 	Size = 3;
 	break;
@@ -1588,7 +1588,7 @@ void ProcessDebugCommand (char *Line)
 	    {
 		int i;
 		for (i = 0; i < Count; i++)
-		    putc (S9xGetByte (Address + i), fs);
+		    putc (S9xGetByteNoCycles (Address + i), fs);
 
 		fclose (fs);
 	    }
@@ -1604,17 +1604,17 @@ void ProcessDebugCommand (char *Line)
 	printf ("Vectors:\n");
 	sprintf (String, "      8 Bit   16 Bit ");
 	DPrint (String);
-	sprintf (String, "ABT $00:%04X|$00:%04X", S9xGetWord (0xFFF8), S9xGetWord (0xFFE8));
+	sprintf (String, "ABT $00:%04X|$00:%04X", S9xGetWordNoCycles (0xFFF8), S9xGetWordNoCycles (0xFFE8));
 	DPrint (String);
-	sprintf (String, "BRK $00:%04X|$00:%04X", S9xGetWord (0xFFFE), S9xGetWord (0xFFE6));
+	sprintf (String, "BRK $00:%04X|$00:%04X", S9xGetWordNoCycles (0xFFFE), S9xGetWordNoCycles (0xFFE6));
 	DPrint (String);
-	sprintf (String, "COP $00:%04X|$00:%04X", S9xGetWord (0xFFF4), S9xGetWord (0xFFE4));
+	sprintf (String, "COP $00:%04X|$00:%04X", S9xGetWordNoCycles (0xFFF4), S9xGetWordNoCycles (0xFFE4));
 	DPrint (String);
-	sprintf (String, "IRQ $00:%04X|$00:%04X", S9xGetWord (0xFFFE), S9xGetWord (0xFFEE));
+	sprintf (String, "IRQ $00:%04X|$00:%04X", S9xGetWordNoCycles (0xFFFE), S9xGetWordNoCycles (0xFFEE));
 	DPrint (String);
-	sprintf (String, "NMI $00:%04X|$00:%04X", S9xGetWord (0xFFFA), S9xGetWord (0xFFEA));
+	sprintf (String, "NMI $00:%04X|$00:%04X", S9xGetWordNoCycles (0xFFFA), S9xGetWordNoCycles (0xFFEA));
 	DPrint (String);
-	sprintf (String, "RES     $00:%04X", S9xGetWord (0xFFFC));
+	sprintf (String, "RES     $00:%04X", S9xGetWordNoCycles (0xFFFC));
 	DPrint (String);
     }
     if (strncmp (Line, "ai", 2) == 0)
@@ -2035,7 +2035,7 @@ void ProcessDebugCommand (char *Line)
 		}
 		else
 		{
-		    MemoryByte = S9xGetByte ((Bank << 16) + Address + CByte);
+		    MemoryByte = S9xGetByteNoCycles ((Bank << 16) + Address + CByte);
 		}
 		sprintf (String, "%s %02X", String, MemoryByte);
 	    }
@@ -2052,7 +2052,7 @@ void ProcessDebugCommand (char *Line)
 		}
 		else
 		{
-		    MemoryByte = S9xGetByte ((Bank << 16) + Address + CByte);
+		    MemoryByte = S9xGetByteNoCycles ((Bank << 16) + Address + CByte);
 		}
 		if (MemoryByte < 32 || MemoryByte >= 127)
 		    MemoryByte = '?';

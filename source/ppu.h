@@ -92,6 +92,7 @@
 
 #include "port.h"
 #include "3dsgpu.h"
+#include "3dsimpl_gpu.h"
 #include "ppuvsect.h"
 #include "cliphw.h"
 

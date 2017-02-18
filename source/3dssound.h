@@ -4,9 +4,6 @@
 #define _3DSSOUND_H_
 
 
-#define SAMPLE_RATE         32000           
-#define BUFFER_SIZE         SAMPLE_RATE
-
 
 typedef struct 
 {
@@ -21,9 +18,9 @@ typedef struct
     u64         bufferPosition;
     u64         samplePosition;
 
-    Handle      dspThreadHandle;
-    u8          dspThreadStack[0x4000] __attribute__((aligned(8)));
-    bool        terminateDSPThread;
+    Handle      mixingThreadHandle;
+    u8          mixingThreadStack[0x4000] __attribute__((aligned(8)));
+    bool        terminateMixingThread;
 
     u64         startSamplePosition = 0;
     u64         upToSamplePosition = 0;
@@ -35,18 +32,49 @@ typedef struct
 } SSND3DS;
 
 
-#ifdef _3DSSOUND_CPP_
-    SSND3DS snd3DS;
-#else
-    extern "C" SSND3DS snd3DS;
-#endif
+extern SSND3DS snd3DS;
+
+//---------------------------------------------------------
+// Set the sampling rate.
+//
+// This function should be called by the 
+// impl3dsInitializeCore function. It CANNOT be called
+// after the snd3dsInitialize function is called.
+//---------------------------------------------------------
+void snd3dsSetSampleRate(int sampleRate, int samplesPerLoop);
 
 
-extern "C" bool snd3dsInitialize();
-//extern "C" void snd3dsInsertSamples(short *leftSamples, short *rightSamples, int count);
-extern "C" void snd3dsFinalize();
-extern "C" void snd3dsMixSamples();
-extern "C" void snd3dsStartPlaying();
-extern "C" void snd3dsStopPlaying();
+//---------------------------------------------------------
+// Initialize the CSND library.
+//---------------------------------------------------------
+bool snd3dsInitialize();
+
+
+//---------------------------------------------------------
+// Finalize the CSND library.
+//---------------------------------------------------------
+void snd3dsFinalize();
+
+
+//---------------------------------------------------------
+// Mix the samples.
+//
+// This is usually called from within 3dssound.cpp.
+// It should only be called externall from other 
+// files when running in Citra.
+//---------------------------------------------------------
+void snd3dsMixSamples();
+
+
+//---------------------------------------------------------
+// Start playing the samples.
+//---------------------------------------------------------
+void snd3dsStartPlaying();
+
+
+//---------------------------------------------------------
+// Stop playing the samples.
+//---------------------------------------------------------
+void snd3dsStopPlaying();
 
 #endif

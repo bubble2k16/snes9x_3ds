@@ -102,6 +102,7 @@
 #include "srtc.h"
 #include "spc7110.h"
 #include "movie.h"
+#include "bsx.h"
 
 #include "3dsopt.h"
 
@@ -1062,6 +1063,8 @@ void S9xSetPPU (uint8 Byte, uint16 Address)
 
 			return;
 		}
+		else if (Settings.BS && Address >= 0x2188 && Address <= 0x219f)
+			S9xSetBSXPPU(Byte, Address);
 		else
 			// Dai Kaijyu Monogatari II
 			if (Address == 0x2801 && Settings.SRTC)
@@ -1577,6 +1580,9 @@ uint8 S9xGetPPU (uint16 Address)
     {
 	if (Settings.SA1)
 	    return (S9xGetSA1 (Address));
+
+	if (Settings.BS && Address >= 0x2188 && Address <= 0x219f)
+		return (S9xGetBSXPPU(Address));
 
 	if (Address <= 0x2fff || Address >= 0x3000 + 768)
 	{
