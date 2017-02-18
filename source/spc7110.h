@@ -191,6 +191,9 @@ extern SPC7110Regs s7r;
 extern S7RTC rtc_f9;
 extern SPC7110Decomp decomp;
 
+void S9xSpc7110PreSaveState();
+void S9xSpc7110PostLoadState();
+
 // These are defined in spc7110.cpp
 bool8 S9xSaveSPC7110RTC (S7RTC *rtc_f9);
 bool8 S9xLoadSPC7110RTC (S7RTC *rtc_f9);

@@ -4513,7 +4513,7 @@ void CMemory::ApplyROMFixes ()
     if (strcmp (ROMId, "AKFJ") == 0)
     {
 		SpeedHackAdd(0x008A59, -1, 0x80, 0xF0);  
-		SpeedHackSA1Add(0x008C93, 0xF0, 0xFB);
+		SpeedHackSA1Add(0x008C96, 0x30, 0x09);
 		instructionSet = 1;
     }
     /* KIRBY SUPER DELUXE US */

@@ -18,6 +18,8 @@
 
 
 uint8 SPC7110Decomp::read() {
+  read_counter++;
+  
   if(decomp_buffer_length == 0) {
     //decompress at least (decomp_buffer_size / 2) bytes to the buffer
     switch(decomp_mode) {
@@ -47,6 +49,10 @@ uint8 SPC7110Decomp::dataread() {
 }
 
 void SPC7110Decomp::init(unsigned mode, unsigned offset, unsigned index) {
+  original_decomp_mode = mode;
+  original_decomp_offset = offset;
+  original_decomp_index = index;
+
   decomp_mode = mode;
   decomp_offset = offset;
 
@@ -68,6 +74,8 @@ void SPC7110Decomp::init(unsigned mode, unsigned offset, unsigned index) {
 
   //decompress up to requested output data index
   while(index--) read();
+
+  read_counter = 0;
 }
 
 //

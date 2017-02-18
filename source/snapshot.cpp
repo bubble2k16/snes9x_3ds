@@ -686,6 +686,7 @@ void S9xFreezeToStream (STREAM stream)
 	
 	if (Settings.SPC7110)
     {
+		S9xSpc7110PreSaveState();
 		FreezeStruct (stream, "SP7", &s7r, SnapSPC7110, COUNT (SnapSPC7110));
     }
 	if(Settings.SPC7110RTC)
@@ -796,7 +797,10 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if ((result = UnfreezeStructCopy (stream, "SP7", &local_spc, SnapSPC7110, COUNT(SnapSPC7110))) != SUCCESS)
 		{
 			if(Settings.SPC7110)
+			{
+				S9xSpc7110PostLoadState();
 				break;
+			}
 		}
 		if ((result = UnfreezeStructCopy (stream, "RTC", &local_spc_rtc, SnapS7RTC, COUNT (SnapS7RTC))) != SUCCESS)
 		{

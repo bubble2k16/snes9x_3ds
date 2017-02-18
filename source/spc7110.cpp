@@ -2077,6 +2077,53 @@ void S9xSpc7110Reset()
 }
 
 
+//---------------------------------------------------------
+// This function is newly added in order to save the
+// SPC7110 decompressor's state without breaking the
+// existing save state's format.
+//---------------------------------------------------------
+void S9xSpc7110PreSaveState()
+{
+	// bank50 is no longer used to store the decompressed data,
+	// so in order not to break the save state format, we are going
+	// to use bank50 to store the decompressor's state.
+	
+	uint32 *original_decomp_mode = (uint32 *) &s7r.bank50[0];
+	uint32 *original_decomp_offset = (uint32 *) &s7r.bank50[4];
+	uint32 *original_decomp_index = (uint32 *) &s7r.bank50[8];
+	uint32 *read_counter = (uint32 *) &s7r.bank50[12];
+	
+	*original_decomp_mode = decomp.original_decomp_mode;
+	*original_decomp_offset = decomp.original_decomp_offset;
+	*original_decomp_index = decomp.original_decomp_index;
+	*read_counter = decomp.read_counter;
+}
+
+
+//---------------------------------------------------------
+// This function is newly added in order to load the
+// SPC7110 decompressor's state.
+//---------------------------------------------------------
+void S9xSpc7110PostLoadState()
+{
+	// bank50 is no longer used to store the decompressed data,
+	// but it has been used to the the decompressor's state, so we
+	// will load it up and initialize the decompressor from there.
+	
+	uint32 *original_decomp_mode = (uint32 *) &s7r.bank50[0];
+	uint32 *original_decomp_offset = (uint32 *) &s7r.bank50[4];
+	uint32 *original_decomp_index = (uint32 *) &s7r.bank50[8];
+	uint32 *read_counter = (uint32 *) &s7r.bank50[12];
+	
+	// initialize and restore the state of the decompressor
+	decomp.init(*original_decomp_mode, *original_decomp_offset, *original_decomp_index);
+	for (int i = 0; i < *read_counter; i++)
+	{
+		decomp.read();	
+	}
+}
+
+
 //outputs a cumulative log for the game.
 //there's nothing really weird here, just
 //reading the old log, and writing a new one.
