@@ -164,7 +164,13 @@ struct SGFX{
     //
     uint32 PaletteFrame256[1] = { 1 };    
     uint32 PaletteFrame[16] = { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 };    // 16-color BGs / OBJs
-    uint32 PaletteFrame4[16] = { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 };   // 4-color BGs
+    uint32 PaletteFrame4BG[4][16] = 
+        { 
+            { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 }, 
+            { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 }, 
+            { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 }, 
+            { 1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1 } 
+        };   // Mode 1 4-color BGs
     
     // Memory Usage = 0.50 MB    for the frame the palette was changed for the given Tile.
     //

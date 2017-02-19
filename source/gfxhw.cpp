@@ -763,10 +763,10 @@ inline void __attribute__((always_inline)) S9xDrawBGFullTileHardwareInline (
         pal = (snesTile >> 10) & paletteMask;
 		texturePos = cache3dsGetTexturePositionFast(TileAddr, pal);
 
-        if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != GFX.PaletteFrame[pal + startPalette / 16])
+        if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != GFX.PaletteFrame[pal])
         {
 			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-            GFX.VRAMPaletteFrame[TileAddr / 8][pal] = GFX.PaletteFrame[pal + startPalette / 16];
+            GFX.VRAMPaletteFrame[TileAddr / 8][pal] = GFX.PaletteFrame[pal];
 
 			uint16 *screenColors = DirectColourMaps [pal];
 			cache3dsCacheSnesTileToTexturePosition(pCache, screenColors, texturePos);
@@ -780,7 +780,7 @@ inline void __attribute__((always_inline)) S9xDrawBGFullTileHardwareInline (
 
 		uint32 *paletteFrame = GFX.PaletteFrame;
 		if (paletteShift == 2)
-			paletteFrame = GFX.PaletteFrame4;
+			paletteFrame = GFX.PaletteFrame4BG[startPalette / 32];
 		else if (paletteShift == 0)
 		{
 			paletteFrame = GFX.PaletteFrame256;
@@ -790,10 +790,10 @@ inline void __attribute__((always_inline)) S9xDrawBGFullTileHardwareInline (
 		//if (screenOffset == 0)
 		//	printf ("  %d %d %d %d\n", startPalette, pal, paletteFrame[pal + startPalette / 16], GFX.VRAMPaletteFrame[TileAddr / 8][pal]);
 
-		if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != paletteFrame[pal + startPalette / 16])
+		if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != paletteFrame[pal])
 		{
 			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-			GFX.VRAMPaletteFrame[TileAddr / 8][pal] = paletteFrame[pal + startPalette / 16];
+			GFX.VRAMPaletteFrame[TileAddr / 8][pal] = paletteFrame[pal];
 
 			//if (screenOffset == 0)
 			//	printf ("cache %d\n", texturePos);
@@ -900,10 +900,10 @@ inline void __attribute__((always_inline)) S9xDrawHiresBGFullTileHardwareInline 
 		GFX.ScreenColors = DirectColourMaps [pal];
 		texturePos = cache3dsGetTexturePositionFast(TileAddr, pal);
 
-        if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != GFX.PaletteFrame[pal + startPalette / 16])
+        if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != GFX.PaletteFrame[pal])
         {
 			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-            GFX.VRAMPaletteFrame[TileAddr / 8][pal] = GFX.PaletteFrame[pal + startPalette / 16];
+            GFX.VRAMPaletteFrame[TileAddr / 8][pal] = GFX.PaletteFrame[pal];
 
 			cache3dsCacheSnesTileToTexturePosition(pCache, GFX.ScreenColors, texturePos);
         }
@@ -911,13 +911,12 @@ inline void __attribute__((always_inline)) S9xDrawHiresBGFullTileHardwareInline 
     else
     {
         pal = (snesTile >> 10) & paletteMask;
-        GFX.ScreenColors = &IPPU.ScreenColors [(pal << paletteShift) + startPalette];
 		texturePos = cache3dsGetTexturePositionFast(TileAddr, pal);
 		//printf ("%d\n", texturePos);
 
 		uint32 *paletteFrame = GFX.PaletteFrame;
 		if (paletteShift == 2)
-			paletteFrame = GFX.PaletteFrame4;
+			paletteFrame = GFX.PaletteFrame4BG[startPalette / 32];
 		else if (paletteShift == 0)
 		{
 			paletteFrame = GFX.PaletteFrame256;
@@ -927,14 +926,15 @@ inline void __attribute__((always_inline)) S9xDrawHiresBGFullTileHardwareInline 
 		//if (screenOffset == 0)
 		//	printf ("  %d %d %d %d\n", startPalette, pal, paletteFrame[pal + startPalette / 16], GFX.VRAMPaletteFrame[TileAddr / 8][pal]);
 
-		if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != paletteFrame[pal + startPalette / 16])
+		if (GFX.VRAMPaletteFrame[TileAddr / 8][pal] != paletteFrame[pal])
 		{
 			texturePos = cacheGetSwapTexturePositionForAltFrameFast(TileAddr, pal);
-			GFX.VRAMPaletteFrame[TileAddr / 8][pal] = paletteFrame[pal + startPalette / 16];
+			GFX.VRAMPaletteFrame[TileAddr / 8][pal] = paletteFrame[pal];
 
 			//if (screenOffset == 0)
 			//	printf ("cache %d\n", texturePos);
-			cache3dsCacheSnesTileToTexturePosition(pCache, GFX.ScreenColors, texturePos);
+			uint16 *screenColors = &IPPU.ScreenColors [(pal << paletteShift) + startPalette];
+			cache3dsCacheSnesTileToTexturePosition(pCache, screenColors, texturePos);
 		}
     }
 	

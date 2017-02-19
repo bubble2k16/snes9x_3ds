@@ -710,7 +710,8 @@ void S9xUpdatePalettes()
 				IPPU.ScreenColors [cgaddr] = finalColor;
 				GFX.PaletteFrame256[0] ++;
 				GFX.PaletteFrame[cgaddr / 16] ++;
-				GFX.PaletteFrame4[(cgaddr & 0x1f) / 4] ++;
+				if (cgaddr < 128)
+					GFX.PaletteFrame4BG[cgaddr / 32][(cgaddr & 0x1f) / 4] ++;
 			}
 		}
 		IPPU.ColorsChanged = false;

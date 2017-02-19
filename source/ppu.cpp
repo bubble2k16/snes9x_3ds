@@ -2711,7 +2711,8 @@ void S9xResetPPU ()
 	for (int i = 0; i < 16; i++)
 	{
 		GFX.PaletteFrame[i] = 1;
-		GFX.PaletteFrame4[i] = 1;
+		for (int bg = 0; bg < 4; bg++)
+			GFX.PaletteFrame4BG[bg][i] = 1;
 	}
 	GFX.PaletteFrame256[0] = 1;
 	ZeroMemory (GFX.VRAMPaletteFrame, 8192 * 16 * 4);
@@ -2934,7 +2935,8 @@ void S9xSoftResetPPU ()
 	for (int i = 0; i < 16; i++)
 	{
 		GFX.PaletteFrame[i] = 1;
-		GFX.PaletteFrame4[i] = 1;
+		for (int bg = 0; bg < 4; bg++)
+			GFX.PaletteFrame4BG[bg][i] = 1;
 	}
 	GFX.PaletteFrame256[0] = 1;
 	ZeroMemory (GFX.VRAMPaletteFrame, 8192 * 16 * 4);

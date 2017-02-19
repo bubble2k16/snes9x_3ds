@@ -854,7 +854,8 @@ STATIC inline void REGISTER_2122(uint8 Byte)
                                     IPPU.Blue [PPU.CGADD]);
             GFX.PaletteFrame256[0] ++;
             GFX.PaletteFrame[PPU.CGADD / 16] ++;
-            GFX.PaletteFrame4[(PPU.CGADD & 0x1f) / 4] ++;
+            if (PPU.CGADD < 128)
+                GFX.PaletteFrame4BG[PPU.CGADD / 32][(PPU.CGADD & 0x1f) / 4] ++;
             if (PPU.CGADD == 0)
             {
                 S9xUpdateVerticalSectionValue(&IPPU.BackdropColorSections, IPPU.ScreenColors[0]);
@@ -905,7 +906,8 @@ STATIC inline void REGISTER_2122(uint8 Byte)
 
                 GFX.PaletteFrame256[0] ++;
                 GFX.PaletteFrame[PPU.CGADD / 16] ++;
-                GFX.PaletteFrame4[(PPU.CGADD & 0x1f) / 4] ++;
+            if (PPU.CGADD < 128)
+                GFX.PaletteFrame4BG[PPU.CGADD / 32][(PPU.CGADD & 0x1f) / 4] ++;
                 if (PPU.CGADD == 0)
                 {
                     S9xUpdateVerticalSectionValue(&IPPU.BackdropColorSections, IPPU.ScreenColors[0]);
