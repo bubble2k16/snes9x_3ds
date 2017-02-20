@@ -107,7 +107,7 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 
 ##What's supported
 
-1. Graphic modes 0 - 5, 7. 
+1. Graphic modes 0 - 7. 
 2. Save states of up to 4 slots
 3. Cheats - place your .CHT/.CHX (text format) with the same filename in the same folder as your ROM. For example, if your ROM name is MyGame.smc, then your cheat file should be named MyGame.CHT or MyGame.CHX
 4. Currently uses CSND for audio. So your entry point to home-brew must be able to use CSND. If you can play BlargSNES with sound, you should be able to play Snes9X_3DS with sound.
@@ -132,6 +132,22 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 -------------------------------------------------------------------------------------------------------
 
 ##Change History
+
+v1.10
+- Implemented SA-1 sleep speed-hacks on the following games. These games run faster and some are able to run at 60 fps on the Old 3DS when things on-screen aren't too busy.
+   Super Mario RPG; Kirby’s Dreamland; Jikkyou Oshaberi Parodius; Kirby Super Star; Marvelous; Super Robot Taisen;
+   Panic Bomber World; Dragon Ball Hyper Dimension; SD Gundam Next; Power Rangers Zeo;
+   Daisenryaku Expert 2; Masters New Augusta 3; Bass Fishing; J96 Dream Stadium;
+   Shining Scorpion; Pebble Beach New; PGA European Tour; SD F1 Grand Prix;
+- Fixed mode 7’s CLIP_10_BIT_SIGNED formula to use the original Snes9x’s formula. This fixes Super Chase HQ’s mode 7 intro.
+- Imported SPC7110 decompressor chip code from Snes9x 1.52. Now Tengai Makyou Zero (Far East of Eden Zero) can boot after 2 restarts, and in-game graphics appears without problems. 
+- Fixed important bug in cheat engine so that it doesn't not increment the 65816 processor's clock cycles when enabling/disabling cheats.
+- Fixed the problem of the menu not using the correct font when the emulator first boots up.
+- Added one more mode when using the 3D slider for a sharper image.
+- Major refactoring of code.
+- Fixed SA1 MMC's memory map code by copying it from Snes9x 1.54.2. Now Super Mario World hack VLDC 9 boots.
+- Fixed Mode 0 rendering bug. The original bug was there since day 1 and with this fix, Lagoon's title screen looks right.
+
 
 v1.00
 - Transplanted the full SPC700 + DSP source codes from Snes9x v1.51 into this emulator. As a result, the sound emulation now supports Gaussian Interpolation, and has better accuracy. This fixes some sound problems in Clay Fighter and Mortal Kombat I and II.

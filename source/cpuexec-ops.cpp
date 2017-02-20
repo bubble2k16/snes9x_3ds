@@ -198,21 +198,12 @@ STATIC inline void  __attribute__((always_inline)) CpuFixCycles ()
 }
 
 
-INLINE void  __attribute__((always_inline)) CpuSetPCBase (uint32 Address)
+// We had to move this outside of CpuSetPCBase, because after we added
+// MAP_BSX, emulation performance took a dive, presumably due to 
+// longer jumps in the ARM code for the 65816's branch instructions?
+//
+void CpuSetPCBaseOthers(uint8 *GetAddress, uint32 Address)
 {
-    int block;
-    uint8 *GetAddress = Memory.Map [block = (Address >> MEMMAP_SHIFT) & MEMMAP_MASK];
-
-	CPU.MemSpeed = Memory.MemorySpeed [block];
-	CPU.MemSpeedx2 = CPU.MemSpeed << 1;
- 
-   if (GetAddress >= (uint8 *) CMemory::MAP_LAST)
-    {
-		CPU.PCBase = GetAddress;
-		CPU_PC = GetAddress + (Address & 0xffff);
-		return;
-    }
-	
     switch ((int) GetAddress)
     {
         case CMemory::MAP_PPU:
@@ -250,6 +241,11 @@ INLINE void  __attribute__((always_inline)) CpuSetPCBase (uint32 Address)
             CPU_PC = CPU.PCBase + (Address & 0xffff);
             return;
             
+		case CMemory::MAP_BSX:
+			CPU.PCBase = Memory.ROM;
+            CPU_PC = CPU.PCBase + (Address & 0xffff);
+			return;
+		
         case CMemory::MAP_DEBUG:
 #ifdef DEBUGGER
             printf ("SBP %06x\n", Address);
@@ -265,6 +261,30 @@ INLINE void  __attribute__((always_inline)) CpuSetPCBase (uint32 Address)
             return;
     }
 }
+
+
+// Broke up the CpuSetPCBase into two methods, since the original
+// one causes long jumps in ARM which killed performance. This part
+// is the one that will be used most of the time anyway. 
+// 
+INLINE void  __attribute__((always_inline)) CpuSetPCBase (uint32 Address)
+{
+    int block;
+    uint8 *GetAddress = Memory.Map [block = (Address >> MEMMAP_SHIFT) & MEMMAP_MASK];
+
+	CPU.MemSpeed = Memory.MemorySpeed [block];
+	CPU.MemSpeedx2 = CPU.MemSpeed << 1;
+ 
+   if (GetAddress >= (uint8 *) CMemory::MAP_LAST)
+    {
+		CPU.PCBase = GetAddress;
+		CPU_PC = GetAddress + (Address & 0xffff);
+		return;
+    }
+	
+    CpuSetPCBaseOthers(GetAddress, Address);
+}
+
 
 
 /***********************************************************************************************

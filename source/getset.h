@@ -408,14 +408,14 @@ INLINE void S9xSetPCBase (uint32 Address)
 		CPU.PC = CPU.PCBase + (Address & 0xffff);
 		return;
 		
+		case CMemory::MAP_BSX:
+			CPU.PCBase = S9xGetBasePointerBSX(Address);
+			return;
+		
     case CMemory::MAP_DEBUG:
 #ifdef DEBUGGER
 		printf ("SBP %06x\n", Address);
 #endif
-		
-		case CMemory::MAP_BSX:
-			CPU.PCBase = S9xGetBasePointerBSX(Address);
-			return;
 		
     default:
     case CMemory::MAP_NONE:
