@@ -154,6 +154,32 @@ ifneq ($(ROMFS),)
 	export _3DSXFLAGS += --romfs=$(CURDIR)/$(ROMFS)
 endif
 
+#---------------------------------------------------------------------------------
+# OS detection to automatically determine the correct makerom variant to use for
+# CIA creation
+#---------------------------------------------------------------------------------
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+MAKEROM :=
+ifeq ($(shell expr substr $(UNAME_S) 1 6),Darwin)
+	ifeq ($(shell expr substr $(UNAME_M) 1 6),x86_64)
+		MAKEROM := ./makerom/darwin_x86_64/makerom
+	endif
+endif
+ifeq ($(shell expr substr $(UNAME_S) 1 5),Linux)
+	ifeq ($(shell expr substr $(UNAME_M) 1 6),x86_64)
+		MAKEROM := ./makerom/linux_x86_64/makerom
+	endif
+endif
+ifeq ($(shell expr substr $(UNAME_S) 1 9),CYGWIN_NT)
+	MAKEROM := ./makerom/windows_x86_64/makerom.exe
+endif
+ifeq ($(shell expr substr $(UNAME_S) 1 10),MINGW32_NT)
+	MAKEROM := ./makerom/windows_x86_64/makerom.exe
+endif
+#---------------------------------------------------------------------------------
+
+
 .PHONY: $(BUILD) clean all
 
 #---------------------------------------------------------------------------------
@@ -165,7 +191,12 @@ $(BUILD):
 
 #---------------------------------------------------------------------------------
 cia: $(BUILD)
-	./makerom -rsf $(OUTPUT).rsf -elf $(OUTPUT).elf -icon $(OUTPUT).icn -banner $(OUTPUT).bnr -f cia -o $(OUTPUT).cia
+ifneq ($(MAKEROM),)
+	$(MAKEROM) -rsf $(OUTPUT).rsf -elf $(OUTPUT).elf -icon $(OUTPUT).icn -banner $(OUTPUT).bnr -f cia -o $(OUTPUT).cia
+else
+	$(error "CIA creation is not supported on this platform ($(UNAME_S)_$(UNAME_M))")
+endif
+
 
 #---------------------------------------------------------------------------------
 clean:
