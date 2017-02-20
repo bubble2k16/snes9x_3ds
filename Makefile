@@ -161,20 +161,20 @@ endif
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 MAKEROM :=
-ifeq ($(shell expr substr $(UNAME_S) 1 6),Darwin)
-	ifeq ($(shell expr substr $(UNAME_M) 1 6),x86_64)
+ifeq ($(UNAME_S), Darwin)
+	ifeq ($(UNAME_M), x86_64)
 		MAKEROM := ./makerom/darwin_x86_64/makerom
 	endif
 endif
-ifeq ($(shell expr substr $(UNAME_S) 1 5),Linux)
-	ifeq ($(shell expr substr $(UNAME_M) 1 6),x86_64)
+ifeq ($(UNAME_S), Linux)
+	ifeq ($(UNAME_M), x86_64)
 		MAKEROM := ./makerom/linux_x86_64/makerom
 	endif
 endif
-ifeq ($(shell expr substr $(UNAME_S) 1 9),CYGWIN_NT)
+ifeq ($(findstring CYGWIN_NT, $(UNAME_S)),CYGWIN_NT)
 	MAKEROM := ./makerom/windows_x86_64/makerom.exe
 endif
-ifeq ($(shell expr substr $(UNAME_S) 1 10),MINGW32_NT)
+ifeq ($(findstring MINGW32_NT, $(UNAME_S)), MINGW32_NT)
 	MAKEROM := ./makerom/windows_x86_64/makerom.exe
 endif
 #---------------------------------------------------------------------------------
