@@ -36,7 +36,7 @@
 <p>It also runs on your New 3DS, and it runs games faster! Use your New 3DS if you want to play SuperFX and SA-1 games!</p>
 
 <p>Download the latest from:
-   <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v1.00/snes9x_3ds_v1.00.zip">Snes9x for 3DS v1.00</a></p>
+   <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v1.10/snes9x_3ds-v1.10.zip">Snes9x for 3DS v1.10</a></p>
 
 <p>Give feedback / report bugs here:
    <a href="https://gbatemp.net/threads/snes9x-for-old-3ds.435568/">https://gbatemp.net/threads/snes9x-for-old-3ds.435568/</a></p>
@@ -117,9 +117,9 @@
 <a id="whats-supported" class="anchor" href="#whats-supported" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What's supported</h2>
 
 <ol>
-<li>Graphic modes 0 - 5, 7. </li>
+<li>Graphic modes 0 - 7. </li>
 <li>Save states of up to 4 slots</li>
-<li>Cheats - place your .CHT with the same filename in the same folder as your ROM. For example, if your ROM name is MyGame.smc, then your cheat file should be named MyGame.CHT.</li>
+<li>Cheats - place your .CHT/.CHX (text format) with the same filename in the same folder as your ROM. For example, if your ROM name is MyGame.smc, then your cheat file should be named MyGame.CHT or MyGame.CHX</li>
 <li>Currently uses CSND for audio. So your entry point to home-brew must be able to use CSND. If you can play BlargSNES with sound, you should be able to play Snes9X_3DS with sound.</li>
 <li>Frame skipping.</li>
 <li>Stretch to full screen / 4:3 ratio </li>
@@ -148,6 +148,26 @@
 
 <h2>
 <a id="change-history" class="anchor" href="#change-history" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Change History</h2>
+
+<p>v1.10</p>
+<ul>
+<li>Implemented SA-1 sleep speed-hacks on the following games. These games run faster and some are able to run at 60 fps on the Old 3DS when things on-screen aren't too busy.
+  <ul>
+   <li>Super Mario RPG; Kirby’s Dreamland; Jikkyou Oshaberi Parodius; Kirby Super Star; Marvelous; Super Robot Taisen;</li>
+   <li>Panic Bomber World; Dragon Ball Hyper Dimension; SD Gundam Next; Power Rangers Zeo;</li>
+   <li>Daisenryaku Expert 2; Masters New Augusta 3; Bass Fishing; J96 Dream Stadium;</li>
+   <li>Shining Scorpion; Pebble Beach New; PGA European Tour; SD F1 Grand Prix;</li>
+  </ul>
+</li>
+<li>Fixed mode 7’s CLIP_10_BIT_SIGNED formula to use the original Snes9x’s formula. This fixes Super Chase HQ’s mode 7 intro.</li>
+<li>Imported SPC7110 decompressor chip code from Snes9x 1.52. Now Tengai Makyou Zero (Far East of Eden Zero) can boot after 2 restarts, and in-game graphics appears without problems. </li>
+<li>Fixed important bug in cheat engine so that it doesn't not increment the 65816 processor's clock cycles when enabling/disabling cheats.</li>
+<li>Fixed the problem of the menu not using the correct font when the emulator first boots up.</li>
+<li>Added one more mode when using the 3D slider for a sharper image.</li>
+<li>Major refactoring of code.</li>
+<li>Fixed SA1 MMC's memory map code by copying it from Snes9x 1.54.2. Now Super Mario World hack VLDC 9 boots.</li>
+<li>Fixed Mode 0 rendering bug. The original bug was there since day 1 and with this fix, Lagoon's title screen looks right.</li>
+</ul>
 
 <p>v1.00</p>
 <ul>
@@ -353,7 +373,7 @@ This fix should work for all cases.</li>
         </section>
 
         <aside id="sidebar">
-          <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v1.00/snes9x_3ds_v1.00.zip" class="button">
+          <a href="https://github.com/bubble2k16/snes9x_3ds/releases/download/v1.10/snes9x_3ds-v1.10.zip" class="button">
             <small>Download Binaries</small>
             .zip file
           </a>
