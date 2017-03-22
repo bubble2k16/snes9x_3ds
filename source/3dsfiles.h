@@ -2,6 +2,8 @@
 #ifndef _3DSFILES_H
 #define _3DSFILES_H
 
+#include <string>
+#include <vector>
 
 //----------------------------------------------------------------------
 // Initialize the library
