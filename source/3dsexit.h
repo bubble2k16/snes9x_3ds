@@ -5,8 +5,9 @@
 
 extern aptHookCookie hookCookie;
 extern int appExiting;
+extern int appSuspended;
 
-void setExitFlag(APT_HookType hook, void* param);
-void enableExitHook();
+void handleAptHook(APT_HookType hook, void* param);
+void enableAptHooks();
 
 #endif
