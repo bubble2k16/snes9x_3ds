@@ -60,7 +60,7 @@ u32 input3dsScanInputForEmulation()
     // -----------------------------------------------
 #endif
 
-    if (keysDown & KEY_TOUCH)
+    if ((keysDown & KEY_TOUCH) || ((keysDown & (KEY_ZL | KEY_ZR)) && ((currKeysHeld & (KEY_ZL | KEY_ZR)) == (KEY_ZL | KEY_ZR))))
     {
         impl3dsTouchScreenPressed();
 

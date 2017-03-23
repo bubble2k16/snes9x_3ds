@@ -1117,6 +1117,8 @@ void menuSetupCheats()
 //--------------------------------------------------------
 void emulatorInitialize()
 {
+    APT_CheckNew3DS(&settings3DS.IsNew3DS);
+
     file3dsInitialize();
 
     romFileNameLastSelected[0] = 0;
@@ -1310,7 +1312,8 @@ void emulatorLoop()
     menu3dsDrawBlackScreen();
     if (settings3DS.HideUnnecessaryBottomScrText == 0)
     {
-        ui3dsDrawStringWithNoWrapping(0, 100, 320, 115, 0x7f7f7f, HALIGN_CENTER, "Touch screen for menu");
+        ui3dsDrawStringWithNoWrapping(0, 100, 320, 115, 0x7f7f7f, HALIGN_CENTER,
+            settings3DS.IsNew3DS ? "Touch screen or press ZL + ZR for menu" : "Touch screen for menu");
     }
 
     snd3dsStartPlaying();

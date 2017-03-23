@@ -50,4 +50,6 @@ typedef struct
                                             //   0 - Disabled
                                             //   1 - Enabled
 
+    bool    IsNew3DS;                       // Whether the 3DS this is running on is a New or an Old model.
+
 } S9xSettings3DS;
