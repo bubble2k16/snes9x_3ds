@@ -544,7 +544,7 @@ void impl3dsTouchScreenPressed()
 	// Save the SRAM if it has been modified before we going
 	// into the menu.
 	//
-	if (CPU.SRAMModified || CPU.AutoSaveTimer)
+	if (settings3DS.ForceSRAMWriteOnPause || CPU.SRAMModified || CPU.AutoSaveTimer)
 	{
 		S9xAutoSaveSRAM();
 	}
