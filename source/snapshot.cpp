@@ -114,6 +114,7 @@
 #include "sdd1.h"
 #include "spc7110.h"
 #include "movie.h"
+#include "bufferedfilewriter.h"
 
 extern uint8 *SRAM;
 
@@ -525,9 +526,9 @@ static FreezeData SnapS7RTC [] = {
 static char ROMFilename [_MAX_PATH];
 //static char SnapshotFilename [_MAX_PATH];
 
-void FreezeStruct (STREAM stream, char *name, void *base, FreezeData *fields,
+void FreezeStruct (BufferedFileWriter& stream, char *name, void *base, FreezeData *fields,
 				   int num_fields);
-void FreezeBlock (STREAM stream, char *name, uint8 *block, int size);
+void FreezeBlock (BufferedFileWriter& stream, char *name, uint8 *block, int size);
 
 int UnfreezeStruct (STREAM stream, char *name, void *base, FreezeData *fields,
 					int num_fields);
@@ -546,14 +547,13 @@ bool8 Snapshot (const char *filename)
 
 bool8 S9xFreezeGame (const char *filename)
 {
-    STREAM stream = NULL;
-	
-    if (S9xOpenSnapshotFile (filename, FALSE, &stream))
+    BufferedFileWriter stream;
+    if (stream.open(filename, "wb"))
     {
 		S9xPrepareSoundForSnapshotSave (FALSE);
 		
 		S9xFreezeToStream (stream);
-		S9xCloseSnapshotFile (stream);
+		stream.close();
 
 		S9xPrepareSoundForSnapshotSave (TRUE);
 
@@ -631,7 +631,7 @@ bool8 S9xUnfreezeGame (const char *filename)
     return (FALSE);
 }
 
-void S9xFreezeToStream (STREAM stream)
+void S9xFreezeToStream (BufferedFileWriter& stream)
 {
     char buffer [1024];
     int i;
@@ -650,11 +650,11 @@ void S9xFreezeToStream (STREAM stream)
 		SoundData.channels [i].previous16 [0] = (int16) SoundData.channels [i].previous [0];
 		SoundData.channels [i].previous16 [1] = (int16) SoundData.channels [i].previous [1];
     }
-    sprintf (buffer, "%s:%04d\n", SNAPSHOT_MAGIC, SNAPSHOT_VERSION);
-    WRITE_STREAM (buffer, strlen (buffer), stream);
-    sprintf (buffer, "NAM:%06d:%s%c", strlen (Memory.ROMFilename) + 1,
+    int printed = sprintf (buffer, "%s:%04d\n", SNAPSHOT_MAGIC, SNAPSHOT_VERSION);
+    stream.write(buffer, printed);
+    printed = sprintf (buffer, "NAM:%06d:%s%c", strlen (Memory.ROMFilename) + 1,
 		Memory.ROMFilename, 0);
-    WRITE_STREAM (buffer, strlen (buffer) + 1, stream);
+    stream.write(buffer, printed);
     FreezeStruct (stream, "CPU", &CPU, SnapCPU, COUNT (SnapCPU));
     FreezeStruct (stream, "REG", &Registers, SnapRegisters, COUNT (SnapRegisters));
     FreezeStruct (stream, "PPU", &PPU, SnapPPU, COUNT (SnapPPU));
@@ -985,7 +985,7 @@ int FreezeSize (int size, int type)
     }
 }
 
-void FreezeStruct (STREAM stream, char *name, void *base, FreezeData *fields,
+void FreezeStruct (BufferedFileWriter& stream, char *name, void *base, FreezeData *fields,
 				   int num_fields)
 {
     // Work out the size of the required block
@@ -1072,13 +1072,12 @@ void FreezeStruct (STREAM stream, char *name, void *base, FreezeData *fields,
     delete[] block;
 }
 
-void FreezeBlock (STREAM stream, char *name, uint8 *block, int size)
+void FreezeBlock (BufferedFileWriter& stream, char *name, uint8 *block, int size)
 {
-    char buffer [512];
-    sprintf (buffer, "%s:%06d:", name, size);
-    WRITE_STREAM (buffer, strlen (buffer), stream);
-    WRITE_STREAM (block, size, stream);
-    
+    char buffer[16];
+    int printed = sprintf(buffer, "%s:%06d:", name, size);
+    stream.write(buffer, printed);
+    stream.write(block, size);
 }
 
 int UnfreezeStruct (STREAM stream, char *name, void *base, FreezeData *fields,

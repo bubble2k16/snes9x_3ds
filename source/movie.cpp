@@ -113,6 +113,7 @@
 #include "snes9x.h"
 #include "cpuexec.h"
 #include "snapshot.h"
+#include "bufferedfilewriter.h"
 
 #define SMV_MAGIC	0x1a564d53		// SMV0x1a
 #define SMV_VERSION	1
@@ -487,20 +488,24 @@ int S9xMovieCreate (const char* filename, uint8 controllers_mask, uint8 opts, co
 	fclose(fd);
 
 	// lseek(fn, Movie.SaveStateOffset, SEEK_SET);
-	if(!(stream=REOPEN_STREAM(fn, "ab")))
-		return FILE_NOT_FOUND;
 
 	if(opts & MOVIE_OPT_FROM_RESET)
 	{
+		if(!(stream=REOPEN_STREAM(fn, "ab")))
+			return FILE_NOT_FOUND;
 		S9xReset();
 		// save only SRAM for a from-reset snapshot
 		WRITE_STREAM(SRAM, 0x20000, stream);
+		CLOSE_STREAM(stream);
 	}
 	else
 	{
-		S9xFreezeToStream(stream);
+		BufferedFileWriter bfw;
+		if(!bfw.open(fn, "ab"))
+			return FILE_NOT_FOUND;
+		S9xFreezeToStream(bfw);
+		bfw.close();
 	}
-	CLOSE_STREAM(stream);
 
 	if(!(fd=fopen(filename, "rb+")))
 		return FILE_NOT_FOUND;
