@@ -1044,7 +1044,7 @@ void FreezeStruct (BufferedFileWriter& stream, char *name, void *base, FreezeDat
 			}
 			break;
 			case uint8_ARRAY_V:
-				memmove (ptr, (uint8 *) base + fields [i].offset, fields [i].size);
+				memcpy (ptr, (uint8 *) base + fields [i].offset, fields [i].size);
 				ptr += fields [i].size;
 				break;
 			case uint16_ARRAY_V:
@@ -1146,7 +1146,7 @@ int UnfreezeStruct (STREAM stream, char *name, void *base, FreezeData *fields,
 			}
 			break;
 			case uint8_ARRAY_V:
-				memmove ((uint8 *) base + fields [i].offset, ptr, fields [i].size);
+				memcpy ((uint8 *) base + fields [i].offset, ptr, fields [i].size);
 				ptr += fields [i].size;
 				break;
 			case uint16_ARRAY_V:
