@@ -401,14 +401,18 @@ bool8 S9xLoadCheatTextFile (const char *filename)
     {
         uint32 addr;
         uint8 byte;
-        
+
         fgets(line, 199, fp);
         S9xStripNewLine(line);
 
         enabled = line;
 
         char *newline = strchr(line, '\n');
-        *newline = 0;
+
+        // Fixed crashing bug when loading CHX files.
+        //
+        if (newline != NULL)
+            *newline = 0;
 
         code = strchr(line, ',');
         if (code == NULL)

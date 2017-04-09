@@ -1287,6 +1287,7 @@ void emulatorLoop()
         if (appExiting)
             break;
 
+        gpu3dsStartNewFrame();
         gpu3dsCheckSlider();
         updateFrameCount();
 

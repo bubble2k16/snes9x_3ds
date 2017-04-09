@@ -403,7 +403,6 @@ void impl3dsPrepareForNewFrame()
 void impl3dsRunOneFrame(bool firstFrame, bool skipDrawingFrame)
 {
 	Memory.ApplySpeedHackPatches();
-	gpu3dsStartNewFrame();
 	gpu3dsEnableAlphaBlending();
 
 	if (GPU3DS.emulatorState != EMUSTATE_EMULATE)
