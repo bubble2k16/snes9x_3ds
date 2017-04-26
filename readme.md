@@ -1,4 +1,4 @@
-##Snes9x for 3DS
+## Snes9x for 3DS
 
 Snes9x for 3DS is a high-compatibility SNES emulator for your Old 3DS / 2DS. It runs many games at full speed (60 fps). It supports games that use CX4 chip (Megaman X2/X3), and the SDD-1 chip (Star Ocean, Super Street Fighter 2 Alpha). It can also play games that use the SuperFX chip (Yoshi's Island, etc), and the SA-1 chip (Super Mario RPG, Kirby's Dreamland, Kirby Super Star) but it runs slowly. It has generally much high compatibility than existing SNES emulators on the old 3DS because it uses Snes9x 1.43 as a base, and is a good alternative if your existing emulators cannot play all the games.
 
@@ -12,23 +12,23 @@ Give feedback / report bugs here:
 
 To use:
 
-###Homebrew Launcher:
+### Homebrew Launcher:
 
-1. Copy Snes9x_3ds.3dsx, Snes9x_3ds.smdh and snes9x_3ds_top.png into the /3ds/snes9x_3ds on your SD card. 
+1. Copy Snes9x_3ds.3dsx, Snes9x_3ds.smdh and snes9x_3ds_top.png into the /3ds/snes9x_3ds on your SD card.
 2. Place your SNES ROMs inside any folder.
 3. Go to your Homebrew Launcher (either via Cubic Ninja, Soundhax or other entry points) and launch the snes9x_3ds emulator.
 
-###CIA Version:
+### CIA Version:
 
 1. Use your favorite CIA installer to install snes9x_3ds.cia into your CFW. You can also use FBI to download from TitleDB.
 2. Place your SNES ROMs inside any folder.
 3. Copy snes9x_3ds_top.png to ROOT of your SD card.
 4. Exit your CIA installer and go to your CFW's home screen to launch the app.
 
-###When in-game,
+### When in-game,
 
 1. Tap the bottom screen for the menu.
-2. Use Up/Down to choose option, and A to confirm. 
+2. Use Up/Down to choose option, and A to confirm.
    (Hold down X while pressing Up/Down to Page Up/Page Down)
 3. Use Left/Right to change between ROM selection and emulator options.
 4. You can quit the emulator to your homebrew launcher / your CFW's home screen.
@@ -37,82 +37,82 @@ Feedback and bug reports are welcome. Help with development is also welcome!
 
 -------------------------------------------------------------------------------------------------------
 
-##Screenshots
+## Screenshots
 
-![Seiken Densetsu 3 (English Patch)](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_1.jpg?raw=1) 
+![Seiken Densetsu 3 (English Patch)](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_1.jpg?raw=1)
 
 Seiken Densetsu 3 (English Patch)
 
-![Secret of Mana](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_2.jpg?raw=1) 
+![Secret of Mana](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_2.jpg?raw=1)
 
 Secret of Mana
 
-![Super Mario Kart](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_3.jpg?raw=1) 
+![Super Mario Kart](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_3.jpg?raw=1)
 
 Super Mario Kart
 
-![Disney's Magical Quest 3 Starring Mickey & Donald](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_4.jpg?raw=1) 
+![Disney's Magical Quest 3 Starring Mickey & Donald](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_4.jpg?raw=1)
 
 Disney's Magical Quest 3 Starring Mickey & Donald
 
-![Mighty Morphin Power Rangers - The Fighting Edition](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_5.jpg?raw=1) 
+![Mighty Morphin Power Rangers - The Fighting Edition](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_5.jpg?raw=1)
 
 Mighty Morphin Power Rangers - The Fighting Edition
 
-![Megaman X](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_6.jpg?raw=1) 
+![Megaman X](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_6.jpg?raw=1)
 
 Megaman X
 
 ![Megaman X3](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_8.jpg?raw=1)
 
 Megaman X3
- 
-![Castlevania - Dracula X](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_7.jpg?raw=1) 
+
+![Castlevania - Dracula X](https://github.com/bubble2k16/snes9x_3ds/blob/master/images/snes9x_7.jpg?raw=1)
 
 Castlevania - Dracula X
 
 -------------------------------------------------------------------------------------------------------
 
-##Frequently Asked Questions 
+## Frequently Asked Questions
 
-###Why do some games have strange color issues (for eg., Wild Guns, Kirby Super Star, Judge Dredd, Batman Forever, Secret of Mana, Kirby Super Star)?
+### Why do some games have strange color issues (for eg., Wild Guns, Kirby Super Star, Judge Dredd, Batman Forever, Secret of Mana, Kirby Super Star)?
 
 Try going to the Settings and change the In-Frame Palette Changes to either one of the 3 options: Enabled, Disabled Style 1, Disabled Style 2. Color emulation is never perfect because we are using the 3DS GPU for rendering, which doesn't allow us to do what the SNES requires.
 
-###Why some games keep writing to the SD Card every second or so (for eg., Treasure Hunter G, Some Super Mario Hacks, Final Fantasy Mystic Quest)?
+### Why some games keep writing to the SD Card every second or so (for eg., Treasure Hunter G, Some Super Mario Hacks, Final Fantasy Mystic Quest)?
 
 Try going to the Settings and change the SRAM Auto-Save Delay to 10 seconds, 60 seconds, or disable it entirely! Don't worry, the SRAM will be saved again when you tap on the bottom screen.
 
-###Why can't I load some games? They are supposed to be supported according to the compatibility list!
+### Why can't I load some games? They are supposed to be supported according to the compatibility list!
 
 Ensure that your ROM file is not a zipped file. Currently, the emulator only supports .SFC, .SMC, .FIG formats.
 
-###Can I use my save states generated from Windows versions of Snes9x?
+### Can I use my save states generated from Windows versions of Snes9x?
 
 You can try using save states from Snes9x v1.43, but sometimes this emulator doesn't recognize them.
 
-###How can I make Snes9x utilize the full speed of the New 3DS?
+### How can I make Snes9x utilize the full speed of the New 3DS?
 
 The .3DSX version currently uses the full clock speed of the New 3DS, enabling all your SuperFX, SA-1 games to run faster.
 
-###After closing the lid and re-opening it, the sound synchronization during game emulation goes off!
+### After closing the lid and re-opening it, the sound synchronization during game emulation goes off!
 
-Yes, this is a known issue. You can try to tap the bottom to bring up the menu, and then resume your game. The sound should become synchronized again. 
+Yes, this is a known issue. You can try to tap the bottom to bring up the menu, and then resume your game. The sound should become synchronized again.
 
-###After pressing the Home button, the emulator music still plays!
+### After pressing the Home button, the emulator music still plays!
 
 Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emulator entirely from the emulator's menu before going to the Home screen.
 
 -------------------------------------------------------------------------------------------------------
 
-##What's supported
+## What's supported
 
-1. Graphic modes 0 - 7. 
+1. Graphic modes 0 - 7.
 2. Save states of up to 4 slots
 3. Cheats - place your .CHT/.CHX (text format) with the same filename in the same folder as your ROM. For example, if your ROM name is MyGame.smc, then your cheat file should be named MyGame.CHT or MyGame.CHX
 4. Currently uses CSND for audio. So your entry point to home-brew must be able to use CSND. If you can play BlargSNES with sound, you should be able to play Snes9X_3DS with sound.
 5. Frame skipping.
-6. Stretch to full screen / 4:3 ratio 
+6. Stretch to full screen / 4:3 ratio
 7. PAL (50fps) / NTSC (60 fps) frame rates.
 8. Navigation of ROMs in different folders.
 9. SDD1 chip (Street Fighter 2 Alpha, Star Ocean)
@@ -123,7 +123,7 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 14. Use of full clock speed in the New 3DS.
 15. Sound emulation (at 32KHz, with echo and gaussian interpolation)
 
-##What's missing / needs to be improved
+## What's missing / needs to be improved
 
 1. Minor sound emulation errors.
 2. Mosaics.
@@ -131,7 +131,10 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 
 -------------------------------------------------------------------------------------------------------
 
-##Change History
+## Change History
+
+v1.11
+- Fixed crashing bug when loading CHX cheat files.
 
 v1.10
 - Implemented SA-1 sleep speed-hacks on the following games. These games run faster and some are able to run at 60 fps on the Old 3DS when things on-screen aren't too busy.
@@ -140,7 +143,7 @@ v1.10
    Daisenryaku Expert 2; Masters New Augusta 3; Bass Fishing; J96 Dream Stadium;
    Shining Scorpion; Pebble Beach New; PGA European Tour; SD F1 Grand Prix;
 - Fixed mode 7’s CLIP_10_BIT_SIGNED formula to use the original Snes9x’s formula. This fixes Super Chase HQ’s mode 7 intro.
-- Imported SPC7110 decompressor chip code from Snes9x 1.52. Now Tengai Makyou Zero (Far East of Eden Zero) can boot after 2 restarts, and in-game graphics appears without problems. 
+- Imported SPC7110 decompressor chip code from Snes9x 1.52. Now Tengai Makyou Zero (Far East of Eden Zero) can boot after 2 restarts, and in-game graphics appears without problems.
 - Fixed important bug in cheat engine so that it doesn't not increment the 65816 processor's clock cycles when enabling/disabling cheats.
 - Fixed the problem of the menu not using the correct font when the emulator first boots up.
 - Added one more mode when using the 3D slider for a sharper image.
@@ -162,7 +165,7 @@ v1.00
 - Removed unnecessary debug messages during start up / shut down of the emulator.
 - Fixed a bug when the SRAM still saves randomly when it is set to Disabled.
 - Reduced memory footprint for storing texture position caches.
-- Made this version buildable with libctru v1.2.0 (thanks to Maki-chan) 
+- Made this version buildable with libctru v1.2.0 (thanks to Maki-chan)
   [Note: Building with devkitARM r46 and libctru v1.2.0 will cause a bug where the emulator cannot utilize the full clock speed of the New 3DS.]
 
 v0.80
@@ -179,9 +182,9 @@ v0.71
 - Minor optimizations
 
 v0.70
-- Fixed sprites priority issues. This fixes sprites problems of Shadowrun, Chrono Trigger, Super Mario All Stars' (and possibly other games too) 
+- Fixed sprites priority issues. This fixes sprites problems of Shadowrun, Chrono Trigger, Super Mario All Stars' (and possibly other games too)
 - The newly implemented rendering engine also provides some modest speed improvements in some games.
-- Added feature to save the directory of the previously loaded ROM. 
+- Added feature to save the directory of the previously loaded ROM.
 
 v0.63
 - Fixed bug in DMA when the source address comes from Save RAM. This fixes a number of Super Mario World Hacks so that text is readable on BG layer 3.
@@ -189,17 +192,17 @@ v0.63
 - Fixed DKC tile corruption issue. This probably also fixes most (if not all) tile corruption issues in other games, if you play a game for too long in a single sitting.
 - Fixed sound problems when auto-saving SRAM. Somehow the hardware or the library doesn't like us stopping and starting the CSND too often. Not too sure what the problem is.
 - Added an auto-save SRAM option to tell the emulator when to save SRAM (1 second, 10 seconds, 60 seconds, or disable auto-save).
-Note that regardless of the setting, the emulator will always save any modified SRAM every time you touch the bottom screen to activate the menu. 
+Note that regardless of the setting, the emulator will always save any modified SRAM every time you touch the bottom screen to activate the menu.
 
 v0.62
 - Improved Mode 7 zoomed-in textures. Games like Seiken Densetsu, ActRaiser 1/2 look better when viewing the Mode 7 textures near to the ground. Thanks for Discostew for the motivation!
 - Improved sound handling to ensure that the left speaker plays at the same volume as the right speaker.
-- Added option to change in-frame palette handling. There are three options to choose from: 
-   > Enabled. (Slow, accurate, but never as accurate as software) 
+- Added option to change in-frame palette handling. There are three options to choose from:
+   > Enabled. (Slow, accurate, but never as accurate as software)
    >  Disabled Style 1 (faster, less accurate)
-   > Disabled Style 2 (faster, less accurate) works a little differently from Style 1 
-  Most games are by default Disabled Style 2. 
-  Bahamut Lagoon and Front Mission Gun Hazard are by default Disabled Style 1. 
+   > Disabled Style 2 (faster, less accurate) works a little differently from Style 1
+  Most games are by default Disabled Style 2.
+  Bahamut Lagoon and Front Mission Gun Hazard are by default Disabled Style 1.
   Wild Guns, Judge Dredd, Batman Forever are by default Enabled.
 - Fixed Clock Tower to boot properly again.
 - Fixed Star Fox flickering problem when there are frameskips.
@@ -208,15 +211,15 @@ v0.62
 - Fixed Donkey Kong Country's tile colour corruption bug
 
 v0.61
-- Fixed DSP bug that causes some games like Dragon Ball - Super Budoten 3, Umihara Kawase to mute. 
+- Fixed DSP bug that causes some games like Dragon Ball - Super Budoten 3, Umihara Kawase to mute.
 - Fixed bug that doesn't stop sound from playing when saving to SRAM.
 
 v0.6
 - Default sound amplification to 2x  …
 - Reduced GPU freezing problem after loading new ROMs / resetting too many times
-- Resynchronise sound when you go into the menu (you can reset the sync this way after waking your 
+- Resynchronise sound when you go into the menu (you can reset the sync this way after waking your
   3DS from sleep mode)
-- Improved sound sample rate to 32 KHz, and added echo and interpolation. The result is overall 
+- Improved sound sample rate to 32 KHz, and added echo and interpolation. The result is overall
   better sound quality
 - Improved sync between SPC700 emulation and the DSP.
 - Fixed Contra III Mode 7 EXTBG colors again.
@@ -224,9 +227,9 @@ v0.6
 - Fixed Chrono Trigger music not resuming after any battle music or “sealed by mysterious force” music.
 
 v0.51
-- Implemented pseudo hi-res mode 5 using alternate frame flickering to achieve the pseudo hi-res mode. 
+- Implemented pseudo hi-res mode 5 using alternate frame flickering to achieve the pseudo hi-res mode.
   Games that use this mode include: Secret of Mana, Seiken Densetsu 3, Air Strike Patrol, and a number of others.
-  
+
 v0.5
 - Implemented major graphic rendering optimizations for color handling, transparency and window effects.
   Although codes from BlargSNES was not used directly, ideas came from BlargSNES.
@@ -267,27 +270,27 @@ v0.4
 - Added settings to enable turbo buttons (per game)
 - Added settings to allow user to amplify volume (per game)
   (beware of sound clipping that results in terrible sounds)
-- Palette hack for Secret of Mana to ensure that the dialog borders are blue 
+- Palette hack for Secret of Mana to ensure that the dialog borders are blue
   (the bottom status window still behaves oddly due to palette changes)
 - Transparency fixes:
   o Legend of Zelda's prologue's dark room
   o Reported dark tints on several games like Doremi Fantasy, Bomberman, Secret of Mana, Chrono Trigger
   o Gradient shading on dialog boxes for Chrono Trigger and Final Fantasy III (battles) appear correct.
 - Fixed window clip problems.
-- Fixed mode 7 glitches causing mode 7 bugs in Secret of Mana, NHL 94, Magical Quest 3 
-- Fixed a number of sprite clipping problems 
+- Fixed mode 7 glitches causing mode 7 bugs in Secret of Mana, NHL 94, Magical Quest 3
+- Fixed a number of sprite clipping problems
   o Megaman 7's Dr Wily's spaceship in the intro now pans in from the left correctly
-  o Tales of Phantasia's trainee's sprites (after the intro) now clips correct 
-- Fixed color inconsistency causing some white sprites to be visible on a white background 
+  o Tales of Phantasia's trainee's sprites (after the intro) now clips correct
+- Fixed color inconsistency causing some white sprites to be visible on a white background
   (eg. in NHL's EA Sports intro screen)
-- Added speed hack for games that use the WAI instruction 
+- Added speed hack for games that use the WAI instruction
   (esp Donkey Kong Country 1, 2, 3 should see a good speed increase)
 - Added hack to avoid hiding sprites even if they exceed the maximum number the real hardware can display.
   Apparently, this fixes the missing cursor in Final Fantasy III.
 - And other bugs.
 
 v0.35
-- Fixed Super Mario Kart grass area texture outside of the track. 
+- Fixed Super Mario Kart grass area texture outside of the track.
   This fix should work for all cases.
 - Some minor performance and UI adjustments
 
@@ -302,7 +305,7 @@ v0.34
 
 -------------------------------------------------------------------------------------------------------
 
-##.CHX Cheat File format
+## .CHX Cheat File format
 
 The .CHX is a cheat file format that you can create with any text editor. Each line in the file corresponds to one cheat, and is of the following format:
 
@@ -310,7 +313,7 @@ The .CHX is a cheat file format that you can create with any text editor. Each l
 
 1. [Y/N] represents whether the cheat is enabled. Whenever you enable/disable it in the emulator, the .CHX cheat file will be modified to save your changes.
 2. [CheatCode] must be a Game Genie or a Pro Action Replay code. A Game Genie code looks like this: **F38B-6DA4**. A Pro-Action Replay code looks like this: **7E00DC04**.
-3. [Name] is a short name that represents this cheat. Since this will appear in the emulator, keep it short (< 30 characters). 
+3. [Name] is a short name that represents this cheat. Since this will appear in the emulator, keep it short (< 30 characters).
 
 The .CHX must have the same name as your ROM. This is an example of a .CHX file:
 
@@ -320,36 +323,36 @@ Y,F38B-6DA4,Start with 31 lives
 Y,7E00DC04,Constant Megacrush (enemies die)
 ```
 
-If you are still lost, refer to a sample Gradius cheat file here: 
+If you are still lost, refer to a sample Gradius cheat file here:
 https://raw.githubusercontent.com/bubble2k16/snes9x_3ds/master/samples/Gradius%20III%20(U)%20%5B!%7D.chx.txt
 
 NOTE: You can only have either .CHT or .CHX in your ROM folder for the same ROM. If you have both, only the .CHX file will be effective.
 
 -------------------------------------------------------------------------------------------------------
 
-##How to Build
+## How to Build
 
 The current version can be built in two ways:
 
-###libctru v1.0.0
+### libctru v1.0.0
 
 You will need:
 - devkitARM r45
 - libctru v1.0.0
 - citro3d v1.0.0
 
-Ensure that the makefile has the following definition -DLIBCTRU_1_0_0.
+Ensure that the makefile has the following definition `-DLIBCTRU_1_0_0`.
 
 Then build by using *make*.
 
-###libctru v1.2.0
+### libctru v1.2.0
 
 You will need:
 - devkitARM r46
 - libctru v1.2.0
 - citro3d v1.2.0
 
-Remove the following definition -DLIBCTRU_1_0_0 from the makefile
+Remove the following definition `-DLIBCTRU_1_0_0` from the makefile
 
 Then build by using *make*.
 
@@ -357,7 +360,7 @@ Then build by using *make*.
 
 -------------------------------------------------------------------------------------------------------
 
-##Credits
+## Credits
 
 1. Snes9x team for the fantastic SNES emulator
 2. StapleButter / DiscostewSM for their work on BlargSNES. Many ideas for optimisations came from them.
