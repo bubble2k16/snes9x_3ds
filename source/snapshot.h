@@ -92,6 +92,8 @@
 #include <stdio.h>
 #include "snes9x.h"
 
+class BufferedFileWriter;
+
 #define SNAPSHOT_MAGIC "#!snes9x"
 #define SNAPSHOT_VERSION 1
 
@@ -108,7 +110,7 @@ bool8 S9xUnfreezeGame (const char *filename);
 bool8 Snapshot (const char *filename);
 bool8 S9xLoadSnapshot (const char *filename);
 bool8 S9xSPCDump (const char *filename);
-void S9xFreezeToStream (STREAM);
+void S9xFreezeToStream (BufferedFileWriter& stream);
 int S9xUnfreezeFromStream (STREAM);
 END_EXTERN_C
 
