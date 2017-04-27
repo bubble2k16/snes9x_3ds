@@ -237,7 +237,8 @@ SMenuItem optionMenu[] = {
     MENU_MAKE_CHECKBOX  (13005, "  Button R", 0),
     MENU_MAKE_DISABLED  (""),
     MENU_MAKE_HEADER2   ("SRAM (Save Data)"),
-    MENU_MAKE_PICKER    (17000, "  SRAM Auto-Save Delay", "Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently.", optionsForAutoSaveSRAMDelay, DIALOGCOLOR_CYAN)
+    MENU_MAKE_PICKER    (17000, "  SRAM Auto-Save Delay", "Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently.", optionsForAutoSaveSRAMDelay, DIALOGCOLOR_CYAN),
+    MENU_MAKE_CHECKBOX  (19000, "  Force SRAM Write on Pause", 0)
 
     };
 
@@ -429,6 +430,7 @@ bool settingsReadWriteFullListByGame(bool writeMode)
     {
         settings3DS.PaletteFix = 0;
         settings3DS.SRAMSaveInterval = 0;
+        settings3DS.ForceSRAMWriteOnPause = 0;
     }
 
     config3dsReadWriteInt32("Frameskips=%d\n", &settings3DS.MaxFrameSkips, 0, 4);
@@ -442,6 +444,7 @@ bool settingsReadWriteFullListByGame(bool writeMode)
     config3dsReadWriteInt32("Vol=%d\n", &settings3DS.Volume, 0, 8);
     config3dsReadWriteInt32("PalFix=%d\n", &settings3DS.PaletteFix, 0, 3);
     config3dsReadWriteInt32("SRAMInterval=%d\n", &settings3DS.SRAMSaveInterval, 0, 4);
+    config3dsReadWriteInt32("ForceSRAMWrite=%d\n", &settings3DS.ForceSRAMWriteOnPause, 0, 1);
 
     // All new options should come here!
 
@@ -655,6 +658,7 @@ bool menuCopySettings(bool copyMenuToSettings)
     UPDATE_SETTINGS(settings3DS.Volume, 1, 14000);
     UPDATE_SETTINGS(settings3DS.PaletteFix, 1, 16000);
     UPDATE_SETTINGS(settings3DS.SRAMSaveInterval, 1, 17000);
+    UPDATE_SETTINGS(settings3DS.ForceSRAMWriteOnPause, 1, 19000);
 
     return settingsUpdated;
 }

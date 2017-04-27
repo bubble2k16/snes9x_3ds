@@ -40,4 +40,9 @@ typedef struct
                                             //   3 - 60 seconds
                                             //   4 - Never
 
+    int     ForceSRAMWriteOnPause;          // If the SRAM should be written to SD even when no change was detected.
+                                            // Some games (eg. Yoshi's Island) don't detect SRAM writes correctly.
+                                            //   0 - Disabled
+                                            //   1 - Enabled
+
 } S9xSettings3DS;
