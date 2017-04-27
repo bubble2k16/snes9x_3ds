@@ -26,6 +26,7 @@
 #include "3dsui.h"
 #include "3dsinput.h"
 #include "3dssettings.h"
+#include "3dsimpl.h"
 #include "3dsimpl_tilecache.h"
 #include "3dsimpl_gpu.h"
 
@@ -556,13 +557,22 @@ void impl3dsTouchScreenPressed()
 // name contains the slot number. This will return
 // true if the state is saved successfully.
 //---------------------------------------------------------
-bool impl3dsSaveState(int slotNumber)
+bool impl3dsSaveStateSlot(int slotNumber)
 {
 	char s[_MAX_PATH];
 	sprintf(s, ".%d.frz", slotNumber);
-	return Snapshot(S9xGetFilename (s));
+	return impl3dsSaveState(S9xGetFilename(s));
 }
 
+bool impl3dsSaveStateAuto()
+{
+	return impl3dsSaveState(S9xGetFilename(".auto.frz"));
+}
+
+bool impl3dsSaveState(const char* filename)
+{
+	return Snapshot(filename);
+}
 
 //---------------------------------------------------------
 // This is called when the user chooses to load the state.
@@ -570,11 +580,21 @@ bool impl3dsSaveState(int slotNumber)
 // name contains the slot number. This will return
 // true if the state is loaded successfully.
 //---------------------------------------------------------
-bool impl3dsLoadState(int slotNumber)
+bool impl3dsLoadStateSlot(int slotNumber)
 {
 	char s[_MAX_PATH];
 	sprintf(s, ".%d.frz", slotNumber);
-	bool success = S9xLoadSnapshot(S9xGetFilename (s));
+	return impl3dsLoadState(S9xGetFilename(s));
+}
+
+bool impl3dsLoadStateAuto()
+{
+	return impl3dsLoadState(S9xGetFilename(".auto.frz"));
+}
+
+bool impl3dsLoadState(const char* filename)
+{
+	bool success = S9xLoadSnapshot(filename);
 	if (success)
 	{
 		gpu3dsInitializeMode7Vertexes();
