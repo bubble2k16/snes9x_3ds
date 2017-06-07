@@ -1122,7 +1122,7 @@ void emulatorInitialize()
 
     osSetSpeedupEnable(1);    // Performance: use the higher clock speed for new 3DS.
 
-    enableExitHook();
+    enableAptHooks();
 
     settingsLoad(false);
 
@@ -1259,6 +1259,7 @@ void emulatorLoop()
     long snesFrameTotalAccurateTicks = 0;
 
     bool firstFrame = true;
+    appSuspended = 0;
 
     snd3DS.generateSilence = false;
 
@@ -1290,7 +1291,7 @@ void emulatorLoop()
         startFrameTick = svcGetSystemTick();
         aptMainLoop();
 
-        if (appExiting)
+        if (appExiting || appSuspended)
             break;
 
         gpu3dsStartNewFrame();
