@@ -284,7 +284,7 @@ void ui3dsDrawChar(uint16 *frameBuffer, int x, int y, int color565, uint8 c)
 //---------------------------------------------------------------
 // Computes width of the string
 //---------------------------------------------------------------
-int ui3dsGetStringWidth(char *s, int startPos = 0, int endPos = 0xffff)
+int ui3dsGetStringWidth(const char *s, int startPos = 0, int endPos = 0xffff)
 {
     int totalWidth = 0;
     for (int i = startPos; i <= endPos; i++)
@@ -382,7 +382,7 @@ void ui3dsDrawRect(int x0, int y0, int x1, int y1)
 //---------------------------------------------------------------
 // Draws a string at the given position without translation.
 //---------------------------------------------------------------
-void ui3dsDrawStringOnly(uint16 *fb, int absoluteX, int absoluteY, int color, char *buffer, int startPos = 0, int endPos = 0xffff)
+void ui3dsDrawStringOnly(uint16 *fb, int absoluteX, int absoluteY, int color, const char *buffer, int startPos = 0, int endPos = 0xffff)
 {
     int x = absoluteX;
     int y = absoluteY;
@@ -408,7 +408,7 @@ void ui3dsDrawStringOnly(uint16 *fb, int absoluteX, int absoluteY, int color, ch
 //---------------------------------------------------------------
 // Draws a string with the forecolor, with wrapping
 //---------------------------------------------------------------
-void ui3dsDrawStringWithWrapping(int x0, int y0, int x1, int y1, int color, int horizontalAlignment, char *buffer)
+void ui3dsDrawStringWithWrapping(int x0, int y0, int x1, int y1, int color, int horizontalAlignment, const char *buffer)
 {
     int strLineCount = 0;
     int strLineStart[30];
@@ -507,7 +507,7 @@ void ui3dsDrawStringWithWrapping(int x0, int y0, int x1, int y1, int color, int 
 //---------------------------------------------------------------
 // Draws a string with the forecolor, with no wrapping
 //---------------------------------------------------------------
-void ui3dsDrawStringWithNoWrapping(int x0, int y0, int x1, int y1, int color, int horizontalAlignment, char *buffer)
+void ui3dsDrawStringWithNoWrapping(int x0, int y0, int x1, int y1, int color, int horizontalAlignment, const char *buffer)
 {
     x0 += translateX;
     x1 += translateX;
