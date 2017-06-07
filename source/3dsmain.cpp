@@ -1129,6 +1129,8 @@ void emulatorInitialize()
     // Do this one more time.
     if (file3dsGetCurrentDir()[0] == 0)
         file3dsInitialize();
+
+    srvInit();
 }
 
 
