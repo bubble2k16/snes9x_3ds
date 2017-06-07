@@ -219,6 +219,8 @@ SMenuItem optionMenu[] = {
     MENU_MAKE_PICKER    (18000, "  Font", "The font used for the user interface.", optionsForFont, DIALOGCOLOR_CYAN),
     MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen", 0),
     MENU_MAKE_DISABLED  (""),
+    MENU_MAKE_CHECKBOX  (19100, "  Automatically save state on exit and load state on start", 0),
+    MENU_MAKE_DISABLED  (""),
     MENU_MAKE_HEADER1   ("GAME-SPECIFIC SETTINGS"),
     MENU_MAKE_HEADER2   ("Graphics"),
     MENU_MAKE_PICKER    (10000, "  Frameskip", "Try changing this if the game runs slow. Skipping frames help it run faster but less smooth.", optionsForFrameskip, DIALOGCOLOR_CYAN),
@@ -473,6 +475,8 @@ bool settingsReadWriteFullListGlobal(bool writeMode)
     config3dsReadWriteString("Dir=%s\n", "Dir=%1000[^\n]s\n", file3dsGetCurrentDir());
     config3dsReadWriteString("ROM=%s\n", "ROM=%1000[^\n]s\n", romFileNameLastSelected);
 
+    config3dsReadWriteInt32("AutoSavestate=%d\n", &settings3DS.AutoSavestate, 0, 1);
+
     // All new options should come here!
 
     config3dsCloseFile();
@@ -578,6 +582,9 @@ void emulatorLoadRom()
     settingsUpdateAllSettings();
     menuSetupCheats();
 
+    if (settings3DS.AutoSavestate)
+        impl3dsLoadStateAuto();
+
     snd3DS.generateSilence = false;
 }
 
@@ -657,6 +664,7 @@ bool menuCopySettings(bool copyMenuToSettings)
     UPDATE_SETTINGS(settings3DS.Turbo[5], 1, 13005);
     UPDATE_SETTINGS(settings3DS.Volume, 1, 14000);
     UPDATE_SETTINGS(settings3DS.PaletteFix, 1, 16000);
+    UPDATE_SETTINGS(settings3DS.AutoSavestate, 1, 19100);
     UPDATE_SETTINGS(settings3DS.SRAMSaveInterval, 1, 17000);
     UPDATE_SETTINGS(settings3DS.ForceSRAMWriteOnPause, 1, 19000);
 
@@ -878,9 +886,32 @@ void menuPause()
             }
             else
             {
-                strncpy(romFileNameLastSelected, romFileName, _MAX_PATH);
-                loadRomBeforeExit = true;
-                break;
+                bool loadRom = true;
+
+                // in case someone changed the AutoSavestate option while the menu was open
+                if (menuCopySettings(true))
+                    settingsSave();
+
+                if (settings3DS.AutoSavestate)
+                {
+                    menu3dsShowDialog("Save State", "Autosaving...", DIALOGCOLOR_CYAN, NULL, 0);
+                    bool result = impl3dsSaveStateAuto();
+                    menu3dsHideDialog();
+
+                    if (!result)
+                    {
+                        int choice = menu3dsShowDialog("Autosave failure", "Automatic savestate writing failed.\nLoad chosen game anyway?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+                        if (choice != 1)
+                            loadRom = false;
+                    }
+                }
+
+                if (loadRom)
+                {
+                    strncpy(romFileNameLastSelected, romFileName, _MAX_PATH);
+                    loadRomBeforeExit = true;
+                    break;
+                }
             }
         }
         else if (selection >= 2001 && selection <= 2010)
@@ -890,7 +921,7 @@ void menuPause()
            
             sprintf(text, "Saving into slot %d...\nThis may take a while", slot);
             menu3dsShowDialog("Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
-            bool result = impl3dsSaveState(slot);
+            bool result = impl3dsSaveStateSlot(slot);
             menu3dsHideDialog();
 
             if (result)
@@ -913,7 +944,7 @@ void menuPause()
             int slot = selection - 3000;
             char text[200];
 
-            bool result = impl3dsLoadState(slot);
+            bool result = impl3dsLoadStateSlot(slot);
             if (result)
             {
                 GPU3DS.emulatorState = EMUSTATE_EMULATE;
@@ -1406,6 +1437,9 @@ int main()
     }
 
 quit:
+    if (GPU3DS.emulatorState > 0 && settings3DS.AutoSavestate)
+        impl3dsSaveStateAuto();
+
     printf("emulatorFinalize:\n");
     emulatorFinalize();
     printf ("Exiting...\n");

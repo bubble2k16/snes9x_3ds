@@ -34,6 +34,11 @@ typedef struct
                                             //   2 - Disabled - Style 1.
                                             //   3 - Disabled - Style 2.
 
+    int     AutoSavestate = 0;              // Automatically save the the current state when the emulator is closed
+                                            // or the game is changed, and load it again when the game is loaded.
+                                            //   0 - Disabled
+                                            //   1 - Enabled
+
     int     SRAMSaveInterval;               // SRAM Save Interval
                                             //   1 - 1 second.
                                             //   2 - 10 seconds
