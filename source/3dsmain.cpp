@@ -191,7 +191,7 @@ SMenuItem optionsForFrameskip[] = {
 };
 
 SMenuItem optionsForFrameRate[] = {
-    MENU_MAKE_DIALOG_ACTION (0, "Default based on ROM",     ""),
+    MENU_MAKE_DIALOG_ACTION (0, "Default based on ROM region",     ""),
     MENU_MAKE_DIALOG_ACTION (1, "50 FPS",                   ""),
     MENU_MAKE_DIALOG_ACTION (2, "60 FPS",                   "")
 };
