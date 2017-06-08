@@ -139,7 +139,7 @@ v1.20
 - Improved speed of writing savestates.
 - Added a feature that automatically saves and loads a game's state when stopping/starting the game.
 - Minor text change.
-*Thanks AdmiralCurtis for submitting the pull requests to the original project!*
+*Thanks AdmiralCurtiss for submitting the pull requests to the original project!*
 
 v1.11
 - Fixed crashing bug when loading CHX cheat files.
