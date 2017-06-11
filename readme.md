@@ -134,13 +134,6 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 
 ## Change History
 
-v1.20
-- Fixed issues caused by going into sleep mode or suspending the game.
-- Improved speed of writing savestates.
-- Added a feature that automatically saves and loads a game's state when stopping/starting the game.
-- Minor text change.
-*Thanks AdmiralCurtiss for submitting the pull requests to the original project!*
-
 v1.11
 - Fixed crashing bug when loading CHX cheat files.
 
