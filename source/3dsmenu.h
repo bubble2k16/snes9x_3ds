@@ -1,6 +1,7 @@
-
 #ifndef _3DSMENU_H_
 #define _3DSMENU_H_
+
+#include <vector>
 
 #define MENUITEM_DISABLED           -1
 #define MENUITEM_HEADER1            0
@@ -46,26 +47,33 @@ typedef struct
     int     PickerBackColor;
 } SMenuItem;
 
-
+typedef struct
+{
+    SMenuItem   *MenuItems;
+    char        SubTitle[256];
+    char        *Title;
+    char        *DialogText;
+    int         ItemCount;
+    int         FirstItemIndex;
+    int         SelectedItemIndex;
+} SMenuTab;
 
 
 void menu3dsSetTransferGameScreen(bool transfer);
 
-void menu3dsSetTabSubTitle(int tabIndex, char *subtitle);
-void menu3dsAddTab(char *title, SMenuItem *menuItems, int itemCount);
-void menu3dsClearMenuTabs();
-void menu3dsSetCurrentMenuTab(int tabIndex);
-void menu3dsSetSelectedItemIndexByID(int tabIndex, int ID);
-void menu3dsSetValueByID(int tabIndex, int ID, int value);
-int menu3dsGetValueByID(int tabIndex, int ID);
+void menu3dsSetTabSubTitle(std::vector<SMenuTab>& menuTab, int tabIndex, char *subtitle);
+void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, SMenuItem *menuItems, int itemCount);
+void menu3dsSetSelectedItemIndexByID(int& currentMenuTab, std::vector<SMenuTab>& menuTab, int tabIndex, int ID);
+void menu3dsSetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID, int value);
+int menu3dsGetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID);
 
 void menu3dsDrawBlackScreen(float opacity = 1.0f);
 
-int menu3dsShowMenu(void (*itemChangedCallback)(int ID, int value), bool animateMenu);
-void menu3dsHideMenu();
+int menu3dsShowMenu(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, void (*itemChangedCallback)(int ID, int value), bool animateMenu);
+void menu3dsHideMenu(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab);
 
-int menu3dsShowDialog(char *title, char *dialogText, int dialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID = -1);
-void menu3dsHideDialog();
+int menu3dsShowDialog(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, char *title, char *dialogText, int dialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID = -1);
+void menu3dsHideDialog(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab);
 
 bool menu3dsTakeScreenshot(const char *path);
 

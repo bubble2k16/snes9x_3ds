@@ -637,17 +637,17 @@ int fileFindLastSelectedFile()
 //----------------------------------------------------------------------
 // Copy values from menu to settings.
 //----------------------------------------------------------------------
-bool menuCopySettings(bool copyMenuToSettings)
+bool menuCopySettings(std::vector<SMenuTab>& menuTab, bool copyMenuToSettings)
 {
 #define UPDATE_SETTINGS(var, tabIndex, ID)  \
-    if (copyMenuToSettings && (var) != menu3dsGetValueByID(tabIndex, ID)) \
+    if (copyMenuToSettings && (var) != menu3dsGetValueByID(menuTab, tabIndex, ID)) \
     { \
-        var = menu3dsGetValueByID(tabIndex, ID); \
+        var = menu3dsGetValueByID(menuTab, tabIndex, ID); \
         settingsUpdated = true; \
     } \
     if (!copyMenuToSettings) \
     { \
-        menu3dsSetValueByID(tabIndex, ID, (var)); \
+        menu3dsSetValueByID(menuTab, tabIndex, ID, (var)); \
     }
 
     bool settingsUpdated = false;
@@ -709,6 +709,10 @@ bool menuCopyCheats(bool copyMenuToSettings)
 //----------------------------------------------------------------------
 void menuSelectFile(void)
 {
+    std::vector<SMenuTab> menuTab;
+    int currentMenuTab = 0;
+    bool isDialog = false;
+
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
     
     emulatorMenuCount = sizeof(emulatorNewMenu) / sizeof(SMenuItem);
@@ -716,14 +720,15 @@ void menuSelectFile(void)
 
     fileGetAllFiles();
     int previousFileID = fileFindLastSelectedFile();
-    menu3dsClearMenuTabs();
-    menu3dsAddTab("Emulator", emulatorNewMenu, emulatorMenuCount);
-    menu3dsAddTab("Select ROM", fileMenu, totalRomFileCount);
-    menu3dsSetTabSubTitle(0, NULL);
-    menu3dsSetTabSubTitle(1, file3dsGetCurrentDir());
-    menu3dsSetCurrentMenuTab(1);
+    menuTab.clear();
+    currentMenuTab = 0;
+    menu3dsAddTab(menuTab, "Emulator", emulatorNewMenu, emulatorMenuCount);
+    menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
+    menu3dsSetTabSubTitle(menuTab, 0, NULL);
+    menu3dsSetTabSubTitle(menuTab, 1, file3dsGetCurrentDir());
+    currentMenuTab = 1;
     if (previousFileID >= 0)
-        menu3dsSetSelectedItemIndexByID(1, previousFileID);
+        menu3dsSetSelectedItemIndexByID(currentMenuTab, menuTab, 1, previousFileID);
     menu3dsSetTransferGameScreen(false);
 
     bool animateMenu = true;
@@ -733,7 +738,7 @@ void menuSelectFile(void)
         if (appExiting)
             return;
 
-        selection = menu3dsShowMenu(NULL, animateMenu);
+        selection = menu3dsShowMenu(isDialog, currentMenuTab, menuTab, NULL, animateMenu);
         animateMenu = false;
 
         if (selection >= 0 && selection < 1000)
@@ -750,11 +755,12 @@ void menuSelectFile(void)
                     file3dsGoToChildDirectory(&romFileName[2]);
 
                 fileGetAllFiles();
-                menu3dsClearMenuTabs();
-                menu3dsAddTab("Emulator", emulatorNewMenu, emulatorMenuCount);
-                menu3dsAddTab("Select ROM", fileMenu, totalRomFileCount);
-                menu3dsSetCurrentMenuTab(1);
-                menu3dsSetTabSubTitle(1, file3dsGetCurrentDir());
+                menuTab.clear();
+                currentMenuTab = 0;
+                menu3dsAddTab(menuTab, "Emulator", emulatorNewMenu, emulatorMenuCount);
+                menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
+                currentMenuTab = 1;
+                menu3dsSetTabSubTitle(menuTab, 1, file3dsGetCurrentDir());
                 selection = -1;
             }
             else
@@ -765,8 +771,8 @@ void menuSelectFile(void)
         }
         else if (selection == 6001)
         {
-            int result = menu3dsShowDialog("Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
-            menu3dsHideDialog();
+            int result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
 
             if (result == 1)
             {
@@ -779,7 +785,7 @@ void menuSelectFile(void)
     }
     while (selection == -1);
 
-    menu3dsHideMenu();
+    menu3dsHideMenu(isDialog, currentMenuTab, menuTab);
 
     emulatorLoadRom();
 }
@@ -814,6 +820,10 @@ void menuItemChangedCallback(int ID, int value)
 //----------------------------------------------------------------------
 void menuPause()
 {
+    std::vector<SMenuTab> menuTab;
+    int currentMenuTab = 0;
+    bool isDialog = false;
+
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
     
     emulatorMenuCount = sizeof(emulatorMenu) / sizeof(SMenuItem);
@@ -824,23 +834,24 @@ void menuPause()
     bool returnToEmulation = false;
 
 
-    menu3dsClearMenuTabs();
-    menu3dsAddTab("Emulator", emulatorMenu, emulatorMenuCount);
-    menu3dsAddTab("Options", optionMenu, optionMenuCount);
-    menu3dsAddTab("Cheats", cheatMenu, cheatMenuCount);
-    menu3dsAddTab("Select ROM", fileMenu, totalRomFileCount);
+    menuTab.clear();
+    currentMenuTab = 0;
+    menu3dsAddTab(menuTab, "Emulator", emulatorMenu, emulatorMenuCount);
+    menu3dsAddTab(menuTab, "Options", optionMenu, optionMenuCount);
+    menu3dsAddTab(menuTab, "Cheats", cheatMenu, cheatMenuCount);
+    menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
 
-    menuCopySettings(false);
+    menuCopySettings(menuTab, false);
     menuCopyCheats(false);
 
     int previousFileID = fileFindLastSelectedFile();
-    menu3dsSetTabSubTitle(0, NULL);
-    menu3dsSetTabSubTitle(1, NULL);
-    menu3dsSetTabSubTitle(2, NULL);
-    menu3dsSetTabSubTitle(3, file3dsGetCurrentDir());
+    menu3dsSetTabSubTitle(menuTab, 0, NULL);
+    menu3dsSetTabSubTitle(menuTab, 1, NULL);
+    menu3dsSetTabSubTitle(menuTab, 2, NULL);
+    menu3dsSetTabSubTitle(menuTab, 3, file3dsGetCurrentDir());
     if (previousFileID >= 0)
-        menu3dsSetSelectedItemIndexByID(3, previousFileID);
-    menu3dsSetCurrentMenuTab(0);
+        menu3dsSetSelectedItemIndexByID(currentMenuTab, menuTab, 3, previousFileID);
+    currentMenuTab = 0;
     menu3dsSetTransferGameScreen(true);
 
     bool animateMenu = true;
@@ -852,7 +863,7 @@ void menuPause()
             break;
         }
 
-        int selection = menu3dsShowMenu(menuItemChangedCallback, animateMenu);
+        int selection = menu3dsShowMenu(isDialog, currentMenuTab, menuTab, menuItemChangedCallback, animateMenu);
         animateMenu = false;
 
         if (selection == -1 || selection == 1000)
@@ -876,31 +887,32 @@ void menuPause()
                     file3dsGoToChildDirectory(&romFileName[2]);
 
                 fileGetAllFiles();
-                menu3dsClearMenuTabs();
-                menu3dsAddTab("Emulator", emulatorMenu, emulatorMenuCount);
-                menu3dsAddTab("Options", optionMenu, optionMenuCount);
-                menu3dsAddTab("Cheats", cheatMenu, cheatMenuCount);
-                menu3dsAddTab("Select ROM", fileMenu, totalRomFileCount);
-                menu3dsSetCurrentMenuTab(3);
-                menu3dsSetTabSubTitle(3, file3dsGetCurrentDir());
+                menuTab.clear();
+                currentMenuTab = 0;
+                menu3dsAddTab(menuTab, "Emulator", emulatorMenu, emulatorMenuCount);
+                menu3dsAddTab(menuTab, "Options", optionMenu, optionMenuCount);
+                menu3dsAddTab(menuTab, "Cheats", cheatMenu, cheatMenuCount);
+                menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
+                currentMenuTab = 3;
+                menu3dsSetTabSubTitle(menuTab, 3, file3dsGetCurrentDir());
             }
             else
             {
                 bool loadRom = true;
 
                 // in case someone changed the AutoSavestate option while the menu was open
-                if (menuCopySettings(true))
+                if (menuCopySettings(menuTab, true))
                     settingsSave();
 
                 if (settings3DS.AutoSavestate)
                 {
-                    menu3dsShowDialog("Save State", "Autosaving...", DIALOGCOLOR_CYAN, NULL, 0);
+                    menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Save State", "Autosaving...", DIALOGCOLOR_CYAN, NULL, 0);
                     bool result = impl3dsSaveStateAuto();
-                    menu3dsHideDialog();
+                    menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
 
                     if (!result)
                     {
-                        int choice = menu3dsShowDialog("Autosave failure", "Automatic savestate writing failed.\nLoad chosen game anyway?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+                        int choice = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Autosave failure", "Automatic savestate writing failed.\nLoad chosen game anyway?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
                         if (choice != 1)
                             loadRom = false;
                     }
@@ -920,24 +932,24 @@ void menuPause()
             char text[200];
            
             sprintf(text, "Saving into slot %d...\nThis may take a while", slot);
-            menu3dsShowDialog("Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
+            menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
             bool result = impl3dsSaveStateSlot(slot);
-            menu3dsHideDialog();
+            menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
 
             if (result)
             {
                 sprintf(text, "Slot %d save completed.", slot);
-                result = menu3dsShowDialog("Savestates", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
-                menu3dsHideDialog();
+                result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
             }
             else
             {
                 sprintf(text, "Oops. Unable to save slot %d!", slot);
-                result = menu3dsShowDialog("Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
-                menu3dsHideDialog();
+                result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
             }
 
-            menu3dsSetSelectedItemIndexByID(0, 1000);
+            menu3dsSetSelectedItemIndexByID(currentMenuTab, menuTab, 0, 1000);
         }
         else if (selection >= 3001 && selection <= 3010)
         {
@@ -954,13 +966,13 @@ void menuPause()
             else
             {
                 sprintf(text, "Oops. Unable to load slot %d!", slot);
-                menu3dsShowDialog("Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
-                menu3dsHideDialog();
+                menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
             }
         }
         else if (selection == 4001)
         {
-            menu3dsShowDialog("Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, NULL, 0);
+            menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, NULL, 0);
 
             char ext[256];
             const char *path = NULL;
@@ -984,25 +996,25 @@ void menuPause()
             {
                 success = menu3dsTakeScreenshot(path);
             }
-            menu3dsHideDialog();
+            menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
 
             if (success)
             {
                 char text[600];
                 snprintf(text, 600, "Done! File saved to %s", path);
-                menu3dsShowDialog("Screenshot", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
-                menu3dsHideDialog();
+                menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Screenshot", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
+                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
             }
             else 
             {
-                menu3dsShowDialog("Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
-                menu3dsHideDialog();
+                menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
+                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
             }
         }
         else if (selection == 5001)
         {
-            int result = menu3dsShowDialog("Reset Console", "Are you sure?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
-            menu3dsHideDialog();
+            int result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Reset Console", "Are you sure?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
 
             if (result == 1)
             {
@@ -1016,7 +1028,7 @@ void menuPause()
         }
         else if (selection == 6001)
         {
-            int result = menu3dsShowDialog("Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            int result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
             if (result == 1)
             {
                 GPU3DS.emulatorState = EMUSTATE_END;
@@ -1024,17 +1036,17 @@ void menuPause()
                 break;
             }
             else
-                menu3dsHideDialog();
+                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
             
         }
 
     }
 
-    menu3dsHideMenu();
+    menu3dsHideMenu(isDialog, currentMenuTab, menuTab);
 
     // Save settings and cheats
     //
-    if (menuCopySettings(true))
+    if (menuCopySettings(menuTab, true))
         settingsSave();
     settingsUpdateAllSettings();
 

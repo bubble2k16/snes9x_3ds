@@ -1,3 +1,4 @@
+#include <array>
 #include <cstring>
 #include <string.h>
 #include <stdio.h>
@@ -19,24 +20,8 @@
 #define ANIMATE_TAB_STEPS 3
 
 
-typedef struct
-{
-    SMenuItem   *MenuItems;
-    char        SubTitle[256];
-    char        *Title;
-    char        *DialogText;
-    int         ItemCount;
-    int         FirstItemIndex;
-    int         SelectedItemIndex;
-} SMenuTab;
-
-
-SMenuTab            menuTab[4];
 SMenuTab            dialogTab;
-
-int                 menuTabCount;
-int                 currentMenuTab = 0;
-bool                isDialog = false;
+int menuTabCount;
 
 bool                transferGameScreen = false;
 int                 transferGameScreenCount = 0;
@@ -261,7 +246,7 @@ void menu3dsDrawItems(
 
 // Display the list of choices for selection
 //
-void menu3dsDrawMenu(int menuItemFrame, int translateY)
+void menu3dsDrawMenu(std::vector<SMenuTab>& menuTab, int& currentMenuTab, int menuItemFrame, int translateY)
 {
     SMenuTab *currentTab = &menuTab[currentMenuTab];
 
@@ -275,7 +260,7 @@ void menu3dsDrawMenu(int menuItemFrame, int translateY)
 
     // Draw the tabs at the top
     //
-    for (int i = 0; i < menuTabCount; i++)
+    for (int i = 0; i < static_cast<int>(menuTab.size()); i++)
     {
         int color = i == currentMenuTab ? 0xFFFFFF : 0x90CAF9 ;
         ui3dsDrawStringWithNoWrapping(i * 75 + 10, 6, (i+1)*75 + 10, 21, color, HALIGN_CENTER, 
@@ -401,7 +386,7 @@ void menu3dsDrawDialog()
 }
 
 
-void menu3dsDrawEverything(int menuFrame = 0, int menuItemsFrame = 0, int dialogFrame = 0)
+void menu3dsDrawEverything(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, int menuFrame = 0, int menuItemsFrame = 0, int dialogFrame = 0)
 {
     if (!isDialog)
     {
@@ -411,7 +396,7 @@ void menu3dsDrawEverything(int menuFrame = 0, int menuItemsFrame = 0, int dialog
         ui3dsSetTranslate(0, 0);
         ui3dsDrawRect(0, 0, 400, y, 0x000000);
         ui3dsSetTranslate(0, y);
-        menu3dsDrawMenu(menuItemsFrame, y);
+        menu3dsDrawMenu(menuTab, currentMenuTab, menuItemsFrame, y);
     }
     else
     {
@@ -420,7 +405,7 @@ void menu3dsDrawEverything(int menuFrame = 0, int menuItemsFrame = 0, int dialog
         ui3dsSetViewport(0, 0, 320, y);
         //ui3dsBlitToFrameBuffer(savedBuffer, 1.0f - (float)(8 - dialogFrame) / 10);
         ui3dsSetTranslate(0, 0);
-        menu3dsDrawMenu(0, 0);
+        menu3dsDrawMenu(menuTab, currentMenuTab, 0, 0);
         ui3dsDrawRect(0, 0, 320, y, 0x000000, (float)(8 - dialogFrame) / 10);
 
         ui3dsSetViewport(0, 0, 320, 240);
@@ -432,7 +417,7 @@ void menu3dsDrawEverything(int menuFrame = 0, int menuItemsFrame = 0, int dialog
 }
 
 
-SMenuTab *menu3dsAnimateTab(int direction)
+SMenuTab *menu3dsAnimateTab(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, int direction)
 {
     SMenuTab *currentTab = &menuTab[currentMenuTab];
 
@@ -441,19 +426,19 @@ SMenuTab *menu3dsAnimateTab(int direction)
         for (int i = 1; i <= ANIMATE_TAB_STEPS; i++)
         {
             aptMainLoop();
-            menu3dsDrawEverything(0, i, 0);
+            menu3dsDrawEverything(isDialog, currentMenuTab, menuTab, 0, i, 0);
             menu3dsSwapBuffersAndWaitForVBlank();
         }
 
         currentMenuTab--;
         if (currentMenuTab < 0)
-            currentMenuTab = menuTabCount - 1;
+            currentMenuTab = static_cast<int>(menuTab.size() - 1);
         currentTab = &menuTab[currentMenuTab];
         
         for (int i = -ANIMATE_TAB_STEPS; i <= 0; i++)
         {
             aptMainLoop();
-            menu3dsDrawEverything(0, i, 0);
+            menu3dsDrawEverything(isDialog, currentMenuTab, menuTab, 0, i, 0);
             menu3dsSwapBuffersAndWaitForVBlank();
         }
     }
@@ -462,19 +447,19 @@ SMenuTab *menu3dsAnimateTab(int direction)
         for (int i = -1; i >= -ANIMATE_TAB_STEPS; i--)
         {
             aptMainLoop();
-            menu3dsDrawEverything(0, i, 0);
+            menu3dsDrawEverything(isDialog, currentMenuTab, menuTab, 0, i, 0);
             menu3dsSwapBuffersAndWaitForVBlank();
         }
 
         currentMenuTab++;
-        if (currentMenuTab >= menuTabCount)
+        if (currentMenuTab >= static_cast<int>(menuTab.size()))
             currentMenuTab = 0;
         currentTab = &menuTab[currentMenuTab];
         
         for (int i = ANIMATE_TAB_STEPS; i >= 0; i--)
         {
             aptMainLoop();
-            menu3dsDrawEverything(0, i, 0);
+            menu3dsDrawEverything(isDialog, currentMenuTab, menuTab, 0, i, 0);
             menu3dsSwapBuffersAndWaitForVBlank();
         }
     }
@@ -489,7 +474,7 @@ static u32 thisKeysHeld = 0;
 // Displays the menu and allows the user to select from
 // a list of choices.
 //
-int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
+int menu3dsMenuSelectItem(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, void (*itemChangedCallback)(int ID, int value))
 {
     int framesDKeyHeld = 0;
     int returnResult = -1;
@@ -504,7 +489,7 @@ int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
     for (int i = 0; i < 2; i ++)
     {
         aptMainLoop();
-        menu3dsDrawEverything();
+        menu3dsDrawEverything(isDialog, currentMenuTab, menuTab);
         menu3dsSwapBuffersAndWaitForVBlank();
 
         hidScanInput();
@@ -556,11 +541,11 @@ int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
                     {
                         currentTab->MenuItems[currentTab->SelectedItemIndex].Value ++ ;
                     }
-                    menu3dsDrawEverything();
+                    menu3dsDrawEverything(isDialog, currentMenuTab, menuTab);
                 }
                 else
                 {
-                    currentTab = menu3dsAnimateTab(+1);
+                    currentTab = menu3dsAnimateTab(isDialog, currentMenuTab, menuTab, +1);
                 }
             }
         }
@@ -577,11 +562,11 @@ int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
                     {
                         currentTab->MenuItems[currentTab->SelectedItemIndex].Value -- ;
                     }
-                    menu3dsDrawEverything();
+                    menu3dsDrawEverything(isDialog, currentMenuTab, menuTab);
                 }
                 else
                 {
-                    currentTab = menu3dsAnimateTab(-1);
+                    currentTab = menu3dsAnimateTab(isDialog, currentMenuTab, menuTab, -1);
                 }
             }
         }
@@ -598,12 +583,12 @@ int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
                     currentTab->MenuItems[currentTab->SelectedItemIndex].Value = 1;
                 else
                     currentTab->MenuItems[currentTab->SelectedItemIndex].Value = 0;
-                menu3dsDrawEverything();
+                menu3dsDrawEverything(isDialog, currentMenuTab, menuTab);
             }
             if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_PICKER)
             {
                 snprintf(menuTextBuffer, 511, "%s", currentTab->MenuItems[currentTab->SelectedItemIndex].Text);
-                int resultValue = menu3dsShowDialog(menuTextBuffer, 
+                int resultValue = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, menuTextBuffer,
                     currentTab->MenuItems[currentTab->SelectedItemIndex].PickerDescription,
                     currentTab->MenuItems[currentTab->SelectedItemIndex].PickerBackColor,
                     (SMenuItem *)currentTab->MenuItems[currentTab->SelectedItemIndex].PickerItems,
@@ -617,8 +602,8 @@ int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
                     
                     currentTab->MenuItems[currentTab->SelectedItemIndex].Value = resultValue;
                 }
-                menu3dsDrawEverything();
-                menu3dsHideDialog();
+                menu3dsDrawEverything(isDialog, currentMenuTab, menuTab);
+                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
 
 
             }
@@ -657,7 +642,7 @@ int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
 
-            menu3dsDrawEverything();
+            menu3dsDrawEverything(isDialog, currentMenuTab, menuTab);
 
         }
         if (keysDown & KEY_DOWN || ((thisKeysHeld & KEY_DOWN) && (framesDKeyHeld > 30) && (framesDKeyHeld % 2 == 0)))
@@ -694,7 +679,7 @@ int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
 
-            menu3dsDrawEverything();
+            menu3dsDrawEverything(isDialog, currentMenuTab, menuTab);
         }
 
         menu3dsSwapBuffersAndWaitForVBlank();
@@ -706,9 +691,10 @@ int menu3dsMenuSelectItem(void (*itemChangedCallback)(int ID, int value))
 
 
 
-void menu3dsAddTab(char *title, SMenuItem *menuItems, int itemCount)
+void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, SMenuItem *menuItems, int itemCount)
 {
-    SMenuTab *currentTab = &menuTab[menuTabCount];
+    menuTab.emplace_back();
+    SMenuTab *currentTab = &menuTab.back();
 
     currentTab->Title = title;
     currentTab->MenuItems = menuItems;
@@ -726,13 +712,11 @@ void menu3dsAddTab(char *title, SMenuItem *menuItems, int itemCount)
             break;
         }
     }
-
-    menuTabCount++;
 }
 
 
 
-void menu3dsSetTabSubTitle(int tabIndex, char *subtitle)
+void menu3dsSetTabSubTitle(std::vector<SMenuTab>& menuTab, int tabIndex, char *subtitle)
 {
     SMenuTab *currentTab = &menuTab[tabIndex];
 
@@ -741,13 +725,7 @@ void menu3dsSetTabSubTitle(int tabIndex, char *subtitle)
         strncpy(currentTab->SubTitle, subtitle, 255);
 }
 
-void menu3dsSetCurrentMenuTab(int tabIndex)
-{
-    currentMenuTab = tabIndex;
-}
-
-
-void menu3dsSetSelectedItemIndexByID(int tabIndex, int ID)
+void menu3dsSetSelectedItemIndexByID(int& currentMenuTab, std::vector<SMenuTab>& menuTab, int tabIndex, int ID)
 {
     currentMenuTab = tabIndex;
 
@@ -774,7 +752,7 @@ void menu3dsSetSelectedItemIndexByID(int tabIndex, int ID)
 }
 
 
-void menu3dsSetValueByID(int tabIndex, int ID, int value)
+void menu3dsSetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID, int value)
 {
     SMenuTab *currentTab = &menuTab[tabIndex];
 
@@ -789,7 +767,7 @@ void menu3dsSetValueByID(int tabIndex, int ID, int value)
 }
 
 
-int menu3dsGetValueByID(int tabIndex, int ID)
+int menu3dsGetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID)
 {
     SMenuTab *currentTab = &menuTab[tabIndex];
 
@@ -803,16 +781,7 @@ int menu3dsGetValueByID(int tabIndex, int ID)
     return -1;
 }
 
-
-void menu3dsClearMenuTabs()
-{
-    menuTabCount = 0;
-    currentMenuTab = 0;
-}
-
-
-
-int menu3dsShowMenu(void (*itemChangedCallback)(int ID, int value), bool animateMenu)
+int menu3dsShowMenu(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, void (*itemChangedCallback)(int ID, int value), bool animateMenu)
 {
     isDialog = false;
 
@@ -821,27 +790,27 @@ int menu3dsShowMenu(void (*itemChangedCallback)(int ID, int value), bool animate
         for (int f = 8; f >= 0; f--)
         {
             aptMainLoop();
-            menu3dsDrawEverything(f, 0, 0);    
+            menu3dsDrawEverything(isDialog, currentMenuTab, menuTab, f, 0, 0);
             menu3dsSwapBuffersAndWaitForVBlank();  
         }
     }
 
-    return menu3dsMenuSelectItem(itemChangedCallback);
+    return menu3dsMenuSelectItem(isDialog, currentMenuTab, menuTab, itemChangedCallback);
 
 }
 
-void menu3dsHideMenu()
+void menu3dsHideMenu(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab)
 {
     for (int f = 0; f <= 8; f++)
     {
         aptMainLoop();
-        menu3dsDrawEverything(f, 0, 0);    
+        menu3dsDrawEverything(isDialog, currentMenuTab, menuTab, f, 0, 0);
         menu3dsSwapBuffersAndWaitForVBlank();  
     }    
     ui3dsSetTranslate(0, 0);
 }
 
-int menu3dsShowDialog(char *title, char *dialogText, int newDialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID)
+int menu3dsShowDialog(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, char *title, char *dialogText, int newDialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID)
 {
     SMenuTab *currentTab = &dialogTab;
 
@@ -870,7 +839,7 @@ int menu3dsShowDialog(char *title, char *dialogText, int newDialogBackColor, SMe
     // fade the dialog fade in
     //
     aptMainLoop();
-    menu3dsDrawEverything();
+    menu3dsDrawEverything(isDialog, currentMenuTab, menuTab);
     menu3dsSwapBuffersAndWaitForVBlank();  
     //ui3dsCopyFromFrameBuffer(savedBuffer);
 
@@ -878,7 +847,7 @@ int menu3dsShowDialog(char *title, char *dialogText, int newDialogBackColor, SMe
     for (int f = 8; f >= 0; f--)
     {
         aptMainLoop();
-        menu3dsDrawEverything(0, 0, f);    
+        menu3dsDrawEverything(isDialog, currentMenuTab, menuTab, 0, 0, f);
         menu3dsSwapBuffersAndWaitForVBlank();  
     }
 
@@ -886,7 +855,7 @@ int menu3dsShowDialog(char *title, char *dialogText, int newDialogBackColor, SMe
     //
     if (itemCount > 0)
     {
-        int result = menu3dsMenuSelectItem(NULL);
+        int result = menu3dsMenuSelectItem(isDialog, currentMenuTab, menuTab, NULL);
 
         return result;
     }
@@ -894,14 +863,14 @@ int menu3dsShowDialog(char *title, char *dialogText, int newDialogBackColor, SMe
 }
 
 
-void menu3dsHideDialog()
+void menu3dsHideDialog(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab)
 {
     // fade the dialog out
     //
     for (int f = 0; f <= 8; f++)
     {
         aptMainLoop();
-        menu3dsDrawEverything(0, 0, f);        
+        menu3dsDrawEverything(isDialog, currentMenuTab, menuTab, 0, 0, f);
         menu3dsSwapBuffersAndWaitForVBlank();    
     }
 
@@ -910,7 +879,7 @@ void menu3dsHideDialog()
     // draw the updated menu
     //
     aptMainLoop();
-    menu3dsDrawEverything();
+    menu3dsDrawEverything(isDialog, currentMenuTab, menuTab);
     menu3dsSwapBuffersAndWaitForVBlank();  
     
 }
