@@ -1,4 +1,5 @@
 #include <array>
+#include <cmath>
 #include <cstring>
 #include <string.h>
 #include <stdio.h>
@@ -261,12 +262,28 @@ void menu3dsDrawMenu(std::vector<SMenuTab>& menuTab, int& currentMenuTab, int me
     //
     for (int i = 0; i < static_cast<int>(menuTab.size()); i++)
     {
-        int color = i == currentMenuTab ? 0xFFFFFF : 0x90CAF9 ;
-        ui3dsDrawStringWithNoWrapping(i * 75 + 10, 6, (i+1)*75 + 10, 21, color, HALIGN_CENTER, 
-            menuTab[i].Title);
+        int color = i == currentMenuTab ? 0xFFFFFF : 0x90CAF9;
 
-        if (i == currentMenuTab)
-            ui3dsDrawRect(i * 75 + 10, 21, (i+1)*75 + 10, 24, 0xFFFFFF);
+        int offsetLeft = 10;
+        int offsetRight = 10;
+
+        int availableSpace = 320 - ( offsetLeft + offsetRight );
+        int pixelPerOption =      availableSpace / static_cast<int>(menuTab.size());
+        int extraPixelOnOptions = availableSpace % static_cast<int>(menuTab.size());
+
+        // each tab gains an equal amount of horizontal space
+        // if space is not cleanly divisible by tab count, the earlier tabs gain one extra pixel each until we reach the requested space
+        int xLeft =  (     i     * pixelPerOption ) + offsetLeft + std::min( i,     extraPixelOnOptions );
+        int xRight = ( ( i + 1 ) * pixelPerOption ) + offsetLeft + std::min( i + 1, extraPixelOnOptions );
+        int yTextTop = 6;
+        int yCurrentTabBoxTop = 21;
+        int yCurrentTabBoxBottom = 24;
+
+        ui3dsDrawStringWithNoWrapping(xLeft, yTextTop, xRight, yCurrentTabBoxTop, color, HALIGN_CENTER, menuTab[i].Title);
+
+        if (i == currentMenuTab) {
+            ui3dsDrawRect(xLeft, yCurrentTabBoxTop, xRight, yCurrentTabBoxBottom, 0xFFFFFF);
+        }
     }
 
     // Shadows
