@@ -724,8 +724,8 @@ void menuSelectFile(void)
     currentMenuTab = 0;
     menu3dsAddTab(menuTab, "Emulator", emulatorNewMenu, emulatorMenuCount);
     menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
-    menu3dsSetTabSubTitle(menuTab, 0, NULL);
-    menu3dsSetTabSubTitle(menuTab, 1, file3dsGetCurrentDir());
+    menuTab[0].SubTitle.clear();
+    menuTab[1].SubTitle.assign(file3dsGetCurrentDir());
     currentMenuTab = 1;
     if (previousFileID >= 0)
         menu3dsSetSelectedItemIndexByID(currentMenuTab, menuTab, 1, previousFileID);
@@ -760,7 +760,7 @@ void menuSelectFile(void)
                 menu3dsAddTab(menuTab, "Emulator", emulatorNewMenu, emulatorMenuCount);
                 menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
                 currentMenuTab = 1;
-                menu3dsSetTabSubTitle(menuTab, 1, file3dsGetCurrentDir());
+                menuTab[1].SubTitle.assign(file3dsGetCurrentDir());
                 selection = -1;
             }
             else
@@ -845,10 +845,10 @@ void menuPause()
     menuCopyCheats(false);
 
     int previousFileID = fileFindLastSelectedFile();
-    menu3dsSetTabSubTitle(menuTab, 0, NULL);
-    menu3dsSetTabSubTitle(menuTab, 1, NULL);
-    menu3dsSetTabSubTitle(menuTab, 2, NULL);
-    menu3dsSetTabSubTitle(menuTab, 3, file3dsGetCurrentDir());
+    menuTab[0].SubTitle.clear();
+    menuTab[1].SubTitle.clear();
+    menuTab[2].SubTitle.clear();
+    menuTab[3].SubTitle.assign(file3dsGetCurrentDir());
     if (previousFileID >= 0)
         menu3dsSetSelectedItemIndexByID(currentMenuTab, menuTab, 3, previousFileID);
     currentMenuTab = 0;
@@ -894,7 +894,7 @@ void menuPause()
                 menu3dsAddTab(menuTab, "Cheats", cheatMenu, cheatMenuCount);
                 menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
                 currentMenuTab = 3;
-                menu3dsSetTabSubTitle(menuTab, 3, file3dsGetCurrentDir());
+                menuTab[3].SubTitle.assign(file3dsGetCurrentDir());
             }
             else
             {

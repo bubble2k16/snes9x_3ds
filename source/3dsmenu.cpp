@@ -98,12 +98,11 @@ void menu3dsDrawItems(
     char selectedTextBuffer[512];
     
     // Display the subtitle
-    if (currentTab->SubTitle[0])
+    if (!currentTab->SubTitle.empty())
     {
         maxItems--;
-        snprintf (menuTextBuffer, 511, "%s", currentTab->SubTitle);
         ui3dsDrawStringWithNoWrapping(20, menuStartY, 300, menuStartY + fontHeight, 
-            subtitleTextColor, HALIGN_LEFT, menuTextBuffer);
+            subtitleTextColor, HALIGN_LEFT, currentTab->SubTitle.c_str());
         menuStartY += fontHeight;
     }
 
@@ -515,7 +514,7 @@ int menu3dsMenuSelectItem(bool& isDialog, int& currentMenuTab, std::vector<SMenu
         if (isDialog)
             maxItems = DIALOG_HEIGHT;
 
-        if (currentTab->SubTitle[0])
+        if (!currentTab->SubTitle.empty())
         {
             maxItems--;
         }
@@ -714,17 +713,6 @@ void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, SMenuItem *menuI
     }
 }
 
-
-
-void menu3dsSetTabSubTitle(std::vector<SMenuTab>& menuTab, int tabIndex, char *subtitle)
-{
-    SMenuTab *currentTab = &menuTab[tabIndex];
-
-    currentTab->SubTitle[0] = 0;
-    if (subtitle != NULL)
-        strncpy(currentTab->SubTitle, subtitle, 255);
-}
-
 void menu3dsSetSelectedItemIndexByID(int& currentMenuTab, std::vector<SMenuTab>& menuTab, int tabIndex, int ID)
 {
     currentMenuTab = tabIndex;
@@ -732,7 +720,7 @@ void menu3dsSetSelectedItemIndexByID(int& currentMenuTab, std::vector<SMenuTab>&
     SMenuTab *currentTab = &menuTab[tabIndex];
 
     int maxItems = MENU_HEIGHT;
-    if (currentTab->SubTitle[0])
+    if (!currentTab->SubTitle.empty())
         maxItems--;
 
     for (int i = 0; i < currentTab->ItemCount; i++)

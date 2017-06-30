@@ -1,6 +1,7 @@
 #ifndef _3DSMENU_H_
 #define _3DSMENU_H_
 
+#include <string>
 #include <vector>
 
 #define MENUITEM_DISABLED           -1
@@ -47,21 +48,20 @@ typedef struct
     int     PickerBackColor;
 } SMenuItem;
 
-typedef struct
-{
+class SMenuTab {
+public:
     SMenuItem   *MenuItems;
-    char        SubTitle[256];
+    std::string SubTitle;
     char        *Title;
     char        *DialogText;
     int         ItemCount;
     int         FirstItemIndex;
     int         SelectedItemIndex;
-} SMenuTab;
+};
 
 
 void menu3dsSetTransferGameScreen(bool transfer);
 
-void menu3dsSetTabSubTitle(std::vector<SMenuTab>& menuTab, int tabIndex, char *subtitle);
 void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, SMenuItem *menuItems, int itemCount);
 void menu3dsSetSelectedItemIndexByID(int& currentMenuTab, std::vector<SMenuTab>& menuTab, int tabIndex, int ID);
 void menu3dsSetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID, int value);
