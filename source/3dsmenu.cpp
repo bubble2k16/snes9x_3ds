@@ -279,7 +279,7 @@ void menu3dsDrawMenu(std::vector<SMenuTab>& menuTab, int& currentMenuTab, int me
         int yCurrentTabBoxTop = 21;
         int yCurrentTabBoxBottom = 24;
 
-        ui3dsDrawStringWithNoWrapping(xLeft, yTextTop, xRight, yCurrentTabBoxTop, color, HALIGN_CENTER, menuTab[i].Title);
+        ui3dsDrawStringWithNoWrapping(xLeft, yTextTop, xRight, yCurrentTabBoxTop, color, HALIGN_CENTER, menuTab[i].Title.c_str());
 
         if (i == currentMenuTab) {
             ui3dsDrawRect(xLeft, yCurrentTabBoxTop, xRight, yCurrentTabBoxBottom, 0xFFFFFF);
@@ -367,22 +367,12 @@ void menu3dsDrawDialog()
     ui3dsDrawRect(0, 0, 320, 75, dialogBackColor2);
     ui3dsDrawRect(0, 75, 320, 160, dialogBackColor);
 
-    // Left trim the dialog title
-    int len = strlen(dialogTab.Title);
-    int startChar = 0;
-    for (int i = 0; i < len; i++)
-        if (dialogTab.Title[i] != ' ')
-        {
-            startChar = i;
-            break;
-        }
-
     // Draw the dialog's title and descriptive text
     int dialogTitleTextColor = 
         ui3dsApplyAlphaToColor(dialogBackColor, 0.5f) + 
         ui3dsApplyAlphaToColor(dialogTextColor, 0.5f);
-    ui3dsDrawStringWithNoWrapping(30, 10, 290, 25, dialogTitleTextColor, HALIGN_LEFT, &dialogTab.Title[startChar]);
-    ui3dsDrawStringWithWrapping(30, 30, 290, 70, dialogTextColor, HALIGN_LEFT, dialogTab.DialogText);
+    ui3dsDrawStringWithNoWrapping(30, 10, 290, 25, dialogTitleTextColor, HALIGN_LEFT, dialogTab.Title.c_str());
+    ui3dsDrawStringWithWrapping(30, 30, 290, 70, dialogTextColor, HALIGN_LEFT, dialogTab.DialogText.c_str());
 
     // Draw the selectable items.
     int dialogItemDescriptionTextColor = dialogTitleTextColor;
@@ -712,7 +702,7 @@ void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, SMenuItem *menuI
     menuTab.emplace_back();
     SMenuTab *currentTab = &menuTab.back();
 
-    currentTab->Title = title;
+    currentTab->SetTitle(title);
     currentTab->MenuItems = menuItems;
     currentTab->ItemCount = itemCount;
 
@@ -821,8 +811,8 @@ int menu3dsShowDialog(bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>
 
     dialogBackColor = newDialogBackColor;
 
-    currentTab->Title = title;
-    currentTab->DialogText = dialogText;
+    currentTab->SetTitle(title);
+    currentTab->DialogText.assign(dialogText);
     currentTab->MenuItems = menuItems;
     currentTab->ItemCount = itemCount;
 

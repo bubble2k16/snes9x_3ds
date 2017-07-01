@@ -52,11 +52,17 @@ class SMenuTab {
 public:
     SMenuItem   *MenuItems;
     std::string SubTitle;
-    char        *Title;
-    char        *DialogText;
+    std::string Title;
+    std::string DialogText;
     int         ItemCount;
     int         FirstItemIndex;
     int         SelectedItemIndex;
+
+    void SetTitle(const std::string& title) {
+        // Left trim the dialog title
+        size_t offs = title.find_first_not_of(' ');
+        Title.assign(offs != title.npos ? title.substr(offs) : title);
+    }
 };
 
 
