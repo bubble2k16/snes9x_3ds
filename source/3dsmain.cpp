@@ -712,6 +712,7 @@ void menuSelectFile(void)
     std::vector<SMenuTab> menuTab;
     int currentMenuTab = 0;
     bool isDialog = false;
+    SMenuTab dialogTab;
 
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
     
@@ -738,7 +739,7 @@ void menuSelectFile(void)
         if (appExiting)
             return;
 
-        selection = menu3dsShowMenu(isDialog, currentMenuTab, menuTab, NULL, animateMenu);
+        selection = menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, NULL, animateMenu);
         animateMenu = false;
 
         if (selection >= 0 && selection < 1000)
@@ -771,8 +772,8 @@ void menuSelectFile(void)
         }
         else if (selection == 6001)
         {
-            int result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
-            menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
             if (result == 1)
             {
@@ -785,7 +786,7 @@ void menuSelectFile(void)
     }
     while (selection == -1);
 
-    menu3dsHideMenu(isDialog, currentMenuTab, menuTab);
+    menu3dsHideMenu(dialogTab, isDialog, currentMenuTab, menuTab);
 
     emulatorLoadRom();
 }
@@ -823,6 +824,7 @@ void menuPause()
     std::vector<SMenuTab> menuTab;
     int currentMenuTab = 0;
     bool isDialog = false;
+    SMenuTab dialogTab;
 
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
     
@@ -863,7 +865,7 @@ void menuPause()
             break;
         }
 
-        int selection = menu3dsShowMenu(isDialog, currentMenuTab, menuTab, menuItemChangedCallback, animateMenu);
+        int selection = menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, menuItemChangedCallback, animateMenu);
         animateMenu = false;
 
         if (selection == -1 || selection == 1000)
@@ -906,13 +908,13 @@ void menuPause()
 
                 if (settings3DS.AutoSavestate)
                 {
-                    menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Save State", "Autosaving...", DIALOGCOLOR_CYAN, NULL, 0);
+                    menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Save State", "Autosaving...", DIALOGCOLOR_CYAN, NULL, 0);
                     bool result = impl3dsSaveStateAuto();
-                    menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+                    menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
                     if (!result)
                     {
-                        int choice = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Autosave failure", "Automatic savestate writing failed.\nLoad chosen game anyway?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+                        int choice = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Autosave failure", "Automatic savestate writing failed.\nLoad chosen game anyway?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
                         if (choice != 1)
                             loadRom = false;
                     }
@@ -932,21 +934,21 @@ void menuPause()
             char text[200];
            
             sprintf(text, "Saving into slot %d...\nThis may take a while", slot);
-            menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
+            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
             bool result = impl3dsSaveStateSlot(slot);
-            menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
             if (result)
             {
                 sprintf(text, "Slot %d save completed.", slot);
-                result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
-                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+                result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
             else
             {
                 sprintf(text, "Oops. Unable to save slot %d!", slot);
-                result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
-                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+                result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
 
             menu3dsSetSelectedItemIndexByID(currentMenuTab, menuTab, 0, 1000);
@@ -966,13 +968,13 @@ void menuPause()
             else
             {
                 sprintf(text, "Oops. Unable to load slot %d!", slot);
-                menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
-                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
         }
         else if (selection == 4001)
         {
-            menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, NULL, 0);
+            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, NULL, 0);
 
             char ext[256];
             const char *path = NULL;
@@ -996,25 +998,25 @@ void menuPause()
             {
                 success = menu3dsTakeScreenshot(path);
             }
-            menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
             if (success)
             {
                 char text[600];
                 snprintf(text, 600, "Done! File saved to %s", path);
-                menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Screenshot", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
-                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
+                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
             else 
             {
-                menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
-                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
+                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
         }
         else if (selection == 5001)
         {
-            int result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Reset Console", "Are you sure?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
-            menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Reset Console", "Are you sure?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
             if (result == 1)
             {
@@ -1028,7 +1030,7 @@ void menuPause()
         }
         else if (selection == 6001)
         {
-            int result = menu3dsShowDialog(isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
             if (result == 1)
             {
                 GPU3DS.emulatorState = EMUSTATE_END;
@@ -1036,13 +1038,13 @@ void menuPause()
                 break;
             }
             else
-                menu3dsHideDialog(isDialog, currentMenuTab, menuTab);
+                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             
         }
 
     }
 
-    menu3dsHideMenu(isDialog, currentMenuTab, menuTab);
+    menu3dsHideMenu(dialogTab, isDialog, currentMenuTab, menuTab);
 
     // Save settings and cheats
     //
