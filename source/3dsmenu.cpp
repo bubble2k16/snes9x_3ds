@@ -91,9 +91,6 @@ void menu3dsDrawItems(
     int subtitleTextColor)
 {
     int fontHeight = 13;
-    char gauge[52];
-    char menuTextBuffer[512];
-    char selectedTextBuffer[512];
     
     // Display the subtitle
     if (!currentTab->SubTitle.empty())
@@ -114,11 +111,6 @@ void menu3dsDrawItems(
     {
         int y = line * fontHeight + menuStartY;
 
-        if (currentTab->MenuItems[i].Text == NULL)
-            snprintf (menuTextBuffer, 511, "");
-        else
-            snprintf (menuTextBuffer, 511, "%s", currentTab->MenuItems[i].Text);
-
         // Draw the selected background 
         //
         if (currentTab->SelectedItemIndex == i)
@@ -129,33 +121,32 @@ void menu3dsDrawItems(
         if (currentTab->MenuItems[i].Type == MENUITEM_HEADER1)
         {
             color = headerItemTextColor;
-            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
             ui3dsDrawRect(horizontalPadding, y + fontHeight - 1, 320 - horizontalPadding, y + fontHeight, color);
         }
         else if (currentTab->MenuItems[i].Type == MENUITEM_HEADER2)
         {
             color = headerItemTextColor;
-            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
         }
         else if (currentTab->MenuItems[i].Type == MENUITEM_DISABLED)
         {
             color = disabledItemTextColor;
-            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
         }
         else if (currentTab->MenuItems[i].Type == MENUITEM_ACTION)
         {
             color = normalItemTextColor;
             if (currentTab->SelectedItemIndex == i)
                 color = selectedItemTextColor;
-            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
 
             color = normalItemDescriptionTextColor;
             if (currentTab->SelectedItemIndex == i)
                 color = selectedItemDescriptionTextColor;
-            if (currentTab->MenuItems[i].Description != NULL)
+            if (!currentTab->MenuItems[i].Description.empty())
             {
-                snprintf(menuTextBuffer, 511, "%s", currentTab->MenuItems[i].Description);
-                ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, menuTextBuffer);
+                ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, currentTab->MenuItems[i].Description.c_str());
             }
         }
         else if (currentTab->MenuItems[i].Type == MENUITEM_CHECKBOX)
@@ -165,20 +156,18 @@ void menu3dsDrawItems(
                 color = disabledItemTextColor;
                 if (currentTab->SelectedItemIndex == i)
                     color = selectedItemTextColor;
-                ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+                ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
 
-                snprintf(menuTextBuffer, 511, "\xfe");
-                ui3dsDrawStringWithNoWrapping(280, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, menuTextBuffer);
+                ui3dsDrawStringWithNoWrapping(280, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, "\xfe");
             }
             else
             {
                 color = normalItemTextColor;
                 if (currentTab->SelectedItemIndex == i)
                     color = selectedItemTextColor;
-                ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+                ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
 
-                snprintf(menuTextBuffer, 511, "\xfd");
-                ui3dsDrawStringWithNoWrapping(280, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, menuTextBuffer);
+                ui3dsDrawStringWithNoWrapping(280, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, "\xfd");
             }
         }
         else if (currentTab->MenuItems[i].Type == MENUITEM_GAUGE)
@@ -187,12 +176,13 @@ void menu3dsDrawItems(
             if (currentTab->SelectedItemIndex == i)
                 color = selectedItemTextColor;
 
-            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
 
-            int max = 40;
+            const int max = 40;
             int diff = currentTab->MenuItems[i].GaugeMaxValue - currentTab->MenuItems[i].GaugeMinValue;
             int pos = (currentTab->MenuItems[i].Value - currentTab->MenuItems[i].GaugeMinValue) * (max - 1) / diff;
 
+            char gauge[max+1];
             for (int j = 0; j < max; j++)
                 gauge[j] = (j == pos) ? '\xfa' : '\xfb';
             gauge[max] = 0;
@@ -204,20 +194,23 @@ void menu3dsDrawItems(
             if (currentTab->SelectedItemIndex == i)
                 color = selectedItemTextColor;
 
-            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 160, y + fontHeight, color, HALIGN_LEFT, menuTextBuffer);
+            ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 160, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
 
-            snprintf(selectedTextBuffer, 511, "");
-            if (currentTab->MenuItems[i].PickerItems != NULL)
+            if (!currentTab->MenuItems[i].PickerItems.empty())
             {
-                for (int j = 0; j < currentTab->MenuItems[i].PickerItemCount; j++)
+                int selectedIndex = -1;
+                for (int j = 0; j < currentTab->MenuItems[i].PickerItems.size(); j++)
                 {
-                    SMenuItem *pickerItems = (SMenuItem *)currentTab->MenuItems[i].PickerItems;
+                    std::vector<SMenuItem>& pickerItems = currentTab->MenuItems[i].PickerItems;
                     if (pickerItems[j].ID == currentTab->MenuItems[i].Value)
                     {
-                        snprintf(selectedTextBuffer, 511, "%s", pickerItems[j].Text);
+                        selectedIndex = j;
                     }
                 }
-                ui3dsDrawStringWithNoWrapping(160, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, selectedTextBuffer);
+                if (selectedIndex > -1)
+                {
+                    ui3dsDrawStringWithNoWrapping(160, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, currentTab->MenuItems[i].PickerItems[selectedIndex].Text.c_str());
+                }
             }
         }
 
@@ -590,12 +583,11 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
             }
             if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_PICKER)
             {
-                snprintf(menuTextBuffer, 511, "%s", currentTab->MenuItems[currentTab->SelectedItemIndex].Text);
+                snprintf(menuTextBuffer, 511, "%s", currentTab->MenuItems[currentTab->SelectedItemIndex].Text.c_str());
                 int resultValue = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, menuTextBuffer,
                     currentTab->MenuItems[currentTab->SelectedItemIndex].PickerDescription,
                     currentTab->MenuItems[currentTab->SelectedItemIndex].PickerBackColor,
-                    (SMenuItem *)currentTab->MenuItems[currentTab->SelectedItemIndex].PickerItems,
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].PickerItemCount,
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].PickerItems,
                     currentTab->MenuItems[currentTab->SelectedItemIndex].Value
                     );
                 if (resultValue != -1)
@@ -694,18 +686,18 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
 
 
 
-void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, SMenuItem *menuItems, int itemCount)
+void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, const std::vector<SMenuItem>& menuItems)
 {
     menuTab.emplace_back();
     SMenuTab *currentTab = &menuTab.back();
 
     currentTab->SetTitle(title);
     currentTab->MenuItems = menuItems;
-    currentTab->ItemCount = itemCount;
+    currentTab->ItemCount = static_cast<int>(menuItems.size());
 
     currentTab->FirstItemIndex = 0;
     currentTab->SelectedItemIndex = 0;
-    for (int i = 0; i < itemCount; i++)
+    for (int i = 0; i < currentTab->ItemCount; i++)
     {
         if (menuItems[i].ID > -1)
         {
@@ -802,7 +794,7 @@ void menu3dsHideMenu(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, s
     ui3dsSetTranslate(0, 0);
 }
 
-int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, char *title, char *dialogText, int newDialogBackColor, SMenuItem *menuItems, int itemCount, int selectedID)
+int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, const std::string& title, const std::string& dialogText, int newDialogBackColor, const std::vector<SMenuItem>& menuItems, int selectedID)
 {
     SMenuTab *currentTab = &dialogTab;
 
@@ -811,12 +803,12 @@ int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, 
     currentTab->SetTitle(title);
     currentTab->DialogText.assign(dialogText);
     currentTab->MenuItems = menuItems;
-    currentTab->ItemCount = itemCount;
+    currentTab->ItemCount = static_cast<int>(menuItems.size());
 
     currentTab->FirstItemIndex = 0;
     currentTab->SelectedItemIndex = 0;
 
-    for (int i = 0; i < itemCount; i++)
+    for (int i = 0; i < currentTab->ItemCount; i++)
     {
         if ((selectedID == -1 && menuItems[i].ID > -1) || 
             menuItems[i].ID == selectedID)
@@ -845,7 +837,7 @@ int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, 
 
     // Execute the dialog and return result.
     //
-    if (itemCount > 0)
+    if (currentTab->ItemCount > 0)
     {
         int result = menu3dsMenuSelectItem(dialogTab, isDialog, currentMenuTab, menuTab, NULL);
 

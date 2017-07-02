@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
+#include <string>
 #include <vector>
 
 #include <unistd.h>
@@ -37,6 +38,10 @@
 #include "3dsimpl_gpu.h"
 
 #include "lodepng.h"
+
+inline std::string operator "" s(const char* s, unsigned int length) {
+    return std::string(s, length);
+}
 
 S9xSettings3DS settings3DS;
 
@@ -98,181 +103,171 @@ void clearTopScreenWithLogo()
 //----------------------------------------------------------------------
 
 #define MENU_MAKE_ACTION(ID, text) \
-    { MENUITEM_ACTION, ID, text, NULL, 0 }
+    items.emplace_back( MENUITEM_ACTION, ID, text, ""s, 0 )
 
 #define MENU_MAKE_DIALOG_ACTION(ID, text, desc) \
-    { MENUITEM_ACTION, ID, text, desc, 0 }
+    items.emplace_back( MENUITEM_ACTION, ID, text, desc, 0 )
 
 #define MENU_MAKE_DISABLED(text) \
-    { MENUITEM_DISABLED, -1, text, NULL }
+    items.emplace_back( MENUITEM_DISABLED, -1, text, ""s )
 
 #define MENU_MAKE_HEADER1(text) \
-    { MENUITEM_HEADER1, -1, text, NULL }
+    items.emplace_back( MENUITEM_HEADER1, -1, text, ""s )
 
 #define MENU_MAKE_HEADER2(text) \
-    { MENUITEM_HEADER2, -1, text, NULL }
+    items.emplace_back( MENUITEM_HEADER2, -1, text, ""s )
 
 #define MENU_MAKE_CHECKBOX(ID, text, value) \
-    { MENUITEM_CHECKBOX, ID, text, NULL, value }
+    items.emplace_back( MENUITEM_CHECKBOX, ID, text, ""s, value )
 
 #define MENU_MAKE_GAUGE(ID, text, min, max, value) \
-    { MENUITEM_GAUGE, ID, text, NULL, value, min, max }
+    items.emplace_back( MENUITEM_GAUGE, ID, text, ""s, value, min, max )
 
 #define MENU_MAKE_PICKER(ID, text, pickerDescription, pickerOptions, backColor) \
-    { MENUITEM_PICKER, ID, text, NULL, 0, 0, 0, pickerDescription, sizeof(pickerOptions)/sizeof(SMenuItem), pickerOptions, backColor }
+    items.emplace_back( MENUITEM_PICKER, ID, text, ""s, 0, 0, 0, pickerDescription, pickerOptions, backColor )
 
 
-SMenuItem emulatorMenu[] = {
-    MENU_MAKE_HEADER2   ("Resume"),
-    MENU_MAKE_ACTION    (1000, "  Resume Game"),
-    MENU_MAKE_HEADER2   (""),
+std::vector<SMenuItem> makeEmulatorMenu() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_HEADER2   ("Resume"s);
+    MENU_MAKE_ACTION    (1000, "  Resume Game"s);
+    MENU_MAKE_HEADER2   (""s);
 
-    MENU_MAKE_HEADER2   ("Savestates"),
-    MENU_MAKE_ACTION    (2001, "  Save Slot #1"),
-    MENU_MAKE_ACTION    (2002, "  Save Slot #2"),
-    MENU_MAKE_ACTION    (2003, "  Save Slot #3"),
-    MENU_MAKE_ACTION    (2004, "  Save Slot #4"),
-    MENU_MAKE_HEADER2   (""),
+    MENU_MAKE_HEADER2   ("Savestates"s);
+    MENU_MAKE_ACTION    (2001, "  Save Slot #1"s);
+    MENU_MAKE_ACTION    (2002, "  Save Slot #2"s);
+    MENU_MAKE_ACTION    (2003, "  Save Slot #3"s);
+    MENU_MAKE_ACTION    (2004, "  Save Slot #4"s);
+    MENU_MAKE_HEADER2   (""s);
     
-    MENU_MAKE_ACTION    (3001, "  Load Slot #1"),
-    MENU_MAKE_ACTION    (3002, "  Load Slot #2"),
-    MENU_MAKE_ACTION    (3003, "  Load Slot #3"),
-    MENU_MAKE_ACTION    (3004, "  Load Slot #4"),
-    MENU_MAKE_HEADER2   (""),
+    MENU_MAKE_ACTION    (3001, "  Load Slot #1"s);
+    MENU_MAKE_ACTION    (3002, "  Load Slot #2"s);
+    MENU_MAKE_ACTION    (3003, "  Load Slot #3"s);
+    MENU_MAKE_ACTION    (3004, "  Load Slot #4"s);
+    MENU_MAKE_HEADER2   (""s);
 
-    MENU_MAKE_HEADER2   ("Others"),
-    MENU_MAKE_ACTION    (4001, "  Take Screenshot"),
-    MENU_MAKE_ACTION    (5001, "  Reset Console"),
-    MENU_MAKE_ACTION    (6001, "  Exit"),
-    /*
-    { -1         ,   "Resume           ", -1, 0, 0, 0 },
-    { 1000,          "  Resume Game    ", -1, 0, 0, 0 },
-    { -1         ,   NULL,                -1, 0, 0, 0 },
-    { -1         ,   "Savestates       ", -1, 0, 0, 0 },
-    { 2001,          "  Save Slot #1   ", -1, 0, 0, 0 },
-    { 2002,          "  Save Slot #2   ", -1, 0, 0, 0 },
-    { 2003,          "  Save Slot #3   ", -1, 0, 0, 0 },
-    { 2004,          "  Save Slot #4   ", -1, 0, 0, 0 },
-    { -1         ,   NULL,                -1, 0, 0, 0 },
-    { 3001,          "  Load Slot #1   ", -1, 0, 0, 0 },
-    { 3002,          "  Load Slot #2   ", -1, 0, 0, 0 },
-    { 3003,          "  Load Slot #3   ", -1, 0, 0, 0 },
-    { 3004,          "  Load Slot #4   ", -1, 0, 0, 0 },
-    { -1         ,   NULL,                -1, 0, 0, 0 },
-    { -1         ,   "Emulation        ", -1, 0, 0, 0 },
-    { 4001,          "  Take Screenshot", -1, 0, 0, 0 },
-    { 5001,          "  Reset Console  ", -1, 0, 0, 0 },
-    { 6001,          "  Exit           ", -1, 0, 0, 0 }*/
-    };
+    MENU_MAKE_HEADER2   ("Others"s);
+    MENU_MAKE_ACTION    (4001, "  Take Screenshot"s);
+    MENU_MAKE_ACTION    (5001, "  Reset Console"s);
+    MENU_MAKE_ACTION    (6001, "  Exit"s);
+    return items;
+}
 
-SMenuItem optionsForFont[] = {
-    MENU_MAKE_DIALOG_ACTION (0, "Tempesta",               ""),
-    MENU_MAKE_DIALOG_ACTION (1, "Ronda",               ""),
-    MENU_MAKE_DIALOG_ACTION (2, "Arial",                  "")
+std::vector<SMenuItem> makeOptionsForFont() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_DIALOG_ACTION (0, "Tempesta"s,              ""s);
+    MENU_MAKE_DIALOG_ACTION (1, "Ronda"s,              ""s);
+    MENU_MAKE_DIALOG_ACTION (2, "Arial"s,                 ""s);
+    return items;
+}
+
+std::vector<SMenuItem> makeOptionsForStretch() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_DIALOG_ACTION (0, "No Stretch"s,              "'Pixel Perfect'"s);
+    MENU_MAKE_DIALOG_ACTION (7, "Expand to Fit"s,           "'Pixel Perfect' fit"s);
+    MENU_MAKE_DIALOG_ACTION (6, "TV-style"s,                "Stretch width only to 292px"s);
+    MENU_MAKE_DIALOG_ACTION (5, "4:3"s,                     "Stretch width only"s);
+    MENU_MAKE_DIALOG_ACTION (1, "4:3 Fit"s,                 "Stretch to 320x240"s);
+    MENU_MAKE_DIALOG_ACTION (2, "Fullscreen"s,              "Stretch to 400x240"s);
+    MENU_MAKE_DIALOG_ACTION (3, "Cropped 4:3 Fit"s,         "Crop & Stretch to 320x240"s);
+    MENU_MAKE_DIALOG_ACTION (4, "Cropped Fullscreen"s,      "Crop & Stretch to 400x240"s);
+    return items;
+}
+
+std::vector<SMenuItem> makeOptionsForFrameskip() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_DIALOG_ACTION (0, "Disabled"s,                ""s);
+    MENU_MAKE_DIALOG_ACTION (1, "Enabled (max 1 frame)"s,   ""s);
+    MENU_MAKE_DIALOG_ACTION (2, "Enabled (max 2 frames)"s,   ""s);
+    MENU_MAKE_DIALOG_ACTION (3, "Enabled (max 3 frames)"s,   ""s);
+    MENU_MAKE_DIALOG_ACTION (4, "Enabled (max 4 frames)"s,   ""s);
+    return items;
 };
 
-SMenuItem optionsForStretch[] = {
-    MENU_MAKE_DIALOG_ACTION (0, "No Stretch",               "'Pixel Perfect'"),
-    MENU_MAKE_DIALOG_ACTION (7, "Expand to Fit",            "'Pixel Perfect' fit"),
-    MENU_MAKE_DIALOG_ACTION (6, "TV-style",                 "Stretch width only to 292px"),
-    MENU_MAKE_DIALOG_ACTION (5, "4:3",                      "Stretch width only"),
-    MENU_MAKE_DIALOG_ACTION (1, "4:3 Fit",                  "Stretch to 320x240"),
-    MENU_MAKE_DIALOG_ACTION (2, "Fullscreen",               "Stretch to 400x240"),
-    MENU_MAKE_DIALOG_ACTION (3, "Cropped 4:3 Fit",          "Crop & Stretch to 320x240"),
-    MENU_MAKE_DIALOG_ACTION (4, "Cropped Fullscreen",       "Crop & Stretch to 400x240")
+std::vector<SMenuItem> makeOptionsForFrameRate() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_DIALOG_ACTION (0, "Default based on ROM region"s,    ""s);
+    MENU_MAKE_DIALOG_ACTION (1, "50 FPS"s,                  ""s);
+    MENU_MAKE_DIALOG_ACTION (2, "60 FPS"s,                  ""s);
+    return items;
 };
 
-SMenuItem optionsForFrameskip[] = {
-    MENU_MAKE_DIALOG_ACTION (0, "Disabled",                 ""),
-    MENU_MAKE_DIALOG_ACTION (1, "Enabled (max 1 frame)",    ""),
-    MENU_MAKE_DIALOG_ACTION (2, "Enabled (max 2 frames)",    ""),
-    MENU_MAKE_DIALOG_ACTION (3, "Enabled (max 3 frames)",    ""),
-    MENU_MAKE_DIALOG_ACTION (4, "Enabled (max 4 frames)",    "")
+std::vector<SMenuItem> makeOptionsForAutoSaveSRAMDelay() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_DIALOG_ACTION (1, "1 second"s,    ""s);
+    MENU_MAKE_DIALOG_ACTION (2, "10 seconds"s,  ""s);
+    MENU_MAKE_DIALOG_ACTION (3, "60 seconds"s,  ""s);
+    MENU_MAKE_DIALOG_ACTION (4, "Disabled"s,    "Touch bottom screen to save"s);
+    return items;
 };
 
-SMenuItem optionsForFrameRate[] = {
-    MENU_MAKE_DIALOG_ACTION (0, "Default based on ROM region",     ""),
-    MENU_MAKE_DIALOG_ACTION (1, "50 FPS",                   ""),
-    MENU_MAKE_DIALOG_ACTION (2, "60 FPS",                   "")
+std::vector<SMenuItem> makeOptionsForInFramePaletteChanges() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_DIALOG_ACTION (1, "Enabled"s,         "Best (not 100% accurate); slower"s);
+    MENU_MAKE_DIALOG_ACTION (2, "Disabled Style 1"s,"Faster than \"Enabled\""s);
+    MENU_MAKE_DIALOG_ACTION (3, "Disabled Style 2"s,"Faster than \"Enabled\""s);
+    return items;
 };
 
-SMenuItem optionsForAutoSaveSRAMDelay[] = {
-    MENU_MAKE_DIALOG_ACTION (1, "1 second",     ""),
-    MENU_MAKE_DIALOG_ACTION (2, "10 seconds",   ""),
-    MENU_MAKE_DIALOG_ACTION (3, "60 seconds",   ""),
-    MENU_MAKE_DIALOG_ACTION (4, "Disabled",     "Touch bottom screen to save")
+std::vector<SMenuItem> makeEmulatorNewMenu() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_ACTION(6001, "  Exit"s);
+    return items;
+}
+
+std::vector<SMenuItem> makeOptionMenu() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_HEADER1   ("GLOBAL SETTINGS"s);
+    MENU_MAKE_PICKER    (11000, "  Screen Stretch"s,"How would you like the final screen to appear?"s,makeOptionsForStretch(), DIALOGCOLOR_CYAN);
+    MENU_MAKE_PICKER    (18000, "  Font"s,"The font used for the user interface."s,makeOptionsForFont(), DIALOGCOLOR_CYAN);
+    MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen"s,0);
+    MENU_MAKE_DISABLED  (""s);
+    MENU_MAKE_CHECKBOX  (19100, "  Automatically save state on exit and load state on start"s,0);
+    MENU_MAKE_DISABLED  (""s);
+    MENU_MAKE_HEADER1   ("GAME-SPECIFIC SETTINGS"s);
+    MENU_MAKE_HEADER2   ("Graphics"s);
+    MENU_MAKE_PICKER    (10000, "  Frameskip"s,"Try changing this if the game runs slow. Skipping frames help it run faster but less smooth."s,makeOptionsForFrameskip(), DIALOGCOLOR_CYAN);
+    MENU_MAKE_PICKER    (12000, "  Framerate"s,"Some games run at 50 or 60 FPS by default. Override if required."s,makeOptionsForFrameRate(), DIALOGCOLOR_CYAN);
+    MENU_MAKE_PICKER    (16000, "  In-Frame Palette Changes"s,"Try changing this if some colours in the game look off."s,makeOptionsForInFramePaletteChanges(), DIALOGCOLOR_CYAN);
+    MENU_MAKE_DISABLED  (""s);
+    MENU_MAKE_HEADER2   ("Audio"s);
+    MENU_MAKE_GAUGE     (14000, "  Volume Amplification"s,0, 8, 4);
+    MENU_MAKE_DISABLED  (""s);
+    MENU_MAKE_HEADER2   ("Turbo (Auto-Fire) Buttons"s);
+    MENU_MAKE_CHECKBOX  (13000, "  Button A"s,0);
+    MENU_MAKE_CHECKBOX  (13001, "  Button B"s,0);
+    MENU_MAKE_CHECKBOX  (13002, "  Button X"s,0);
+    MENU_MAKE_CHECKBOX  (13003, "  Button Y"s,0);
+    MENU_MAKE_CHECKBOX  (13004, "  Button L"s,0);
+    MENU_MAKE_CHECKBOX  (13005, "  Button R"s,0);
+    MENU_MAKE_DISABLED  (""s);
+    MENU_MAKE_HEADER2   ("SRAM (Save Data)"s);
+    MENU_MAKE_PICKER    (17000, "  SRAM Auto-Save Delay"s,"Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently."s,makeOptionsForAutoSaveSRAMDelay(), DIALOGCOLOR_CYAN);
+    MENU_MAKE_CHECKBOX  (19000, "  Force SRAM Write on Pause"s,0);
+    return items;
 };
 
-SMenuItem optionsForInFramePaletteChanges[] = {
-    MENU_MAKE_DIALOG_ACTION (1, "Enabled",          "Best (not 100% accurate); slower"),
-    MENU_MAKE_DIALOG_ACTION (2, "Disabled Style 1", "Faster than \"Enabled\""),
-    MENU_MAKE_DIALOG_ACTION (3, "Disabled Style 2", "Faster than \"Enabled\"")
+void menuSetupCheats(std::vector<SMenuItem>& cheatMenu);
+
+std::vector<SMenuItem> makeCheatMenu() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_HEADER2   ("Cheats"s);
+    menuSetupCheats(items);
+    return items;
 };
 
-SMenuItem emulatorNewMenu[] = {
-    MENU_MAKE_ACTION(6001, "  Exit")
-    };
+std::vector<SMenuItem> makeOptionsForNoYes() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_ACTION(0, "No"s);
+    MENU_MAKE_ACTION(1, "Yes"s);
+    return items;
+}
 
-SMenuItem optionMenu[] = {
-    MENU_MAKE_HEADER1   ("GLOBAL SETTINGS"),
-    MENU_MAKE_PICKER    (11000, "  Screen Stretch", "How would you like the final screen to appear?", optionsForStretch, DIALOGCOLOR_CYAN),
-    MENU_MAKE_PICKER    (18000, "  Font", "The font used for the user interface.", optionsForFont, DIALOGCOLOR_CYAN),
-    MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen", 0),
-    MENU_MAKE_DISABLED  (""),
-    MENU_MAKE_CHECKBOX  (19100, "  Automatically save state on exit and load state on start", 0),
-    MENU_MAKE_DISABLED  (""),
-    MENU_MAKE_HEADER1   ("GAME-SPECIFIC SETTINGS"),
-    MENU_MAKE_HEADER2   ("Graphics"),
-    MENU_MAKE_PICKER    (10000, "  Frameskip", "Try changing this if the game runs slow. Skipping frames help it run faster but less smooth.", optionsForFrameskip, DIALOGCOLOR_CYAN),
-    MENU_MAKE_PICKER    (12000, "  Framerate", "Some games run at 50 or 60 FPS by default. Override if required.", optionsForFrameRate, DIALOGCOLOR_CYAN),
-    MENU_MAKE_PICKER    (16000, "  In-Frame Palette Changes", "Try changing this if some colours in the game look off.", optionsForInFramePaletteChanges, DIALOGCOLOR_CYAN),
-    MENU_MAKE_DISABLED  (""),
-    MENU_MAKE_HEADER2   ("Audio"),
-    MENU_MAKE_GAUGE     (14000, "  Volume Amplification", 0, 8, 4),
-    MENU_MAKE_DISABLED  (""),
-    MENU_MAKE_HEADER2   ("Turbo (Auto-Fire) Buttons"),
-    MENU_MAKE_CHECKBOX  (13000, "  Button A", 0),
-    MENU_MAKE_CHECKBOX  (13001, "  Button B", 0),
-    MENU_MAKE_CHECKBOX  (13002, "  Button X", 0),
-    MENU_MAKE_CHECKBOX  (13003, "  Button Y", 0),
-    MENU_MAKE_CHECKBOX  (13004, "  Button L", 0),
-    MENU_MAKE_CHECKBOX  (13005, "  Button R", 0),
-    MENU_MAKE_DISABLED  (""),
-    MENU_MAKE_HEADER2   ("SRAM (Save Data)"),
-    MENU_MAKE_PICKER    (17000, "  SRAM Auto-Save Delay", "Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently.", optionsForAutoSaveSRAMDelay, DIALOGCOLOR_CYAN),
-    MENU_MAKE_CHECKBOX  (19000, "  Force SRAM Write on Pause", 0)
-
-    };
-
-SMenuItem cheatMenu[MAX_CHEATS+1] =
-{
-    MENU_MAKE_HEADER2   ("Cheats")
-};
-
-char *amplificationText[9] =
-    {
-        "  Volume Amplification (1.00x)",
-        "  Volume Amplification (1.25x)",
-        "  Volume Amplification (1.50x)",
-        "  Volume Amplification (1.75x)",
-        "  Volume Amplification (2.00x)",
-        "  Volume Amplification (2.25x)",
-        "  Volume Amplification (2.50x)",
-        "  Volume Amplification (2.75x)",
-        "  Volume Amplification (3.00x)"
-    };
-int emulatorMenuCount = 0;
-int optionMenuCount = 0;
-int cheatMenuCount = 1;
-
-SMenuItem optionsForNoYes[] = {
-    MENU_MAKE_ACTION(0, "No"),
-    MENU_MAKE_ACTION(1, "Yes")
-};
-
-SMenuItem optionsForOk[] = {
-    MENU_MAKE_ACTION(0, "OK")
-};
+std::vector<SMenuItem> makeOptionsForOk() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_ACTION(0, "OK"s);
+    return items;
+}
 
 
 //----------------------------------------------------------------------
@@ -563,7 +558,6 @@ bool settingsLoad(bool includeGameSettings = true)
 //-------------------------------------------------------
 
 extern SCheatData Cheat;
-void menuSetupCheats();  // forward declaration
 
 void emulatorLoadRom()
 {
@@ -580,7 +574,6 @@ void emulatorLoadRom()
     consoleClear();
     settingsLoad();
     settingsUpdateAllSettings();
-    menuSetupCheats();
 
     if (settings3DS.AutoSavestate)
         impl3dsLoadStateAuto();
@@ -592,28 +585,21 @@ void emulatorLoadRom()
 //----------------------------------------------------------------------
 // Menus
 //----------------------------------------------------------------------
-SMenuItem fileMenu[1000];
 char romFileNames[1000][_MAX_PATH];
-
-int totalRomFileCount = 0;
 
 //----------------------------------------------------------------------
 // Load all ROM file names (up to 1000 ROMs)
 //----------------------------------------------------------------------
-void fileGetAllFiles(void)
+void fileGetAllFiles(std::vector<SMenuItem>& fileMenu)
 {
+    fileMenu.clear();
     std::vector<std::string> files = file3dsGetFiles("smc,sfc,fig", 1000);
-
-    totalRomFileCount = 0;
 
     // Increase the total number of files we can display.
     for (int i = 0; i < files.size() && i < 1000; i++)
     {
         strncpy(romFileNames[i], files[i].c_str(), _MAX_PATH);
-        totalRomFileCount++;
-        fileMenu[i].Type = MENUITEM_ACTION;
-        fileMenu[i].ID = i;
-        fileMenu[i].Text = romFileNames[i];
+        fileMenu.emplace_back(MENUITEM_ACTION, i, std::string(romFileNames[i]), ""s);
     }
 }
 
@@ -621,11 +607,11 @@ void fileGetAllFiles(void)
 //----------------------------------------------------------------------
 // Find the ID of the last selected file in the file list.
 //----------------------------------------------------------------------
-int fileFindLastSelectedFile()
+int fileFindLastSelectedFile(std::vector<SMenuItem>& fileMenu)
 {
-    for (int i = 0; i < totalRomFileCount && i < 1000; i++)
+    for (int i = 0; i < fileMenu.size() && i < 1000; i++)
     {
-        if (strncmp(fileMenu[i].Text, romFileNameLastSelected, _MAX_PATH) == 0)
+        if (strncmp(fileMenu[i].Text.c_str(), romFileNameLastSelected, _MAX_PATH) == 0)
             return i;
     }
     return -1;
@@ -675,10 +661,10 @@ bool menuCopySettings(std::vector<SMenuTab>& menuTab, bool copyMenuToSettings)
 //----------------------------------------------------------------------
 // Handle menu cheats.
 //----------------------------------------------------------------------
-bool menuCopyCheats(bool copyMenuToSettings)
+bool menuCopyCheats(std::vector<SMenuItem>& cheatMenu, bool copyMenuToSettings)
 {
     bool cheatsUpdated = false;
-    for (int i = 0; i < MAX_CHEATS && i < Cheat.num_cheats; i++)
+    for (int i = 0; (i+1) < cheatMenu.size() && i < MAX_CHEATS && i < Cheat.num_cheats; i++)
     {
         cheatMenu[i+1].Type = MENUITEM_CHECKBOX;
         cheatMenu[i+1].ID = 20000 + i;
@@ -713,18 +699,16 @@ void menuSelectFile(void)
     int currentMenuTab = 0;
     bool isDialog = false;
     SMenuTab dialogTab;
+    std::vector<SMenuItem> fileMenu;
 
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
-    
-    emulatorMenuCount = sizeof(emulatorNewMenu) / sizeof(SMenuItem);
-    optionMenuCount = sizeof(optionMenu) / sizeof(SMenuItem);
 
-    fileGetAllFiles();
-    int previousFileID = fileFindLastSelectedFile();
+    fileGetAllFiles(fileMenu);
+    int previousFileID = fileFindLastSelectedFile(fileMenu);
     menuTab.clear();
     currentMenuTab = 0;
-    menu3dsAddTab(menuTab, "Emulator", emulatorNewMenu, emulatorMenuCount);
-    menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
+    menu3dsAddTab(menuTab, "Emulator", makeEmulatorNewMenu());
+    menu3dsAddTab(menuTab, "Select ROM", fileMenu);
     menuTab[0].SubTitle.clear();
     menuTab[1].SubTitle.assign(file3dsGetCurrentDir());
     currentMenuTab = 1;
@@ -755,11 +739,11 @@ void menuSelectFile(void)
                 else
                     file3dsGoToChildDirectory(&romFileName[2]);
 
-                fileGetAllFiles();
+                fileGetAllFiles(fileMenu);
                 menuTab.clear();
                 currentMenuTab = 0;
-                menu3dsAddTab(menuTab, "Emulator", emulatorNewMenu, emulatorMenuCount);
-                menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
+                menu3dsAddTab(menuTab, "Emulator", makeEmulatorNewMenu());
+                menu3dsAddTab(menuTab, "Select ROM", fileMenu);
                 currentMenuTab = 1;
                 menuTab[1].SubTitle.assign(file3dsGetCurrentDir());
                 selection = -1;
@@ -772,7 +756,7 @@ void menuSelectFile(void)
         }
         else if (selection == 6001)
         {
-            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, makeOptionsForNoYes());
             menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
             if (result == 1)
@@ -825,28 +809,29 @@ void menuPause()
     int currentMenuTab = 0;
     bool isDialog = false;
     SMenuTab dialogTab;
+    std::vector<SMenuItem> fileMenu;
 
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
     
-    emulatorMenuCount = sizeof(emulatorMenu) / sizeof(SMenuItem);
-    optionMenuCount = sizeof(optionMenu) / sizeof(SMenuItem);
     bool settingsUpdated = false;
     bool cheatsUpdated = false;
     bool loadRomBeforeExit = false;
     bool returnToEmulation = false;
 
 
+    fileGetAllFiles(fileMenu);
     menuTab.clear();
     currentMenuTab = 0;
-    menu3dsAddTab(menuTab, "Emulator", emulatorMenu, emulatorMenuCount);
-    menu3dsAddTab(menuTab, "Options", optionMenu, optionMenuCount);
-    menu3dsAddTab(menuTab, "Cheats", cheatMenu, cheatMenuCount);
-    menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
+    menu3dsAddTab(menuTab, "Emulator", makeEmulatorMenu());
+    menu3dsAddTab(menuTab, "Options", makeOptionMenu());
+    menu3dsAddTab(menuTab, "Cheats", makeCheatMenu());
+    menu3dsAddTab(menuTab, "Select ROM", fileMenu);
+    std::vector<SMenuItem>& cheatMenu = menuTab[2].MenuItems;
 
     menuCopySettings(menuTab, false);
-    menuCopyCheats(false);
+    menuCopyCheats(cheatMenu, false);
 
-    int previousFileID = fileFindLastSelectedFile();
+    int previousFileID = fileFindLastSelectedFile(fileMenu);
     menuTab[0].SubTitle.clear();
     menuTab[1].SubTitle.clear();
     menuTab[2].SubTitle.clear();
@@ -888,13 +873,13 @@ void menuPause()
                 else
                     file3dsGoToChildDirectory(&romFileName[2]);
 
-                fileGetAllFiles();
+                fileGetAllFiles(fileMenu);
                 menuTab.clear();
                 currentMenuTab = 0;
-                menu3dsAddTab(menuTab, "Emulator", emulatorMenu, emulatorMenuCount);
-                menu3dsAddTab(menuTab, "Options", optionMenu, optionMenuCount);
-                menu3dsAddTab(menuTab, "Cheats", cheatMenu, cheatMenuCount);
-                menu3dsAddTab(menuTab, "Select ROM", fileMenu, totalRomFileCount);
+                menu3dsAddTab(menuTab, "Emulator", makeEmulatorMenu());
+                menu3dsAddTab(menuTab, "Options", makeOptionMenu());
+                menu3dsAddTab(menuTab, "Cheats", makeCheatMenu());
+                menu3dsAddTab(menuTab, "Select ROM", fileMenu);
                 currentMenuTab = 3;
                 menuTab[3].SubTitle.assign(file3dsGetCurrentDir());
             }
@@ -908,13 +893,13 @@ void menuPause()
 
                 if (settings3DS.AutoSavestate)
                 {
-                    menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Save State", "Autosaving...", DIALOGCOLOR_CYAN, NULL, 0);
+                    menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Save State", "Autosaving...", DIALOGCOLOR_CYAN, std::vector<SMenuItem>());
                     bool result = impl3dsSaveStateAuto();
                     menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
                     if (!result)
                     {
-                        int choice = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Autosave failure", "Automatic savestate writing failed.\nLoad chosen game anyway?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+                        int choice = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Autosave failure", "Automatic savestate writing failed.\nLoad chosen game anyway?", DIALOGCOLOR_RED, makeOptionsForNoYes());
                         if (choice != 1)
                             loadRom = false;
                     }
@@ -934,20 +919,20 @@ void menuPause()
             char text[200];
            
             sprintf(text, "Saving into slot %d...\nThis may take a while", slot);
-            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_CYAN, NULL, 0);
+            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_CYAN, std::vector<SMenuItem>());
             bool result = impl3dsSaveStateSlot(slot);
             menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
             if (result)
             {
                 sprintf(text, "Slot %d save completed.", slot);
-                result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_GREEN, makeOptionsForOk());
                 menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
             else
             {
                 sprintf(text, "Oops. Unable to save slot %d!", slot);
-                result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, makeOptionsForOk());
                 menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
 
@@ -968,13 +953,13 @@ void menuPause()
             else
             {
                 sprintf(text, "Oops. Unable to load slot %d!", slot);
-                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk) / sizeof(SMenuItem));
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, makeOptionsForOk());
                 menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
         }
         else if (selection == 4001)
         {
-            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, NULL, 0);
+            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, std::vector<SMenuItem>());
 
             char ext[256];
             const char *path = NULL;
@@ -1004,18 +989,18 @@ void menuPause()
             {
                 char text[600];
                 snprintf(text, 600, "Done! File saved to %s", path);
-                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", text, DIALOGCOLOR_GREEN, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", text, DIALOGCOLOR_GREEN, makeOptionsForOk());
                 menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
             else 
             {
-                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, optionsForOk, sizeof(optionsForOk)/sizeof(SMenuItem));
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, makeOptionsForOk());
                 menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
         }
         else if (selection == 5001)
         {
-            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Reset Console", "Are you sure?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Reset Console", "Are you sure?", DIALOGCOLOR_RED, makeOptionsForNoYes());
             menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
             if (result == 1)
@@ -1030,7 +1015,7 @@ void menuPause()
         }
         else if (selection == 6001)
         {
-            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, optionsForNoYes, sizeof(optionsForNoYes) / sizeof(SMenuItem));
+            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, makeOptionsForNoYes());
             if (result == 1)
             {
                 GPU3DS.emulatorState = EMUSTATE_END;
@@ -1052,7 +1037,7 @@ void menuPause()
         settingsSave();
     settingsUpdateAllSettings();
 
-    if (menuCopyCheats(true))
+    if (menuCopyCheats(cheatMenu, true))
     {
         // Only one of these will succeeed.
         S9xSaveCheatFile (S9xGetFilename(".cht"));
@@ -1092,33 +1077,20 @@ char *noCheatsText[] {
     ""
      };
 
-void menuSetupCheats()
+void menuSetupCheats(std::vector<SMenuItem>& cheatMenu)
 {
     if (Cheat.num_cheats > 0)
     {
-        cheatMenuCount = Cheat.num_cheats + 1;
-
-        // Bug fix: If the number of cheats exceeds what we can store,
-        // make sure we limit it.
-        //
-        if (cheatMenuCount > MAX_CHEATS)
-            cheatMenuCount = MAX_CHEATS;
         for (int i = 0; i < MAX_CHEATS && i < Cheat.num_cheats; i++)
         {
-            cheatMenu[i+1].Type = MENUITEM_CHECKBOX;
-            cheatMenu[i+1].ID = 20000 + i;
-            cheatMenu[i+1].Text = Cheat.c[i].name;
-            cheatMenu[i+1].Value = Cheat.c[i].enabled ? 1 : 0;
+            cheatMenu.emplace_back( MENUITEM_CHECKBOX, 20000+i, std::string(Cheat.c[i].name), ""s, Cheat.c[i].enabled ? 1 : 0 );
         }
     }
     else
     {
-        cheatMenuCount = 14;
-        for (int i = 0; i < cheatMenuCount; i++)
+        for (int i = 0; i < 14; i++)
         {
-            cheatMenu[i+1].Type = MENUITEM_DISABLED;
-            cheatMenu[i+1].ID = -2;
-            cheatMenu[i+1].Text = noCheatsText[i];
+            cheatMenu.emplace_back(MENUITEM_DISABLED, -2, std::string(noCheatsText[i]), ""s);
         }
     }
 }
