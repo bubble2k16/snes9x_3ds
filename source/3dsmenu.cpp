@@ -21,8 +21,6 @@
 #define ANIMATE_TAB_STEPS 3
 
 
-int menuTabCount;
-
 bool                transferGameScreen = false;
 int                 transferGameScreenCount = 0;
 
