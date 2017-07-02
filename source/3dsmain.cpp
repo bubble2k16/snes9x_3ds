@@ -53,7 +53,7 @@ S9xSettings3DS settings3DS;
 int frameCount60 = 60;
 u64 frameCountTick = 0;
 int framesSkippedCount = 0;
-char *romFileName = 0;
+char romFileName[_MAX_PATH];
 char romFileNameFullPath[_MAX_PATH];
 char romFileNameLastSelected[_MAX_PATH];
 
@@ -593,22 +593,20 @@ void emulatorLoadRom()
 
 
 //----------------------------------------------------------------------
-// Menus
-//----------------------------------------------------------------------
-char romFileNames[1000][_MAX_PATH];
-
-//----------------------------------------------------------------------
 // Load all ROM file names (up to 1000 ROMs)
 //----------------------------------------------------------------------
-void fileGetAllFiles(std::vector<SMenuItem>& fileMenu)
+void fileGetAllFiles(std::vector<SMenuItem>& fileMenu, std::vector<std::string>& romFileNames)
 {
     fileMenu.clear();
+    romFileNames.clear();
+
+    // TODO: Lift the 1k file limitation once we no longer have hardcoded IDs for menu items.
     std::vector<std::string> files = file3dsGetFiles("smc,sfc,fig", 1000);
 
     // Increase the total number of files we can display.
     for (int i = 0; i < files.size() && i < 1000; i++)
     {
-        strncpy(romFileNames[i], files[i].c_str(), _MAX_PATH);
+        romFileNames.emplace_back(files[i]);
         fileMenu.emplace_back(nullptr, MENUITEM_ACTION, i, std::string(romFileNames[i]), ""s);
     }
 }
@@ -710,10 +708,11 @@ void menuSelectFile(void)
     bool isDialog = false;
     SMenuTab dialogTab;
     std::vector<SMenuItem> fileMenu;
+    std::vector<std::string> romFileNames;
 
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
 
-    fileGetAllFiles(fileMenu);
+    fileGetAllFiles(fileMenu, romFileNames);
     int previousFileID = fileFindLastSelectedFile(fileMenu);
     menuTab.clear();
     currentMenuTab = 0;
@@ -740,7 +739,7 @@ void menuSelectFile(void)
         {
             // Load ROM
             //
-            romFileName = romFileNames[selection];
+            strncpy(romFileName, romFileNames[selection].c_str(), _MAX_PATH);
             strncpy(romFileNameLastSelected, romFileName, _MAX_PATH);
             if (romFileName[0] == 1)
             {
@@ -749,7 +748,7 @@ void menuSelectFile(void)
                 else
                     file3dsGoToChildDirectory(&romFileName[2]);
 
-                fileGetAllFiles(fileMenu);
+                fileGetAllFiles(fileMenu, romFileNames);
                 menuTab.clear();
                 currentMenuTab = 0;
                 menu3dsAddTab(menuTab, "Emulator", makeEmulatorNewMenu());
@@ -816,6 +815,7 @@ void menuPause()
     bool isDialog = false;
     SMenuTab dialogTab;
     std::vector<SMenuItem> fileMenu;
+    std::vector<std::string> romFileNames;
 
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
     
@@ -825,7 +825,7 @@ void menuPause()
     bool returnToEmulation = false;
 
 
-    fileGetAllFiles(fileMenu);
+    fileGetAllFiles(fileMenu, romFileNames);
     menuTab.clear();
     currentMenuTab = 0;
     menu3dsAddTab(menuTab, "Emulator", makeEmulatorMenu());
@@ -871,7 +871,7 @@ void menuPause()
         {
             // Load ROM
             //
-            romFileName = romFileNames[selection];
+            strncpy(romFileName, romFileNames[selection].c_str(), _MAX_PATH);
             if (romFileName[0] == 1)
             {
                 if (strcmp(romFileName, "\x01 ..") == 0)
@@ -879,7 +879,7 @@ void menuPause()
                 else
                     file3dsGoToChildDirectory(&romFileName[2]);
 
-                fileGetAllFiles(fileMenu);
+                fileGetAllFiles(fileMenu, romFileNames);
                 menuTab.clear();
                 currentMenuTab = 0;
                 menu3dsAddTab(menuTab, "Emulator", makeEmulatorMenu());
