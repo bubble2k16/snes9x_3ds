@@ -102,54 +102,54 @@ void clearTopScreenWithLogo()
 // Menu options
 //----------------------------------------------------------------------
 
-#define MENU_MAKE_ACTION(ID, text) \
-    items.emplace_back( MENUITEM_ACTION, ID, text, ""s, 0 )
+#define MENU_MAKE_ACTION(ID, text, callback) \
+    items.emplace_back( callback, MENUITEM_ACTION, ID, text, ""s, 0 )
 
 #define MENU_MAKE_DIALOG_ACTION(ID, text, desc) \
-    items.emplace_back( MENUITEM_ACTION, ID, text, desc, 0 )
+    items.emplace_back( nullptr, MENUITEM_ACTION, ID, text, desc, 0 )
 
 #define MENU_MAKE_DISABLED(text) \
-    items.emplace_back( MENUITEM_DISABLED, -1, text, ""s )
+    items.emplace_back( nullptr, MENUITEM_DISABLED, -1, text, ""s )
 
 #define MENU_MAKE_HEADER1(text) \
-    items.emplace_back( MENUITEM_HEADER1, -1, text, ""s )
+    items.emplace_back( nullptr, MENUITEM_HEADER1, -1, text, ""s )
 
 #define MENU_MAKE_HEADER2(text) \
-    items.emplace_back( MENUITEM_HEADER2, -1, text, ""s )
+    items.emplace_back( nullptr, MENUITEM_HEADER2, -1, text, ""s )
 
-#define MENU_MAKE_CHECKBOX(ID, text, value) \
-    items.emplace_back( MENUITEM_CHECKBOX, ID, text, ""s, value )
+#define MENU_MAKE_CHECKBOX(ID, text, value, callback) \
+    items.emplace_back( callback, MENUITEM_CHECKBOX, ID, text, ""s, value )
 
-#define MENU_MAKE_GAUGE(ID, text, min, max, value) \
-    items.emplace_back( MENUITEM_GAUGE, ID, text, ""s, value, min, max )
+#define MENU_MAKE_GAUGE(ID, text, min, max, value, callback) \
+    items.emplace_back( callback, MENUITEM_GAUGE, ID, text, ""s, value, min, max )
 
-#define MENU_MAKE_PICKER(ID, text, pickerDescription, pickerOptions, backColor) \
-    items.emplace_back( MENUITEM_PICKER, ID, text, ""s, 0, 0, 0, pickerDescription, pickerOptions, backColor )
+#define MENU_MAKE_PICKER(ID, text, pickerDescription, pickerOptions, value, backColor, callback) \
+    items.emplace_back( callback, MENUITEM_PICKER, ID, text, ""s, value, 0, 0, pickerDescription, pickerOptions, backColor )
 
 
 std::vector<SMenuItem> makeEmulatorMenu() {
     std::vector<SMenuItem> items;
     MENU_MAKE_HEADER2   ("Resume"s);
-    MENU_MAKE_ACTION    (1000, "  Resume Game"s);
+    MENU_MAKE_ACTION    (1000, "  Resume Game"s, nullptr); // TODO!
     MENU_MAKE_HEADER2   (""s);
 
     MENU_MAKE_HEADER2   ("Savestates"s);
-    MENU_MAKE_ACTION    (2001, "  Save Slot #1"s);
-    MENU_MAKE_ACTION    (2002, "  Save Slot #2"s);
-    MENU_MAKE_ACTION    (2003, "  Save Slot #3"s);
-    MENU_MAKE_ACTION    (2004, "  Save Slot #4"s);
+    MENU_MAKE_ACTION    (2001, "  Save Slot #1"s, nullptr); // TODO!
+    MENU_MAKE_ACTION    (2002, "  Save Slot #2"s, nullptr); // TODO!
+    MENU_MAKE_ACTION    (2003, "  Save Slot #3"s, nullptr); // TODO!
+    MENU_MAKE_ACTION    (2004, "  Save Slot #4"s, nullptr); // TODO!
     MENU_MAKE_HEADER2   (""s);
     
-    MENU_MAKE_ACTION    (3001, "  Load Slot #1"s);
-    MENU_MAKE_ACTION    (3002, "  Load Slot #2"s);
-    MENU_MAKE_ACTION    (3003, "  Load Slot #3"s);
-    MENU_MAKE_ACTION    (3004, "  Load Slot #4"s);
+    MENU_MAKE_ACTION    (3001, "  Load Slot #1"s, nullptr); // TODO!
+    MENU_MAKE_ACTION    (3002, "  Load Slot #2"s, nullptr); // TODO!
+    MENU_MAKE_ACTION    (3003, "  Load Slot #3"s, nullptr); // TODO!
+    MENU_MAKE_ACTION    (3004, "  Load Slot #4"s, nullptr); // TODO!
     MENU_MAKE_HEADER2   (""s);
 
     MENU_MAKE_HEADER2   ("Others"s);
-    MENU_MAKE_ACTION    (4001, "  Take Screenshot"s);
-    MENU_MAKE_ACTION    (5001, "  Reset Console"s);
-    MENU_MAKE_ACTION    (6001, "  Exit"s);
+    MENU_MAKE_ACTION    (4001, "  Take Screenshot"s, nullptr); // TODO!
+    MENU_MAKE_ACTION    (5001, "  Reset Console"s, nullptr); // TODO!
+    MENU_MAKE_ACTION    (6001, "  Exit"s, nullptr); // TODO!
     return items;
 }
 
@@ -211,39 +211,49 @@ std::vector<SMenuItem> makeOptionsForInFramePaletteChanges() {
 
 std::vector<SMenuItem> makeEmulatorNewMenu() {
     std::vector<SMenuItem> items;
-    MENU_MAKE_ACTION(6001, "  Exit"s);
+    MENU_MAKE_ACTION(6001, "  Exit"s, nullptr); // TODO!
     return items;
 }
 
 std::vector<SMenuItem> makeOptionMenu() {
     std::vector<SMenuItem> items;
     MENU_MAKE_HEADER1   ("GLOBAL SETTINGS"s);
-    MENU_MAKE_PICKER    (11000, "  Screen Stretch"s,"How would you like the final screen to appear?"s,makeOptionsForStretch(), DIALOGCOLOR_CYAN);
-    MENU_MAKE_PICKER    (18000, "  Font"s,"The font used for the user interface."s,makeOptionsForFont(), DIALOGCOLOR_CYAN);
-    MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen"s,0);
+    MENU_MAKE_PICKER    (11000, "  Screen Stretch"s, "How would you like the final screen to appear?"s, makeOptionsForStretch(), settings3DS.ScreenStretch, DIALOGCOLOR_CYAN,
+                         []( int val ) { settings3DS.ScreenStretch = val; });
+    MENU_MAKE_PICKER    (18000, "  Font"s, "The font used for the user interface."s, makeOptionsForFont(), settings3DS.Font, DIALOGCOLOR_CYAN,
+                         []( int val ) { settings3DS.Font = val; ui3dsSetFont(val); });
+    MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen"s, 0,
+                         []( int val ) { settings3DS.HideUnnecessaryBottomScrText = val; });
     MENU_MAKE_DISABLED  (""s);
-    MENU_MAKE_CHECKBOX  (19100, "  Automatically save state on exit and load state on start"s,0);
+    MENU_MAKE_CHECKBOX  (19100, "  Automatically save state on exit and load state on start"s, settings3DS.AutoSavestate,
+                         []( int val ) { settings3DS.AutoSavestate = val; });
     MENU_MAKE_DISABLED  (""s);
     MENU_MAKE_HEADER1   ("GAME-SPECIFIC SETTINGS"s);
     MENU_MAKE_HEADER2   ("Graphics"s);
-    MENU_MAKE_PICKER    (10000, "  Frameskip"s,"Try changing this if the game runs slow. Skipping frames help it run faster but less smooth."s,makeOptionsForFrameskip(), DIALOGCOLOR_CYAN);
-    MENU_MAKE_PICKER    (12000, "  Framerate"s,"Some games run at 50 or 60 FPS by default. Override if required."s,makeOptionsForFrameRate(), DIALOGCOLOR_CYAN);
-    MENU_MAKE_PICKER    (16000, "  In-Frame Palette Changes"s,"Try changing this if some colours in the game look off."s,makeOptionsForInFramePaletteChanges(), DIALOGCOLOR_CYAN);
+    MENU_MAKE_PICKER    (10000, "  Frameskip"s, "Try changing this if the game runs slow. Skipping frames help it run faster but less smooth."s, makeOptionsForFrameskip(), settings3DS.MaxFrameSkips, DIALOGCOLOR_CYAN,
+                         []( int val ) { settings3DS.MaxFrameSkips = val; });
+    MENU_MAKE_PICKER    (12000, "  Framerate"s, "Some games run at 50 or 60 FPS by default. Override if required."s, makeOptionsForFrameRate(), settings3DS.ForceFrameRate, DIALOGCOLOR_CYAN,
+                         []( int val ) { settings3DS.ForceFrameRate = val; });
+    MENU_MAKE_PICKER    (16000, "  In-Frame Palette Changes"s, "Try changing this if some colours in the game look off."s, makeOptionsForInFramePaletteChanges(), settings3DS.PaletteFix, DIALOGCOLOR_CYAN,
+                         []( int val ) { settings3DS.PaletteFix = val; });
     MENU_MAKE_DISABLED  (""s);
     MENU_MAKE_HEADER2   ("Audio"s);
-    MENU_MAKE_GAUGE     (14000, "  Volume Amplification"s,0, 8, 4);
+    MENU_MAKE_GAUGE     (14000, "  Volume Amplification"s, 0, 8, settings3DS.Volume,
+                         []( int val ) { settings3DS.Volume = val; });
     MENU_MAKE_DISABLED  (""s);
     MENU_MAKE_HEADER2   ("Turbo (Auto-Fire) Buttons"s);
-    MENU_MAKE_CHECKBOX  (13000, "  Button A"s,0);
-    MENU_MAKE_CHECKBOX  (13001, "  Button B"s,0);
-    MENU_MAKE_CHECKBOX  (13002, "  Button X"s,0);
-    MENU_MAKE_CHECKBOX  (13003, "  Button Y"s,0);
-    MENU_MAKE_CHECKBOX  (13004, "  Button L"s,0);
-    MENU_MAKE_CHECKBOX  (13005, "  Button R"s,0);
+    MENU_MAKE_CHECKBOX  (13000, "  Button A"s, settings3DS.Turbo[0], []( int val ) { settings3DS.Turbo[0] = val; });
+    MENU_MAKE_CHECKBOX  (13001, "  Button B"s, settings3DS.Turbo[1], []( int val ) { settings3DS.Turbo[1] = val; });
+    MENU_MAKE_CHECKBOX  (13002, "  Button X"s, settings3DS.Turbo[2], []( int val ) { settings3DS.Turbo[2] = val; });
+    MENU_MAKE_CHECKBOX  (13003, "  Button Y"s, settings3DS.Turbo[3], []( int val ) { settings3DS.Turbo[3] = val; });
+    MENU_MAKE_CHECKBOX  (13004, "  Button L"s, settings3DS.Turbo[4], []( int val ) { settings3DS.Turbo[4] = val; });
+    MENU_MAKE_CHECKBOX  (13005, "  Button R"s, settings3DS.Turbo[5], []( int val ) { settings3DS.Turbo[5] = val; });
     MENU_MAKE_DISABLED  (""s);
     MENU_MAKE_HEADER2   ("SRAM (Save Data)"s);
-    MENU_MAKE_PICKER    (17000, "  SRAM Auto-Save Delay"s,"Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently."s,makeOptionsForAutoSaveSRAMDelay(), DIALOGCOLOR_CYAN);
-    MENU_MAKE_CHECKBOX  (19000, "  Force SRAM Write on Pause"s,0);
+    MENU_MAKE_PICKER    (17000, "  SRAM Auto-Save Delay"s, "Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently."s, makeOptionsForAutoSaveSRAMDelay(), settings3DS.SRAMSaveInterval, DIALOGCOLOR_CYAN,
+                         []( int val ) { settings3DS.SRAMSaveInterval = val; });
+    MENU_MAKE_CHECKBOX  (19000, "  Force SRAM Write on Pause"s, settings3DS.ForceSRAMWriteOnPause,
+                         []( int val ) { settings3DS.ForceSRAMWriteOnPause = val; });
     return items;
 };
 
@@ -258,14 +268,14 @@ std::vector<SMenuItem> makeCheatMenu() {
 
 std::vector<SMenuItem> makeOptionsForNoYes() {
     std::vector<SMenuItem> items;
-    MENU_MAKE_ACTION(0, "No"s);
-    MENU_MAKE_ACTION(1, "Yes"s);
+    MENU_MAKE_ACTION(0, "No"s, nullptr);
+    MENU_MAKE_ACTION(1, "Yes"s, nullptr);
     return items;
 }
 
 std::vector<SMenuItem> makeOptionsForOk() {
     std::vector<SMenuItem> items;
-    MENU_MAKE_ACTION(0, "OK"s);
+    MENU_MAKE_ACTION(0, "OK"s, nullptr);
     return items;
 }
 
@@ -599,7 +609,7 @@ void fileGetAllFiles(std::vector<SMenuItem>& fileMenu)
     for (int i = 0; i < files.size() && i < 1000; i++)
     {
         strncpy(romFileNames[i], files[i].c_str(), _MAX_PATH);
-        fileMenu.emplace_back(MENUITEM_ACTION, i, std::string(romFileNames[i]), ""s);
+        fileMenu.emplace_back(nullptr, MENUITEM_ACTION, i, std::string(romFileNames[i]), ""s);
     }
 }
 
@@ -637,22 +647,22 @@ bool menuCopySettings(std::vector<SMenuTab>& menuTab, bool copyMenuToSettings)
     }
 
     bool settingsUpdated = false;
-    UPDATE_SETTINGS(settings3DS.Font, 1, 18000);
-    UPDATE_SETTINGS(settings3DS.ScreenStretch, 1, 11000);
-    UPDATE_SETTINGS(settings3DS.HideUnnecessaryBottomScrText, 1, 15001);
-    UPDATE_SETTINGS(settings3DS.MaxFrameSkips, 1, 10000);
-    UPDATE_SETTINGS(settings3DS.ForceFrameRate, 1, 12000);
-    UPDATE_SETTINGS(settings3DS.Turbo[0], 1, 13000);
-    UPDATE_SETTINGS(settings3DS.Turbo[1], 1, 13001);
-    UPDATE_SETTINGS(settings3DS.Turbo[2], 1, 13002);
-    UPDATE_SETTINGS(settings3DS.Turbo[3], 1, 13003);
-    UPDATE_SETTINGS(settings3DS.Turbo[4], 1, 13004);
-    UPDATE_SETTINGS(settings3DS.Turbo[5], 1, 13005);
-    UPDATE_SETTINGS(settings3DS.Volume, 1, 14000);
-    UPDATE_SETTINGS(settings3DS.PaletteFix, 1, 16000);
-    UPDATE_SETTINGS(settings3DS.AutoSavestate, 1, 19100);
-    UPDATE_SETTINGS(settings3DS.SRAMSaveInterval, 1, 17000);
-    UPDATE_SETTINGS(settings3DS.ForceSRAMWriteOnPause, 1, 19000);
+    //UPDATE_SETTINGS(settings3DS.Font, 1, 18000);
+    //UPDATE_SETTINGS(settings3DS.ScreenStretch, 1, 11000);
+    //UPDATE_SETTINGS(settings3DS.HideUnnecessaryBottomScrText, 1, 15001);
+    //UPDATE_SETTINGS(settings3DS.MaxFrameSkips, 1, 10000);
+    //UPDATE_SETTINGS(settings3DS.ForceFrameRate, 1, 12000);
+    //UPDATE_SETTINGS(settings3DS.Turbo[0], 1, 13000);
+    //UPDATE_SETTINGS(settings3DS.Turbo[1], 1, 13001);
+    //UPDATE_SETTINGS(settings3DS.Turbo[2], 1, 13002);
+    //UPDATE_SETTINGS(settings3DS.Turbo[3], 1, 13003);
+    //UPDATE_SETTINGS(settings3DS.Turbo[4], 1, 13004);
+    //UPDATE_SETTINGS(settings3DS.Turbo[5], 1, 13005);
+    //UPDATE_SETTINGS(settings3DS.Volume, 1, 14000);
+    //UPDATE_SETTINGS(settings3DS.PaletteFix, 1, 16000);
+    //UPDATE_SETTINGS(settings3DS.AutoSavestate, 1, 19100);
+    //UPDATE_SETTINGS(settings3DS.SRAMSaveInterval, 1, 17000);
+    //UPDATE_SETTINGS(settings3DS.ForceSRAMWriteOnPause, 1, 19000);
 
     return settingsUpdated;
 }
@@ -683,7 +693,7 @@ bool menuCopyCheats(std::vector<SMenuItem>& cheatMenu, bool copyMenuToSettings)
             }
         }
         else
-            cheatMenu[i+1].Value = Cheat.c[i].enabled;
+            cheatMenu[i+1].SetValue(Cheat.c[i].enabled);
     }
     
     return cheatsUpdated;
@@ -723,7 +733,7 @@ void menuSelectFile(void)
         if (appExiting)
             return;
 
-        selection = menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, NULL, animateMenu);
+        selection = menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, animateMenu);
         animateMenu = false;
 
         if (selection >= 0 && selection < 1000)
@@ -793,10 +803,6 @@ bool IsFileExists(const char * filename) {
 //----------------------------------------------------------------------
 void menuItemChangedCallback(int ID, int value)
 {
-    if (ID == 18000)
-    {
-        ui3dsSetFont(value);
-    }
 }
 
 
@@ -850,7 +856,7 @@ void menuPause()
             break;
         }
 
-        int selection = menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, menuItemChangedCallback, animateMenu);
+        int selection = menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, animateMenu);
         animateMenu = false;
 
         if (selection == -1 || selection == 1000)
@@ -1083,14 +1089,14 @@ void menuSetupCheats(std::vector<SMenuItem>& cheatMenu)
     {
         for (int i = 0; i < MAX_CHEATS && i < Cheat.num_cheats; i++)
         {
-            cheatMenu.emplace_back( MENUITEM_CHECKBOX, 20000+i, std::string(Cheat.c[i].name), ""s, Cheat.c[i].enabled ? 1 : 0 );
+            cheatMenu.emplace_back(nullptr, MENUITEM_CHECKBOX, 20000+i, std::string(Cheat.c[i].name), ""s, Cheat.c[i].enabled ? 1 : 0);
         }
     }
     else
     {
         for (int i = 0; i < 14; i++)
         {
-            cheatMenu.emplace_back(MENUITEM_DISABLED, -2, std::string(noCheatsText[i]), ""s);
+            cheatMenu.emplace_back(nullptr, MENUITEM_DISABLED, -2, std::string(noCheatsText[i]), ""s);
         }
     }
 }

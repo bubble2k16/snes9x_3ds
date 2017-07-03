@@ -1,6 +1,7 @@
 #ifndef _3DSMENU_H_
 #define _3DSMENU_H_
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -46,15 +47,25 @@ public:
     std::vector<SMenuItem> PickerItems;
     int     PickerBackColor;
 
+protected:
+    std::function<void(int)> ValueChangedCallback;
+
+public:
     SMenuItem(
+        std::function<void(int)> callback,
         int type, int id, const std::string& text, const std::string& description, int value = 0,
         int min = 0, int max = 0,
         const std::string& pickerDesc = std::string(), const std::vector<SMenuItem>& pickerItems = std::vector<SMenuItem>(), int pickerColor = 0
-    ) : Type(type), ID(id), Text(text), Description(description), Value(value),
+    ) : ValueChangedCallback(callback), Type(type), ID(id), Text(text), Description(description), Value(value),
         GaugeMinValue(min), GaugeMaxValue(max),
         PickerDescription(pickerDesc), PickerItems(pickerItems), PickerBackColor(pickerColor) {}
 
-
+    void SetValue(int value) {
+        this->Value = value;
+        if (this->ValueChangedCallback) {
+            this->ValueChangedCallback(value);
+        }
+    }
 };
 
 class SMenuTab {
@@ -84,7 +95,7 @@ int menu3dsGetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID);
 
 void menu3dsDrawBlackScreen(float opacity = 1.0f);
 
-int menu3dsShowMenu(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, void (*itemChangedCallback)(int ID, int value), bool animateMenu);
+int menu3dsShowMenu(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, bool animateMenu);
 void menu3dsHideMenu(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab);
 
 int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, const std::string& title, const std::string& dialogText, int dialogBackColor, const std::vector<SMenuItem>& menuItems, int selectedID = -1);

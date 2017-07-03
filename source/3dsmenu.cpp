@@ -470,7 +470,7 @@ static u32 thisKeysHeld = 0;
 // Displays the menu and allows the user to select from
 // a list of choices.
 //
-int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, void (*itemChangedCallback)(int ID, int value))
+int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab)
 {
     int framesDKeyHeld = 0;
     int returnResult = -1;
@@ -535,7 +535,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                     if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value <
                         currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
                     {
-                        currentTab->MenuItems[currentTab->SelectedItemIndex].Value ++ ;
+                        currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(currentTab->MenuItems[currentTab->SelectedItemIndex].Value + 1);
                     }
                     menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
                 }
@@ -556,7 +556,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                     if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value >
                         currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue)
                     {
-                        currentTab->MenuItems[currentTab->SelectedItemIndex].Value -- ;
+                        currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(currentTab->MenuItems[currentTab->SelectedItemIndex].Value - 1);
                     }
                     menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
                 }
@@ -576,9 +576,9 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
             if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_CHECKBOX)
             {
                 if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value == 0)
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].Value = 1;
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(1);
                 else
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].Value = 0;
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(0);
                 menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
             }
             if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_PICKER)
@@ -592,10 +592,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                     );
                 if (resultValue != -1)
                 {
-                    if (itemChangedCallback)
-                        itemChangedCallback(currentTab->MenuItems[currentTab->SelectedItemIndex].ID, resultValue);
-                    
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].Value = resultValue;
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(resultValue);
                 }
                 menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
                 menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
@@ -744,7 +741,7 @@ void menu3dsSetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID, i
     {
         if (currentTab->MenuItems[i].ID == ID)
         {
-            currentTab->MenuItems[i].Value = value;
+            currentTab->MenuItems[i].SetValue(value);
             break;
         }
     }
@@ -765,7 +762,7 @@ int menu3dsGetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID)
     return -1;
 }
 
-int menu3dsShowMenu(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, void (*itemChangedCallback)(int ID, int value), bool animateMenu)
+int menu3dsShowMenu(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, bool animateMenu)
 {
     isDialog = false;
 
@@ -779,7 +776,7 @@ int menu3dsShowMenu(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, st
         }
     }
 
-    return menu3dsMenuSelectItem(dialogTab, isDialog, currentMenuTab, menuTab, itemChangedCallback);
+    return menu3dsMenuSelectItem(dialogTab, isDialog, currentMenuTab, menuTab);
 
 }
 
@@ -839,7 +836,7 @@ int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, 
     //
     if (currentTab->ItemCount > 0)
     {
-        int result = menu3dsMenuSelectItem(dialogTab, isDialog, currentMenuTab, menuTab, NULL);
+        int result = menu3dsMenuSelectItem(dialogTab, isDialog, currentMenuTab, menuTab);
 
         return result;
     }
