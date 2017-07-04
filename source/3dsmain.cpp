@@ -101,6 +101,18 @@ void clearTopScreenWithLogo()
 // Menu options
 //----------------------------------------------------------------------
 
+namespace {
+    template <typename T>
+    bool CheckAndUpdate( T& oldValue, const T& newValue, bool& changed ) {
+        if ( oldValue != newValue ) {
+            oldValue = newValue;
+            changed = true;
+            return true;
+        }
+        return false;
+    }
+}
+
 #define MENU_MAKE_ACTION(ID, text, callback) \
     items.emplace_back( callback, MENUITEM_ACTION, ID, text, ""s, 0 )
 
@@ -218,41 +230,41 @@ std::vector<SMenuItem> makeOptionMenu() {
     std::vector<SMenuItem> items;
     MENU_MAKE_HEADER1   ("GLOBAL SETTINGS"s);
     MENU_MAKE_PICKER    (11000, "  Screen Stretch"s, "How would you like the final screen to appear?"s, makeOptionsForStretch(), settings3DS.ScreenStretch, DIALOGCOLOR_CYAN,
-                         []( int val ) { settings3DS.ScreenStretch = val; });
+                         []( int val ) { CheckAndUpdate( settings3DS.ScreenStretch, val, settings3DS.Changed ); });
     MENU_MAKE_PICKER    (18000, "  Font"s, "The font used for the user interface."s, makeOptionsForFont(), settings3DS.Font, DIALOGCOLOR_CYAN,
-                         []( int val ) { settings3DS.Font = val; ui3dsSetFont(val); });
-    MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen"s, 0,
-                         []( int val ) { settings3DS.HideUnnecessaryBottomScrText = val; });
+                         []( int val ) { if ( CheckAndUpdate( settings3DS.Font, val, settings3DS.Changed ) ) { ui3dsSetFont(val); } });
+    MENU_MAKE_CHECKBOX  (15001, "  Hide text in bottom screen"s, settings3DS.HideUnnecessaryBottomScrText,
+                         []( int val ) { CheckAndUpdate( settings3DS.HideUnnecessaryBottomScrText, val, settings3DS.Changed ); });
     MENU_MAKE_DISABLED  (""s);
     MENU_MAKE_CHECKBOX  (19100, "  Automatically save state on exit and load state on start"s, settings3DS.AutoSavestate,
-                         []( int val ) { settings3DS.AutoSavestate = val; });
+                         []( int val ) { CheckAndUpdate( settings3DS.AutoSavestate, val, settings3DS.Changed ); });
     MENU_MAKE_DISABLED  (""s);
     MENU_MAKE_HEADER1   ("GAME-SPECIFIC SETTINGS"s);
     MENU_MAKE_HEADER2   ("Graphics"s);
     MENU_MAKE_PICKER    (10000, "  Frameskip"s, "Try changing this if the game runs slow. Skipping frames help it run faster but less smooth."s, makeOptionsForFrameskip(), settings3DS.MaxFrameSkips, DIALOGCOLOR_CYAN,
-                         []( int val ) { settings3DS.MaxFrameSkips = val; });
+                         []( int val ) { CheckAndUpdate( settings3DS.MaxFrameSkips, val, settings3DS.Changed ); });
     MENU_MAKE_PICKER    (12000, "  Framerate"s, "Some games run at 50 or 60 FPS by default. Override if required."s, makeOptionsForFrameRate(), settings3DS.ForceFrameRate, DIALOGCOLOR_CYAN,
-                         []( int val ) { settings3DS.ForceFrameRate = val; });
+                         []( int val ) { CheckAndUpdate( settings3DS.ForceFrameRate, val, settings3DS.Changed ); });
     MENU_MAKE_PICKER    (16000, "  In-Frame Palette Changes"s, "Try changing this if some colours in the game look off."s, makeOptionsForInFramePaletteChanges(), settings3DS.PaletteFix, DIALOGCOLOR_CYAN,
-                         []( int val ) { settings3DS.PaletteFix = val; });
+                         []( int val ) { CheckAndUpdate( settings3DS.PaletteFix, val, settings3DS.Changed ); });
     MENU_MAKE_DISABLED  (""s);
     MENU_MAKE_HEADER2   ("Audio"s);
     MENU_MAKE_GAUGE     (14000, "  Volume Amplification"s, 0, 8, settings3DS.Volume,
-                         []( int val ) { settings3DS.Volume = val; });
+                         []( int val ) { CheckAndUpdate( settings3DS.Volume, val, settings3DS.Changed ); });
     MENU_MAKE_DISABLED  (""s);
     MENU_MAKE_HEADER2   ("Turbo (Auto-Fire) Buttons"s);
-    MENU_MAKE_CHECKBOX  (13000, "  Button A"s, settings3DS.Turbo[0], []( int val ) { settings3DS.Turbo[0] = val; });
-    MENU_MAKE_CHECKBOX  (13001, "  Button B"s, settings3DS.Turbo[1], []( int val ) { settings3DS.Turbo[1] = val; });
-    MENU_MAKE_CHECKBOX  (13002, "  Button X"s, settings3DS.Turbo[2], []( int val ) { settings3DS.Turbo[2] = val; });
-    MENU_MAKE_CHECKBOX  (13003, "  Button Y"s, settings3DS.Turbo[3], []( int val ) { settings3DS.Turbo[3] = val; });
-    MENU_MAKE_CHECKBOX  (13004, "  Button L"s, settings3DS.Turbo[4], []( int val ) { settings3DS.Turbo[4] = val; });
-    MENU_MAKE_CHECKBOX  (13005, "  Button R"s, settings3DS.Turbo[5], []( int val ) { settings3DS.Turbo[5] = val; });
+    MENU_MAKE_CHECKBOX  (13000, "  Button A"s, settings3DS.Turbo[0], []( int val ) { CheckAndUpdate( settings3DS.Turbo[0], val, settings3DS.Changed ); });
+    MENU_MAKE_CHECKBOX  (13001, "  Button B"s, settings3DS.Turbo[1], []( int val ) { CheckAndUpdate( settings3DS.Turbo[1], val, settings3DS.Changed ); });
+    MENU_MAKE_CHECKBOX  (13002, "  Button X"s, settings3DS.Turbo[2], []( int val ) { CheckAndUpdate( settings3DS.Turbo[2], val, settings3DS.Changed ); });
+    MENU_MAKE_CHECKBOX  (13003, "  Button Y"s, settings3DS.Turbo[3], []( int val ) { CheckAndUpdate( settings3DS.Turbo[3], val, settings3DS.Changed ); });
+    MENU_MAKE_CHECKBOX  (13004, "  Button L"s, settings3DS.Turbo[4], []( int val ) { CheckAndUpdate( settings3DS.Turbo[4], val, settings3DS.Changed ); });
+    MENU_MAKE_CHECKBOX  (13005, "  Button R"s, settings3DS.Turbo[5], []( int val ) { CheckAndUpdate( settings3DS.Turbo[5], val, settings3DS.Changed ); });
     MENU_MAKE_DISABLED  (""s);
     MENU_MAKE_HEADER2   ("SRAM (Save Data)"s);
     MENU_MAKE_PICKER    (17000, "  SRAM Auto-Save Delay"s, "Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently."s, makeOptionsForAutoSaveSRAMDelay(), settings3DS.SRAMSaveInterval, DIALOGCOLOR_CYAN,
-                         []( int val ) { settings3DS.SRAMSaveInterval = val; });
+                         []( int val ) { CheckAndUpdate( settings3DS.SRAMSaveInterval, val, settings3DS.Changed ); });
     MENU_MAKE_CHECKBOX  (19000, "  Force SRAM Write on Pause"s, settings3DS.ForceSRAMWriteOnPause,
-                         []( int val ) { settings3DS.ForceSRAMWriteOnPause = val; });
+                         []( int val ) { CheckAndUpdate( settings3DS.ForceSRAMWriteOnPause, val, settings3DS.Changed ); });
     return items;
 };
 
@@ -502,6 +514,7 @@ bool settingsSave(bool includeGameSettings = true)
     settingsReadWriteFullListGlobal(true);
     ui3dsDrawRect(50, 140, 270, 154, 0x000000);
 
+    settings3DS.Changed = false;
     return true;
 }
 
@@ -510,6 +523,7 @@ bool settingsSave(bool includeGameSettings = true)
 //----------------------------------------------------------------------
 bool settingsLoad(bool includeGameSettings = true)
 {
+    settings3DS.Changed = false;
     bool success = settingsReadWriteFullListGlobal(false);
     if (!success)
         return false;
@@ -623,46 +637,6 @@ int fileFindLastSelectedFile(std::vector<SMenuItem>& fileMenu)
             return i;
     }
     return -1;
-}
-
-
-
-
-//----------------------------------------------------------------------
-// Copy values from menu to settings.
-//----------------------------------------------------------------------
-bool menuCopySettings(std::vector<SMenuTab>& menuTab, bool copyMenuToSettings)
-{
-#define UPDATE_SETTINGS(var, tabIndex, ID)  \
-    if (copyMenuToSettings && (var) != menu3dsGetValueByID(menuTab, tabIndex, ID)) \
-    { \
-        var = menu3dsGetValueByID(menuTab, tabIndex, ID); \
-        settingsUpdated = true; \
-    } \
-    if (!copyMenuToSettings) \
-    { \
-        menu3dsSetValueByID(menuTab, tabIndex, ID, (var)); \
-    }
-
-    bool settingsUpdated = false;
-    //UPDATE_SETTINGS(settings3DS.Font, 1, 18000);
-    //UPDATE_SETTINGS(settings3DS.ScreenStretch, 1, 11000);
-    //UPDATE_SETTINGS(settings3DS.HideUnnecessaryBottomScrText, 1, 15001);
-    //UPDATE_SETTINGS(settings3DS.MaxFrameSkips, 1, 10000);
-    //UPDATE_SETTINGS(settings3DS.ForceFrameRate, 1, 12000);
-    //UPDATE_SETTINGS(settings3DS.Turbo[0], 1, 13000);
-    //UPDATE_SETTINGS(settings3DS.Turbo[1], 1, 13001);
-    //UPDATE_SETTINGS(settings3DS.Turbo[2], 1, 13002);
-    //UPDATE_SETTINGS(settings3DS.Turbo[3], 1, 13003);
-    //UPDATE_SETTINGS(settings3DS.Turbo[4], 1, 13004);
-    //UPDATE_SETTINGS(settings3DS.Turbo[5], 1, 13005);
-    //UPDATE_SETTINGS(settings3DS.Volume, 1, 14000);
-    //UPDATE_SETTINGS(settings3DS.PaletteFix, 1, 16000);
-    //UPDATE_SETTINGS(settings3DS.AutoSavestate, 1, 19100);
-    //UPDATE_SETTINGS(settings3DS.SRAMSaveInterval, 1, 17000);
-    //UPDATE_SETTINGS(settings3DS.ForceSRAMWriteOnPause, 1, 19000);
-
-    return settingsUpdated;
 }
 
 
@@ -834,7 +808,6 @@ void menuPause()
     menu3dsAddTab(menuTab, "Select ROM", fileMenu);
     std::vector<SMenuItem>& cheatMenu = menuTab[2].MenuItems;
 
-    menuCopySettings(menuTab, false);
     menuCopyCheats(cheatMenu, false);
 
     int previousFileID = fileFindLastSelectedFile(fileMenu);
@@ -894,7 +867,7 @@ void menuPause()
                 bool loadRom = true;
 
                 // in case someone changed the AutoSavestate option while the menu was open
-                if (menuCopySettings(menuTab, true))
+                if (settings3DS.Changed)
                     settingsSave();
 
                 if (settings3DS.AutoSavestate)
@@ -1039,7 +1012,7 @@ void menuPause()
 
     // Save settings and cheats
     //
-    if (menuCopySettings(menuTab, true))
+    if (settings3DS.Changed)
         settingsSave();
     settingsUpdateAllSettings();
 
