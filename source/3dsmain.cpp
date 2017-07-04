@@ -54,7 +54,6 @@ int frameCount60 = 60;
 u64 frameCountTick = 0;
 int framesSkippedCount = 0;
 char romFileName[_MAX_PATH];
-char romFileNameFullPath[_MAX_PATH];
 char romFileNameLastSelected[_MAX_PATH];
 
 
@@ -575,8 +574,9 @@ void emulatorLoadRom()
     gfxSetDoubleBuffering(GFX_BOTTOM, false);
     consoleClear();
     settingsSave(false);
-    snprintf(romFileNameFullPath, _MAX_PATH, "%s%s", file3dsGetCurrentDir(), romFileName);
 
+    char romFileNameFullPath[_MAX_PATH];
+    snprintf(romFileNameFullPath, _MAX_PATH, "%s%s", file3dsGetCurrentDir(), romFileName);
     impl3dsLoadROM(romFileNameFullPath);
 
     GPU3DS.emulatorState = EMUSTATE_EMULATE;
