@@ -114,28 +114,28 @@ namespace {
 }
 
 #define MENU_MAKE_ACTION(ID, text, callback) \
-    items.emplace_back( callback, MENUITEM_ACTION, ID, text, ""s, 0 )
+    items.emplace_back( callback, MenuItemType::Action, ID, text, ""s, 0 )
 
 #define MENU_MAKE_DIALOG_ACTION(ID, text, desc) \
-    items.emplace_back( nullptr, MENUITEM_ACTION, ID, text, desc, 0 )
+    items.emplace_back( nullptr, MenuItemType::Action, ID, text, desc, 0 )
 
 #define MENU_MAKE_DISABLED(text) \
-    items.emplace_back( nullptr, MENUITEM_DISABLED, -1, text, ""s )
+    items.emplace_back( nullptr, MenuItemType::Disabled, -1, text, ""s )
 
 #define MENU_MAKE_HEADER1(text) \
-    items.emplace_back( nullptr, MENUITEM_HEADER1, -1, text, ""s )
+    items.emplace_back( nullptr, MenuItemType::Header1, -1, text, ""s )
 
 #define MENU_MAKE_HEADER2(text) \
-    items.emplace_back( nullptr, MENUITEM_HEADER2, -1, text, ""s )
+    items.emplace_back( nullptr, MenuItemType::Header2, -1, text, ""s )
 
 #define MENU_MAKE_CHECKBOX(ID, text, value, callback) \
-    items.emplace_back( callback, MENUITEM_CHECKBOX, ID, text, ""s, value )
+    items.emplace_back( callback, MenuItemType::Checkbox, ID, text, ""s, value )
 
 #define MENU_MAKE_GAUGE(ID, text, min, max, value, callback) \
-    items.emplace_back( callback, MENUITEM_GAUGE, ID, text, ""s, value, min, max )
+    items.emplace_back( callback, MenuItemType::Gauge, ID, text, ""s, value, min, max )
 
 #define MENU_MAKE_PICKER(ID, text, pickerDescription, pickerOptions, value, backColor, callback) \
-    items.emplace_back( callback, MENUITEM_PICKER, ID, text, ""s, value, 0, 0, pickerDescription, pickerOptions, backColor )
+    items.emplace_back( callback, MenuItemType::Picker, ID, text, ""s, value, 0, 0, pickerDescription, pickerOptions, backColor )
 
 
 std::vector<SMenuItem> makeEmulatorMenu() {
@@ -621,7 +621,7 @@ void fileGetAllFiles(std::vector<SMenuItem>& fileMenu, std::vector<std::string>&
     for (int i = 0; i < files.size() && i < 1000; i++)
     {
         romFileNames.emplace_back(files[i]);
-        fileMenu.emplace_back(nullptr, MENUITEM_ACTION, i, std::string(romFileNames[i]), ""s);
+        fileMenu.emplace_back(nullptr, MenuItemType::Action, i, std::string(romFileNames[i]), ""s);
     }
 }
 
@@ -648,7 +648,7 @@ bool menuCopyCheats(std::vector<SMenuItem>& cheatMenu, bool copyMenuToSettings)
     bool cheatsUpdated = false;
     for (int i = 0; (i+1) < cheatMenu.size() && i < MAX_CHEATS && i < Cheat.num_cheats; i++)
     {
-        cheatMenu[i+1].Type = MENUITEM_CHECKBOX;
+        cheatMenu[i+1].Type = MenuItemType::Checkbox;
         cheatMenu[i+1].ID = 20000 + i;
         cheatMenu[i+1].Text = Cheat.c[i].name;
 
@@ -1062,14 +1062,14 @@ void menuSetupCheats(std::vector<SMenuItem>& cheatMenu)
     {
         for (int i = 0; i < MAX_CHEATS && i < Cheat.num_cheats; i++)
         {
-            cheatMenu.emplace_back(nullptr, MENUITEM_CHECKBOX, 20000+i, std::string(Cheat.c[i].name), ""s, Cheat.c[i].enabled ? 1 : 0);
+            cheatMenu.emplace_back(nullptr, MenuItemType::Checkbox, 20000+i, std::string(Cheat.c[i].name), ""s, Cheat.c[i].enabled ? 1 : 0);
         }
     }
     else
     {
         for (int i = 0; i < 14; i++)
         {
-            cheatMenu.emplace_back(nullptr, MENUITEM_DISABLED, -2, std::string(noCheatsText[i]), ""s);
+            cheatMenu.emplace_back(nullptr, MenuItemType::Disabled, -2, std::string(noCheatsText[i]), ""s);
         }
     }
 }

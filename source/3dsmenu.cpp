@@ -118,23 +118,23 @@ void menu3dsDrawItems(
             ui3dsDrawRect(0, y, 320, y + 14, selectedItemBackColor);
         }
         
-        if (currentTab->MenuItems[i].Type == MENUITEM_HEADER1)
+        if (currentTab->MenuItems[i].Type == MenuItemType::Header1)
         {
             color = headerItemTextColor;
             ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
             ui3dsDrawRect(horizontalPadding, y + fontHeight - 1, 320 - horizontalPadding, y + fontHeight, color);
         }
-        else if (currentTab->MenuItems[i].Type == MENUITEM_HEADER2)
+        else if (currentTab->MenuItems[i].Type == MenuItemType::Header2)
         {
             color = headerItemTextColor;
             ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
         }
-        else if (currentTab->MenuItems[i].Type == MENUITEM_DISABLED)
+        else if (currentTab->MenuItems[i].Type == MenuItemType::Disabled)
         {
             color = disabledItemTextColor;
             ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
         }
-        else if (currentTab->MenuItems[i].Type == MENUITEM_ACTION)
+        else if (currentTab->MenuItems[i].Type == MenuItemType::Action)
         {
             color = normalItemTextColor;
             if (currentTab->SelectedItemIndex == i)
@@ -149,7 +149,7 @@ void menu3dsDrawItems(
                 ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, currentTab->MenuItems[i].Description.c_str());
             }
         }
-        else if (currentTab->MenuItems[i].Type == MENUITEM_CHECKBOX)
+        else if (currentTab->MenuItems[i].Type == MenuItemType::Checkbox)
         {
             if (currentTab->MenuItems[i].Value == 0)
             {
@@ -170,7 +170,7 @@ void menu3dsDrawItems(
                 ui3dsDrawStringWithNoWrapping(280, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, "\xfd");
             }
         }
-        else if (currentTab->MenuItems[i].Type == MENUITEM_GAUGE)
+        else if (currentTab->MenuItems[i].Type == MenuItemType::Gauge)
         {
             color = normalItemTextColor;
             if (currentTab->SelectedItemIndex == i)
@@ -188,7 +188,7 @@ void menu3dsDrawItems(
             gauge[max] = 0;
             ui3dsDrawStringWithNoWrapping(245, y, 320 - horizontalPadding, y + fontHeight, color, HALIGN_RIGHT, gauge);
         }
-        else if (currentTab->MenuItems[i].Type == MENUITEM_PICKER)
+        else if (currentTab->MenuItems[i].Type == MenuItemType::Picker)
         {
             color = normalItemTextColor;
             if (currentTab->SelectedItemIndex == i)
@@ -530,7 +530,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
             if (!isDialog)
             {
                 if (keysDown & KEY_RIGHT &&
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_GAUGE)
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Gauge)
                 {
                     if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value <
                         currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
@@ -550,7 +550,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
             if (!isDialog)
             {
                 if (keysDown & KEY_LEFT &&
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_GAUGE)
+                    currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Gauge)
                 {
                     // Gauge adjustment
                     if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value >
@@ -568,12 +568,12 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
         }
         if (keysDown & KEY_START || keysDown & KEY_A)
         {
-            if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_ACTION)
+            if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Action)
             {
                 returnResult = currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
                 break;
             }
-            if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_CHECKBOX)
+            if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Checkbox)
             {
                 if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value == 0)
                     currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(1);
@@ -581,7 +581,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                     currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(0);
                 menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
             }
-            if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_PICKER)
+            if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Picker)
             {
                 snprintf(menuTextBuffer, 511, "%s", currentTab->MenuItems[currentTab->SelectedItemIndex].Text.c_str());
                 int resultValue = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, menuTextBuffer,
@@ -623,9 +623,9 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 moveCursorTimes++;
             }
             while (
-                (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_DISABLED ||
-                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_HEADER1 ||
-                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_HEADER2
+                (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Disabled ||
+                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Header1 ||
+                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Header2
                 ) &&
                 moveCursorTimes < currentTab->ItemCount);
 
@@ -660,9 +660,9 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 moveCursorTimes++;
             }
             while (
-                (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_DISABLED ||
-                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_HEADER1 ||
-                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MENUITEM_HEADER2
+                (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Disabled ||
+                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Header1 ||
+                currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Header2
                 ) &&
                 moveCursorTimes < currentTab->ItemCount);
 

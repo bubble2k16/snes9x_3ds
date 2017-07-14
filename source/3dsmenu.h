@@ -5,22 +5,19 @@
 #include <string>
 #include <vector>
 
-#define MENUITEM_DISABLED           -1
-#define MENUITEM_HEADER1            0
-#define MENUITEM_HEADER2            1
-#define MENUITEM_ACTION             2
-#define MENUITEM_CHECKBOX           3
-#define MENUITEM_GAUGE              4
-#define MENUITEM_PICKER             5
+enum class MenuItemType {
+    Disabled,
+    Header1,
+    Header2,
+    Action,
+    Checkbox,
+    Gauge,
+    Picker,
+};
 
 class SMenuItem {
 public:
-    int     Type;               // -1 - Disabled
-                                // 0 - Header
-                                // 1 - Action 
-                                // 2 - Checkbox
-                                // 3 - Gauge
-                                // 4 - Picker
+    MenuItemType Type;
 
     int     ID;                 
     
@@ -53,7 +50,7 @@ protected:
 public:
     SMenuItem(
         std::function<void(int)> callback,
-        int type, int id, const std::string& text, const std::string& description, int value = 0,
+        MenuItemType type, int id, const std::string& text, const std::string& description, int value = 0,
         int min = 0, int max = 0,
         const std::string& pickerDesc = std::string(), const std::vector<SMenuItem>& pickerItems = std::vector<SMenuItem>(), int pickerColor = 0
     ) : ValueChangedCallback(callback), Type(type), ID(id), Text(text), Description(description), Value(value),
