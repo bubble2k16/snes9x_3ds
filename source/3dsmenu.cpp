@@ -695,7 +695,7 @@ void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, const std::vecto
     currentTab->SelectedItemIndex = 0;
     for (int i = 0; i < currentTab->MenuItems.size(); i++)
     {
-        if (menuItems[i].ID > -1)
+        if (menuItems[i].IsHighlightable())
         {
             currentTab->SelectedItemIndex = i;
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + MENU_HEIGHT)
@@ -769,7 +769,7 @@ int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, 
 
     for (int i = 0; i < currentTab->MenuItems.size(); i++)
     {
-        if ((selectedID == -1 && menuItems[i].ID > -1) || 
+        if ((selectedID == -1 && menuItems[i].IsHighlightable()) || 
             menuItems[i].ID == selectedID)
         {
             currentTab->SelectedItemIndex = i;

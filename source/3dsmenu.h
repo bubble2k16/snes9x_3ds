@@ -63,6 +63,10 @@ public:
             this->ValueChangedCallback(value);
         }
     }
+
+    bool IsHighlightable() const {
+        return !( Type == MenuItemType::Disabled || Type == MenuItemType::Header1 || Type == MenuItemType::Header2 );
+    }
 };
 
 class SMenuTab {
