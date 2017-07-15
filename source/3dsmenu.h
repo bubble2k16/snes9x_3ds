@@ -71,7 +71,6 @@ public:
     std::string SubTitle;
     std::string Title;
     std::string DialogText;
-    int         ItemCount;
     int         FirstItemIndex;
     int         SelectedItemIndex;
 

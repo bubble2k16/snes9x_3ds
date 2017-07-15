@@ -107,7 +107,7 @@ void menu3dsDrawItems(
     // Draw all the individual items
     //
     for (int i = currentTab->FirstItemIndex;
-        i < currentTab->ItemCount && i < currentTab->FirstItemIndex + maxItems; i++)
+        i < currentTab->MenuItems.size() && i < currentTab->FirstItemIndex + maxItems; i++)
     {
         int y = line * fontHeight + menuStartY;
 
@@ -227,7 +227,7 @@ void menu3dsDrawItems(
 
     // Draw the "down arrow" to indicate more options available at bottom
     //
-    if (currentTab->FirstItemIndex + maxItems < currentTab->ItemCount)
+    if (currentTab->FirstItemIndex + maxItems < currentTab->MenuItems.size())
     {
         ui3dsDrawStringWithNoWrapping(320 - horizontalPadding, menuStartY + (maxItems - 1) * fontHeight, 320, menuStartY + maxItems * fontHeight, disabledItemTextColor, HALIGN_CENTER, "\xf9");
     }
@@ -617,7 +617,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                     currentTab->SelectedItemIndex--;
                     if (currentTab->SelectedItemIndex < 0)
                     {
-                        currentTab->SelectedItemIndex = currentTab->ItemCount - 1;
+                        currentTab->SelectedItemIndex = currentTab->MenuItems.size() - 1;
                     }
                 }
                 moveCursorTimes++;
@@ -627,7 +627,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Header1 ||
                 currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Header2
                 ) &&
-                moveCursorTimes < currentTab->ItemCount);
+                moveCursorTimes < currentTab->MenuItems.size());
 
             if (currentTab->SelectedItemIndex < currentTab->FirstItemIndex)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex;
@@ -645,13 +645,13 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 if (thisKeysHeld & KEY_X)
                 {
                     currentTab->SelectedItemIndex += 15;
-                    if (currentTab->SelectedItemIndex >= currentTab->ItemCount)
-                        currentTab->SelectedItemIndex = currentTab->ItemCount - 1;
+                    if (currentTab->SelectedItemIndex >= currentTab->MenuItems.size())
+                        currentTab->SelectedItemIndex = currentTab->MenuItems.size() - 1;
                 }
                 else
                 {
                     currentTab->SelectedItemIndex++;
-                    if (currentTab->SelectedItemIndex >= currentTab->ItemCount)
+                    if (currentTab->SelectedItemIndex >= currentTab->MenuItems.size())
                     {
                         currentTab->SelectedItemIndex = 0;
                         currentTab->FirstItemIndex = 0;
@@ -664,7 +664,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Header1 ||
                 currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Header2
                 ) &&
-                moveCursorTimes < currentTab->ItemCount);
+                moveCursorTimes < currentTab->MenuItems.size());
 
             if (currentTab->SelectedItemIndex < currentTab->FirstItemIndex)
                 currentTab->FirstItemIndex = currentTab->SelectedItemIndex;
@@ -690,11 +690,10 @@ void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, const std::vecto
 
     currentTab->SetTitle(title);
     currentTab->MenuItems = menuItems;
-    currentTab->ItemCount = static_cast<int>(menuItems.size());
 
     currentTab->FirstItemIndex = 0;
     currentTab->SelectedItemIndex = 0;
-    for (int i = 0; i < currentTab->ItemCount; i++)
+    for (int i = 0; i < currentTab->MenuItems.size(); i++)
     {
         if (menuItems[i].ID > -1)
         {
@@ -764,12 +763,11 @@ int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, 
     currentTab->SetTitle(title);
     currentTab->DialogText.assign(dialogText);
     currentTab->MenuItems = menuItems;
-    currentTab->ItemCount = static_cast<int>(menuItems.size());
 
     currentTab->FirstItemIndex = 0;
     currentTab->SelectedItemIndex = 0;
 
-    for (int i = 0; i < currentTab->ItemCount; i++)
+    for (int i = 0; i < currentTab->MenuItems.size(); i++)
     {
         if ((selectedID == -1 && menuItems[i].ID > -1) || 
             menuItems[i].ID == selectedID)
@@ -798,7 +796,7 @@ int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, 
 
     // Execute the dialog and return result.
     //
-    if (currentTab->ItemCount > 0)
+    if (currentTab->MenuItems.size() > 0)
     {
         int result = menu3dsMenuSelectItem(dialogTab, isDialog, currentMenuTab, menuTab);
 
