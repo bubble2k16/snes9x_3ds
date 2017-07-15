@@ -137,6 +137,19 @@ namespace {
 #define MENU_MAKE_PICKER(ID, text, pickerDescription, pickerOptions, value, backColor, callback) \
     items.emplace_back( callback, MenuItemType::Picker, ID, text, ""s, value, 0, 0, pickerDescription, pickerOptions, backColor )
 
+void exitEmulatorOptionSelected( int val ) {
+    if ( val == 1 ) {
+        GPU3DS.emulatorState = EMUSTATE_END;
+        appExiting = 1;
+    }
+}
+
+std::vector<SMenuItem> makeOptionsForNoYes() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_ACTION(0, "No"s, nullptr);
+    MENU_MAKE_ACTION(1, "Yes"s, nullptr);
+    return items;
+}
 
 std::vector<SMenuItem> makeEmulatorMenu() {
     std::vector<SMenuItem> items;
@@ -160,7 +173,7 @@ std::vector<SMenuItem> makeEmulatorMenu() {
     MENU_MAKE_HEADER2   ("Others"s);
     MENU_MAKE_ACTION    (4001, "  Take Screenshot"s, nullptr); // TODO!
     MENU_MAKE_ACTION    (5001, "  Reset Console"s, nullptr); // TODO!
-    MENU_MAKE_ACTION    (6001, "  Exit"s, nullptr); // TODO!
+    MENU_MAKE_PICKER    (6001, "  Exit"s, "Leaving so soon?", makeOptionsForNoYes(), 0, DIALOGCOLOR_RED, exitEmulatorOptionSelected);
     return items;
 }
 
@@ -222,7 +235,7 @@ std::vector<SMenuItem> makeOptionsForInFramePaletteChanges() {
 
 std::vector<SMenuItem> makeEmulatorNewMenu() {
     std::vector<SMenuItem> items;
-    MENU_MAKE_ACTION(6001, "  Exit"s, nullptr); // TODO!
+    MENU_MAKE_PICKER(6001, "  Exit"s, "Leaving so soon?", makeOptionsForNoYes(), 0, DIALOGCOLOR_RED, exitEmulatorOptionSelected);
     return items;
 }
 
@@ -276,13 +289,6 @@ std::vector<SMenuItem> makeCheatMenu() {
     menuSetupCheats(items);
     return items;
 };
-
-std::vector<SMenuItem> makeOptionsForNoYes() {
-    std::vector<SMenuItem> items;
-    MENU_MAKE_ACTION(0, "No"s, nullptr);
-    MENU_MAKE_ACTION(1, "Yes"s, nullptr);
-    return items;
-}
 
 std::vector<SMenuItem> makeOptionsForOk() {
     std::vector<SMenuItem> items;
@@ -737,17 +743,6 @@ void menuSelectFile(void)
                 return;
             }
         }
-        else if (selection == 6001)
-        {
-            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, makeOptionsForNoYes());
-            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-
-            if (result == 1)
-            {
-                GPU3DS.emulatorState = EMUSTATE_END;
-                return;
-            }
-        }
 
         selection = -1;     // Bug fix: Fixes crashing when setting options before any ROMs are loaded.
     }
@@ -992,20 +987,6 @@ void menuPause()
             }
             
         }
-        else if (selection == 6001)
-        {
-            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Exit",  "Leaving so soon?", DIALOGCOLOR_RED, makeOptionsForNoYes());
-            if (result == 1)
-            {
-                GPU3DS.emulatorState = EMUSTATE_END;
-
-                break;
-            }
-            else
-                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-            
-        }
-
     }
 
     menu3dsHideMenu(dialogTab, isDialog, currentMenuTab, menuTab);
