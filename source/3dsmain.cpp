@@ -687,16 +687,16 @@ void menuSelectFile(void)
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
 
     fileGetAllFiles(fileMenu, romFileNames);
-    int previousFileID = fileFindLastSelectedFile(fileMenu);
     menuTab.clear();
-    currentMenuTab = 0;
     menu3dsAddTab(menuTab, "Emulator", makeEmulatorNewMenu());
     menu3dsAddTab(menuTab, "Select ROM", fileMenu);
     menuTab[0].SubTitle.clear();
     menuTab[1].SubTitle.assign(file3dsGetCurrentDir());
     currentMenuTab = 1;
-    if (previousFileID >= 0)
-        menu3dsSetSelectedItemIndexByID(currentMenuTab, menuTab, 1, previousFileID);
+
+    int previousFileID = fileFindLastSelectedFile(fileMenu);
+    menu3dsSetSelectedItemByIndex(menuTab[1], previousFileID);
+
     menu3dsSetTransferGameScreen(false);
 
     bool animateMenu = true;
@@ -810,14 +810,14 @@ void menuPause()
 
     menuCopyCheats(cheatMenu, false);
 
-    int previousFileID = fileFindLastSelectedFile(fileMenu);
     menuTab[0].SubTitle.clear();
     menuTab[1].SubTitle.clear();
     menuTab[2].SubTitle.clear();
     menuTab[3].SubTitle.assign(file3dsGetCurrentDir());
-    if (previousFileID >= 0)
-        menu3dsSetSelectedItemIndexByID(currentMenuTab, menuTab, 3, previousFileID);
-    currentMenuTab = 0;
+
+    int previousFileID = fileFindLastSelectedFile(fileMenu);
+    menu3dsSetSelectedItemByIndex(menuTab[3], previousFileID);
+
     menu3dsSetTransferGameScreen(true);
 
     bool animateMenu = true;
@@ -915,7 +915,7 @@ void menuPause()
                 menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
 
-            menu3dsSetSelectedItemIndexByID(currentMenuTab, menuTab, 0, 1000);
+            // TODO: Select 'resume' option again?
         }
         else if (selection >= 3001 && selection <= 3010)
         {

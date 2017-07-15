@@ -706,60 +706,24 @@ void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, const std::vecto
     }
 }
 
-void menu3dsSetSelectedItemIndexByID(int& currentMenuTab, std::vector<SMenuTab>& menuTab, int tabIndex, int ID)
+void menu3dsSetSelectedItemByIndex(SMenuTab& tab, int index)
 {
-    currentMenuTab = tabIndex;
+    if (index >= 0 && index < tab.MenuItems.size()) {
+        tab.SelectedItemIndex = index;
 
-    SMenuTab *currentTab = &menuTab[tabIndex];
+        int maxItems = MENU_HEIGHT;
+        if (!tab.SubTitle.empty()) {
+            maxItems--;
+        }
 
-    int maxItems = MENU_HEIGHT;
-    if (!currentTab->SubTitle.empty())
-        maxItems--;
-
-    for (int i = 0; i < currentTab->ItemCount; i++)
-    {
-        if (currentTab->MenuItems[i].ID == ID)
-        {
-            currentTab->SelectedItemIndex = i;
-
-            if (currentTab->SelectedItemIndex < currentTab->FirstItemIndex)
-                currentTab->FirstItemIndex = currentTab->SelectedItemIndex;
-            if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
-                currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
-
-            break;
+        if (tab.SelectedItemIndex < tab.FirstItemIndex) {
+            tab.FirstItemIndex = tab.SelectedItemIndex;
+        }
+        
+        if (tab.SelectedItemIndex >= tab.FirstItemIndex + maxItems) {
+            tab.FirstItemIndex = tab.SelectedItemIndex - maxItems + 1;
         }
     }
-}
-
-
-void menu3dsSetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID, int value)
-{
-    SMenuTab *currentTab = &menuTab[tabIndex];
-
-    for (int i = 0; i < currentTab->ItemCount; i++)
-    {
-        if (currentTab->MenuItems[i].ID == ID)
-        {
-            currentTab->MenuItems[i].SetValue(value);
-            break;
-        }
-    }
-}
-
-
-int menu3dsGetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID)
-{
-    SMenuTab *currentTab = &menuTab[tabIndex];
-
-    for (int i = 0; i < currentTab->ItemCount; i++)
-    {
-        if (currentTab->MenuItems[i].ID == ID)
-        {
-            return currentTab->MenuItems[i].Value;
-        }
-    }
-    return -1;
 }
 
 int menu3dsShowMenu(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, std::vector<SMenuTab>& menuTab, bool animateMenu)

@@ -86,9 +86,7 @@ public:
 void menu3dsSetTransferGameScreen(bool transfer);
 
 void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, const std::vector<SMenuItem>& menuItems);
-void menu3dsSetSelectedItemIndexByID(int& currentMenuTab, std::vector<SMenuTab>& menuTab, int tabIndex, int ID);
-void menu3dsSetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID, int value);
-int menu3dsGetValueByID(std::vector<SMenuTab>& menuTab, int tabIndex, int ID);
+void menu3dsSetSelectedItemByIndex(SMenuTab& tab, int index);
 
 void menu3dsDrawBlackScreen(float opacity = 1.0f);
 
