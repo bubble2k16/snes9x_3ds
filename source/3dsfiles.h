@@ -5,6 +5,16 @@
 #include <string>
 #include <vector>
 
+enum class FileEntryType { ParentDirectory, ChildDirectory, File };
+
+struct DirectoryEntry {
+    std::string Filename;
+    FileEntryType Type;
+
+    DirectoryEntry(const std::string& filename, FileEntryType type)
+    : Filename(filename), Type(type) { }
+};
+
 //----------------------------------------------------------------------
 // Initialize the library
 //----------------------------------------------------------------------
@@ -18,6 +28,12 @@ char *file3dsGetCurrentDir(void);
 
 
 //----------------------------------------------------------------------
+// Go up or down a level.
+//----------------------------------------------------------------------
+void file3dsGoUpOrDownDirectory(const DirectoryEntry& entry);
+
+
+//----------------------------------------------------------------------
 // Go up to the parent directory.
 //----------------------------------------------------------------------
 void file3dsGoToParentDirectory(void);
@@ -26,7 +42,7 @@ void file3dsGoToParentDirectory(void);
 //----------------------------------------------------------------------
 // Go up to the child directory.
 //----------------------------------------------------------------------
-void file3dsGoToChildDirectory(char *childDir);
+void file3dsGoToChildDirectory(const char* childDir);
 
 
 //----------------------------------------------------------------------
@@ -35,6 +51,6 @@ void file3dsGoToChildDirectory(char *childDir);
 // Specify a comma separated list of extensions.
 //
 //----------------------------------------------------------------------
-std::vector<std::string> file3dsGetFiles(char *extensions, int maxFiles);
+void file3dsGetFiles(std::vector<DirectoryEntry>& files, char *extensions, int maxFiles);
 
 #endif

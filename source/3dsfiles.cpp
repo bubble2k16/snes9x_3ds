@@ -3,6 +3,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
+#include <tuple>
 #include <vector>
 
 #include <unistd.h>
@@ -14,6 +15,9 @@
 #include "port.h"
 #include "3dsfiles.h"
 
+inline std::string operator "" s(const char* s, unsigned int length) {
+    return std::string(s, length);
+}
 
 static char currentDir[_MAX_PATH] = "";
 
@@ -34,6 +38,17 @@ char *file3dsGetCurrentDir(void)
     return currentDir;
 }
 
+
+//----------------------------------------------------------------------
+// Go up or down a level.
+//----------------------------------------------------------------------
+void file3dsGoUpOrDownDirectory(const DirectoryEntry& entry) {
+    if (entry.Type == FileEntryType::ParentDirectory) {
+        file3dsGoToParentDirectory();
+    } else if (entry.Type == FileEntryType::ChildDirectory) {
+        file3dsGoToChildDirectory(entry.Filename.c_str());
+    }
+}
 
 //----------------------------------------------------------------------
 // Go up to the parent directory.
@@ -59,7 +74,7 @@ void file3dsGoToParentDirectory(void)
 //----------------------------------------------------------------------
 // Go up to the child directory.
 //----------------------------------------------------------------------
-void file3dsGoToChildDirectory(char *childDir)
+void file3dsGoToChildDirectory(const char* childDir)
 {
     strncat(currentDir, childDir, _MAX_PATH);
     strncat(currentDir, "/", _MAX_PATH);
@@ -132,10 +147,9 @@ char* stristr( char* str1, const char* str2 )
 // Specify a comma separated list of extensions.
 //
 //----------------------------------------------------------------------
-std::vector<std::string> file3dsGetFiles(char *extensions, int maxFiles)
+void file3dsGetFiles(std::vector<DirectoryEntry>& files, char *extensions, int maxFiles)
 {
-    std::vector<std::string> files;
-    char buffer[_MAX_PATH];
+    files.clear();
 
     struct dirent* dir;
     DIR* d = opendir(currentDir);
@@ -143,37 +157,33 @@ std::vector<std::string> file3dsGetFiles(char *extensions, int maxFiles)
     if (strlen(currentDir) > 1)
     {
         // Insert the parent directory.
-        snprintf(buffer, _MAX_PATH, "\x01 ..");   
-        files.push_back(buffer);
+        files.emplace_back(".. (Up to Parent Directory)"s, FileEntryType::ParentDirectory);
     }
 
     if (d)
     {
         while ((dir = readdir(d)) != NULL)
         {
-            char *dot = strrchr(dir->d_name, '.');
-
             if (dir->d_name[0] == '.')
                 continue;
             if (dir->d_type == DT_DIR)
             {
-                snprintf(buffer, _MAX_PATH, "\x01 %s", dir->d_name);
-                files.push_back(buffer);
+                files.emplace_back(std::string(dir->d_name), FileEntryType::ChildDirectory);
             }
             if (dir->d_type == DT_REG)
             {
                 char *ext = file3dsGetExtension(dir->d_name);
 
-                if (!stristr(extensions, ext))
+                if (ext[0] == '\0' || !stristr(extensions, ext))
                     continue;
 
-                files.push_back(dir->d_name);
+                files.emplace_back(std::string(dir->d_name), FileEntryType::File);
             }
         }
         closedir(d);
     }
 
-    std::sort(files.begin(), files.end());
-
-    return files;
+    std::sort( files.begin(), files.end(), [](const DirectoryEntry& a, const DirectoryEntry& b) {
+        return std::tie(a.Type, a.Filename) < std::tie(b.Type, b.Filename);
+    } );
 }

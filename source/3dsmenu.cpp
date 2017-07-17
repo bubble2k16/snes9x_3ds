@@ -571,6 +571,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
             if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Action)
             {
                 returnResult = currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
+                currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(1);
                 break;
             }
             if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Checkbox)

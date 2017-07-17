@@ -6,6 +6,9 @@
 #include <string>
 #include <vector>
 
+#include <iostream>
+#include <sstream>
+
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -58,6 +61,17 @@ char romFileNameLastSelected[_MAX_PATH];
 
 
 
+
+//----------------------------------------------------------------------
+// Checks if file exists.
+//----------------------------------------------------------------------
+bool IsFileExists(const char * filename) {
+    if (FILE * file = fopen(filename, "r")) {
+        fclose(file);
+        return true;
+    }
+    return false;
+}
 
 //-------------------------------------------------------
 // Clear top screen with logo.
@@ -151,29 +165,125 @@ std::vector<SMenuItem> makeOptionsForNoYes() {
     return items;
 }
 
-std::vector<SMenuItem> makeEmulatorMenu() {
+std::vector<SMenuItem> makeOptionsForOk() {
+    std::vector<SMenuItem> items;
+    MENU_MAKE_ACTION(0, "OK"s, nullptr);
+    return items;
+}
+
+std::vector<SMenuItem> makeEmulatorMenu(std::vector<SMenuTab>& menuTab, int& currentMenuTab, bool& closeMenu) {
     std::vector<SMenuItem> items;
     MENU_MAKE_HEADER2   ("Resume"s);
-    MENU_MAKE_ACTION    (1000, "  Resume Game"s, nullptr); // TODO!
+    items.emplace_back([&closeMenu](int val) {
+        closeMenu = true;
+    }, MenuItemType::Action, 1000, "  Resume Game"s, ""s, 0);
     MENU_MAKE_HEADER2   (""s);
 
     MENU_MAKE_HEADER2   ("Savestates"s);
-    MENU_MAKE_ACTION    (2001, "  Save Slot #1"s, nullptr); // TODO!
-    MENU_MAKE_ACTION    (2002, "  Save Slot #2"s, nullptr); // TODO!
-    MENU_MAKE_ACTION    (2003, "  Save Slot #3"s, nullptr); // TODO!
-    MENU_MAKE_ACTION    (2004, "  Save Slot #4"s, nullptr); // TODO!
+    for (int slot = 1; slot <= 5; ++slot) {
+        std::ostringstream optionText;
+        optionText << "  Save Slot #" << slot;
+        items.emplace_back([slot, &menuTab, &currentMenuTab](int val) {
+            SMenuTab dialogTab;
+            bool isDialog = false;
+            bool result;
+
+            {
+                std::ostringstream oss;
+                oss << "Saving into slot #" << slot << "...";
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", oss.str(), DIALOGCOLOR_CYAN, std::vector<SMenuItem>());
+                result = impl3dsSaveStateSlot(slot);
+                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
+            }
+
+            if (!result) {
+                std::ostringstream oss;
+                oss << "Unable to save into #" << slot << "!";
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestate failure", oss.str(), DIALOGCOLOR_RED, makeOptionsForOk());
+                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
+            }
+        }, MenuItemType::Action, 2000 + slot, optionText.str(), ""s, 0);
+    }
     MENU_MAKE_HEADER2   (""s);
     
-    MENU_MAKE_ACTION    (3001, "  Load Slot #1"s, nullptr); // TODO!
-    MENU_MAKE_ACTION    (3002, "  Load Slot #2"s, nullptr); // TODO!
-    MENU_MAKE_ACTION    (3003, "  Load Slot #3"s, nullptr); // TODO!
-    MENU_MAKE_ACTION    (3004, "  Load Slot #4"s, nullptr); // TODO!
+    for (int slot = 1; slot <= 5; ++slot) {
+        std::ostringstream optionText;
+        optionText << "  Load Slot #" << slot;
+        items.emplace_back([slot, &menuTab, &currentMenuTab, &closeMenu](int val) {
+            bool result = impl3dsLoadStateSlot(slot);
+            if (!result) {
+                SMenuTab dialogTab;
+                bool isDialog = false;
+                std::ostringstream oss;
+                oss << "Unable to load slot #" << slot << "!";
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestate failure", oss.str(), DIALOGCOLOR_RED, makeOptionsForOk());
+                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
+            } else {
+                closeMenu = true;
+            }
+        }, MenuItemType::Action, 3000 + slot, optionText.str(), ""s, 0);
+    }
     MENU_MAKE_HEADER2   (""s);
 
     MENU_MAKE_HEADER2   ("Others"s);
-    MENU_MAKE_ACTION    (4001, "  Take Screenshot"s, nullptr); // TODO!
-    MENU_MAKE_ACTION    (5001, "  Reset Console"s, nullptr); // TODO!
+
+    items.emplace_back([&menuTab, &currentMenuTab](int val) {
+        SMenuTab dialogTab;
+        bool isDialog = false;
+        menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, std::vector<SMenuItem>());
+
+        char ext[256];
+        const char *path = NULL;
+
+        // Loop through and look for an non-existing
+        // file name.
+        //
+        int i = 1;
+        while (i <= 999)
+        {
+            snprintf(ext, 255, ".b%03d.bmp", i);
+            path = S9xGetFilename(ext);
+            if (!IsFileExists(path))
+                break;
+            path = NULL;
+            i++;
+        }
+
+        bool success = false;
+        if (path)
+        {
+            success = menu3dsTakeScreenshot(path);
+        }
+        menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
+
+        if (success)
+        {
+            char text[600];
+            snprintf(text, 600, "Done! File saved to %s", path);
+            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", text, DIALOGCOLOR_GREEN, makeOptionsForOk());
+            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
+        }
+        else 
+        {
+            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, makeOptionsForOk());
+            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
+        }
+    }, MenuItemType::Action, 4001, "  Take Screenshot"s, ""s, 0);
+
+    items.emplace_back([&menuTab, &currentMenuTab, &closeMenu](int val) {
+        SMenuTab dialogTab;
+        bool isDialog = false;
+        int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Reset Console", "Are you sure?", DIALOGCOLOR_RED, makeOptionsForNoYes());
+        menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
+
+        if (result == 1) {
+            impl3dsResetConsole();
+            closeMenu = true;
+        }
+    }, MenuItemType::Action, 5001, "  Reset Console"s, ""s, 0);
+
     MENU_MAKE_PICKER    (6001, "  Exit"s, "Leaving so soon?", makeOptionsForNoYes(), 0, DIALOGCOLOR_RED, exitEmulatorOptionSelected);
+
     return items;
 }
 
@@ -289,12 +399,6 @@ std::vector<SMenuItem> makeCheatMenu() {
     menuSetupCheats(items);
     return items;
 };
-
-std::vector<SMenuItem> makeOptionsForOk() {
-    std::vector<SMenuItem> items;
-    MENU_MAKE_ACTION(0, "OK"s, nullptr);
-    return items;
-}
 
 
 //----------------------------------------------------------------------
@@ -615,20 +719,10 @@ void emulatorLoadRom()
 //----------------------------------------------------------------------
 // Load all ROM file names (up to 1000 ROMs)
 //----------------------------------------------------------------------
-void fileGetAllFiles(std::vector<SMenuItem>& fileMenu, std::vector<std::string>& romFileNames)
+void fileGetAllFiles(std::vector<DirectoryEntry>& romFileNames)
 {
-    fileMenu.clear();
-    romFileNames.clear();
-
     // TODO: Lift the 1k file limitation once we no longer have hardcoded IDs for menu items.
-    std::vector<std::string> files = file3dsGetFiles("smc,sfc,fig", 1000);
-
-    // Increase the total number of files we can display.
-    for (int i = 0; i < files.size() && i < 1000; i++)
-    {
-        romFileNames.emplace_back(files[i]);
-        fileMenu.emplace_back(nullptr, MenuItemType::Action, i, std::string(romFileNames[i]), ""s);
-    }
+    file3dsGetFiles(romFileNames, "smc,sfc,fig", 1000);
 }
 
 
@@ -678,314 +772,173 @@ bool menuCopyCheats(std::vector<SMenuItem>& cheatMenu, bool copyMenuToSettings)
 }
 
 
+void fillFileMenuFromFileNames(std::vector<SMenuItem>& fileMenu, const std::vector<DirectoryEntry>& romFileNames, const DirectoryEntry*& selectedEntry) {
+    fileMenu.clear();
+    fileMenu.reserve(romFileNames.size());
+
+    for (size_t i = 0; i < romFileNames.size(); ++i) {
+        const DirectoryEntry& entry = romFileNames[i];
+        fileMenu.emplace_back( [&entry, &selectedEntry]( int val ) {
+            selectedEntry = &entry;
+        }, MenuItemType::Action, i, std::string( entry.Filename ), ""s );
+    }
+}
+
 //----------------------------------------------------------------------
 // Start up menu.
 //----------------------------------------------------------------------
+void setupBootupMenu(std::vector<SMenuTab>& menuTab, std::vector<DirectoryEntry>& romFileNames, const DirectoryEntry*& selectedDirectoryEntry, bool selectPreviousFile) {
+    menuTab.clear();
+    menuTab.reserve(2);
+
+    {
+        menu3dsAddTab(menuTab, "Emulator", makeEmulatorNewMenu());
+        menuTab.back().SubTitle.clear();
+    }
+
+    {
+        std::vector<SMenuItem> fileMenu;
+        fileGetAllFiles(romFileNames);
+        fillFileMenuFromFileNames(fileMenu, romFileNames, selectedDirectoryEntry);
+        menu3dsAddTab(menuTab, "Select ROM", fileMenu);
+        if (selectPreviousFile) {
+            int previousFileID = fileFindLastSelectedFile(menuTab.back().MenuItems);
+            menu3dsSetSelectedItemByIndex(menuTab.back(), previousFileID);
+        }
+        menuTab.back().SubTitle.assign(file3dsGetCurrentDir());
+    }
+}
+
 void menuSelectFile(void)
 {
     std::vector<SMenuTab> menuTab;
-    int currentMenuTab = 0;
+    std::vector<DirectoryEntry> romFileNames; // needs to stay in scope, is there a better way?
+    const DirectoryEntry* selectedDirectoryEntry = nullptr;
+    setupBootupMenu(menuTab, romFileNames, selectedDirectoryEntry, true);
+
+    int currentMenuTab = 1;
     bool isDialog = false;
     SMenuTab dialogTab;
-    std::vector<SMenuItem> fileMenu;
-    std::vector<std::string> romFileNames;
 
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
-
-    fileGetAllFiles(fileMenu, romFileNames);
-    menuTab.clear();
-    menu3dsAddTab(menuTab, "Emulator", makeEmulatorNewMenu());
-    menu3dsAddTab(menuTab, "Select ROM", fileMenu);
-    menuTab[0].SubTitle.clear();
-    menuTab[1].SubTitle.assign(file3dsGetCurrentDir());
-    currentMenuTab = 1;
-
-    int previousFileID = fileFindLastSelectedFile(fileMenu);
-    menu3dsSetSelectedItemByIndex(menuTab[1], previousFileID);
-
     menu3dsSetTransferGameScreen(false);
 
     bool animateMenu = true;
-    int selection = 0;
-    do
-    {
-        if (appExiting)
-            return;
-
-        selection = menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, animateMenu);
+    while (!appExiting) {
+        menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, animateMenu);
         animateMenu = false;
 
-        if (selection >= 0 && selection < 1000)
-        {
-            // Load ROM
-            //
-            strncpy(romFileName, romFileNames[selection].c_str(), _MAX_PATH);
-            strncpy(romFileNameLastSelected, romFileName, _MAX_PATH);
-            if (romFileName[0] == 1)
-            {
-                if (strcmp(romFileName, "\x01 ..") == 0)
-                    file3dsGoToParentDirectory();
-                else
-                    file3dsGoToChildDirectory(&romFileName[2]);
-
-                fileGetAllFiles(fileMenu, romFileNames);
-                menuTab.clear();
-                currentMenuTab = 0;
-                menu3dsAddTab(menuTab, "Emulator", makeEmulatorNewMenu());
-                menu3dsAddTab(menuTab, "Select ROM", fileMenu);
-                currentMenuTab = 1;
-                menuTab[1].SubTitle.assign(file3dsGetCurrentDir());
-                selection = -1;
-            }
-            else
-            {
+        if (selectedDirectoryEntry) {
+            if (selectedDirectoryEntry->Type == FileEntryType::File) {
+                strncpy(romFileName, selectedDirectoryEntry->Filename.c_str(), _MAX_PATH);
+                strncpy(romFileNameLastSelected, romFileName, _MAX_PATH);
+                menu3dsHideMenu(dialogTab, isDialog, currentMenuTab, menuTab);
                 emulatorLoadRom();
                 return;
+            } else if (selectedDirectoryEntry->Type == FileEntryType::ParentDirectory || selectedDirectoryEntry->Type == FileEntryType::ChildDirectory) {
+                file3dsGoUpOrDownDirectory(*selectedDirectoryEntry);
+                setupBootupMenu(menuTab, romFileNames, selectedDirectoryEntry, false);
             }
+            selectedDirectoryEntry = nullptr;
         }
-
-        selection = -1;     // Bug fix: Fixes crashing when setting options before any ROMs are loaded.
     }
-    while (selection == -1);
 
     menu3dsHideMenu(dialogTab, isDialog, currentMenuTab, menuTab);
-
-    emulatorLoadRom();
-}
-
-
-//----------------------------------------------------------------------
-// Checks if file exists.
-//----------------------------------------------------------------------
-bool IsFileExists(const char * filename) {
-    if (FILE * file = fopen(filename, "r")) {
-        fclose(file);
-        return true;
-    }
-    return false;
-}
-
-
-//----------------------------------------------------------------------
-// Callback when a menu item changes
-//----------------------------------------------------------------------
-void menuItemChangedCallback(int ID, int value)
-{
 }
 
 
 //----------------------------------------------------------------------
 // Menu when the emulator is paused in-game.
 //----------------------------------------------------------------------
+void setupPauseMenu(std::vector<SMenuTab>& menuTab, std::vector<DirectoryEntry>& romFileNames, const DirectoryEntry*& selectedDirectoryEntry, bool selectPreviousFile, int& currentMenuTab, bool& closeMenu) {
+    menuTab.clear();
+    menuTab.reserve(4);
+
+    {
+        menu3dsAddTab(menuTab, "Emulator", makeEmulatorMenu(menuTab, currentMenuTab, closeMenu));
+        menuTab.back().SubTitle.clear();
+    }
+
+    {
+        menu3dsAddTab(menuTab, "Options", makeOptionMenu());
+        menuTab.back().SubTitle.clear();
+    }
+
+    {
+        menu3dsAddTab(menuTab, "Cheats", makeCheatMenu());
+        menuTab.back().SubTitle.clear();
+    }
+
+    {
+        std::vector<SMenuItem> fileMenu;
+        fileGetAllFiles(romFileNames);
+        fillFileMenuFromFileNames(fileMenu, romFileNames, selectedDirectoryEntry);
+        menu3dsAddTab(menuTab, "Select ROM", fileMenu);
+        if (selectPreviousFile) {
+            int previousFileID = fileFindLastSelectedFile(menuTab.back().MenuItems);
+            menu3dsSetSelectedItemByIndex(menuTab.back(), previousFileID);
+        }
+        menuTab.back().SubTitle.assign(file3dsGetCurrentDir());
+    }
+}
+
 void menuPause()
 {
-    std::vector<SMenuTab> menuTab;
     int currentMenuTab = 0;
+    bool closeMenu = false;
+    std::vector<SMenuTab> menuTab;
+    std::vector<DirectoryEntry> romFileNames; // needs to stay in scope, is there a better way?
+    const DirectoryEntry* selectedDirectoryEntry = nullptr;
+    setupPauseMenu(menuTab, romFileNames, selectedDirectoryEntry, true, currentMenuTab, closeMenu);
+
     bool isDialog = false;
     SMenuTab dialogTab;
-    std::vector<SMenuItem> fileMenu;
-    std::vector<std::string> romFileNames;
 
     gfxSetDoubleBuffering(GFX_BOTTOM, true);
-    
-    bool settingsUpdated = false;
-    bool cheatsUpdated = false;
-    bool loadRomBeforeExit = false;
-    bool returnToEmulation = false;
-
-
-    fileGetAllFiles(fileMenu, romFileNames);
-    menuTab.clear();
-    currentMenuTab = 0;
-    menu3dsAddTab(menuTab, "Emulator", makeEmulatorMenu());
-    menu3dsAddTab(menuTab, "Options", makeOptionMenu());
-    menu3dsAddTab(menuTab, "Cheats", makeCheatMenu());
-    menu3dsAddTab(menuTab, "Select ROM", fileMenu);
-    std::vector<SMenuItem>& cheatMenu = menuTab[2].MenuItems;
-
-    menuCopyCheats(cheatMenu, false);
-
-    menuTab[0].SubTitle.clear();
-    menuTab[1].SubTitle.clear();
-    menuTab[2].SubTitle.clear();
-    menuTab[3].SubTitle.assign(file3dsGetCurrentDir());
-
-    int previousFileID = fileFindLastSelectedFile(fileMenu);
-    menu3dsSetSelectedItemByIndex(menuTab[3], previousFileID);
-
     menu3dsSetTransferGameScreen(true);
 
+    bool loadRomBeforeExit = false;
+
+    std::vector<SMenuItem>& cheatMenu = menuTab[2].MenuItems;
+    menuCopyCheats(cheatMenu, false);
+
     bool animateMenu = true;
-
-    while (true)
-    {
-        if (appExiting)
-        {
-            break;
+    while (!appExiting && !closeMenu) {
+        if (menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, animateMenu) < 0) {
+            // user pressed B, close menu
+            closeMenu = true;
         }
-
-        int selection = menu3dsShowMenu(dialogTab, isDialog, currentMenuTab, menuTab, animateMenu);
         animateMenu = false;
 
-        if (selection == -1 || selection == 1000)
-        {
-            // Cancels the menu and resumes game
-            //
-            returnToEmulation = true;
-
-            break;
-        }
-        else if (selection < 1000)
-        {
+        if (selectedDirectoryEntry) {
             // Load ROM
-            //
-            strncpy(romFileName, romFileNames[selection].c_str(), _MAX_PATH);
-            if (romFileName[0] == 1)
-            {
-                if (strcmp(romFileName, "\x01 ..") == 0)
-                    file3dsGoToParentDirectory();
-                else
-                    file3dsGoToChildDirectory(&romFileName[2]);
-
-                fileGetAllFiles(fileMenu, romFileNames);
-                menuTab.clear();
-                currentMenuTab = 0;
-                menu3dsAddTab(menuTab, "Emulator", makeEmulatorMenu());
-                menu3dsAddTab(menuTab, "Options", makeOptionMenu());
-                menu3dsAddTab(menuTab, "Cheats", makeCheatMenu());
-                menu3dsAddTab(menuTab, "Select ROM", fileMenu);
-                currentMenuTab = 3;
-                menuTab[3].SubTitle.assign(file3dsGetCurrentDir());
-            }
-            else
-            {
+            if (selectedDirectoryEntry->Type == FileEntryType::File) {
                 bool loadRom = true;
-
-                // in case someone changed the AutoSavestate option while the menu was open
-                if (settings3DS.Changed)
-                    settingsSave();
-
-                if (settings3DS.AutoSavestate)
-                {
+                //if (settings3DS.Changed)settingsSave(); // should be unnecessary now?
+                if (settings3DS.AutoSavestate) {
                     menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Save State", "Autosaving...", DIALOGCOLOR_CYAN, std::vector<SMenuItem>());
                     bool result = impl3dsSaveStateAuto();
                     menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
 
-                    if (!result)
-                    {
+                    if (!result) {
                         int choice = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Autosave failure", "Automatic savestate writing failed.\nLoad chosen game anyway?", DIALOGCOLOR_RED, makeOptionsForNoYes());
-                        if (choice != 1)
+                        if (choice != 1) {
                             loadRom = false;
+                        }
                     }
                 }
 
-                if (loadRom)
-                {
+                if (loadRom) {
+                    strncpy(romFileName, selectedDirectoryEntry->Filename.c_str(), _MAX_PATH);
                     strncpy(romFileNameLastSelected, romFileName, _MAX_PATH);
                     loadRomBeforeExit = true;
                     break;
                 }
+            } else if (selectedDirectoryEntry->Type == FileEntryType::ParentDirectory || selectedDirectoryEntry->Type == FileEntryType::ChildDirectory) {
+                file3dsGoUpOrDownDirectory(*selectedDirectoryEntry);
+                setupPauseMenu(menuTab, romFileNames, selectedDirectoryEntry, false, currentMenuTab, closeMenu);
             }
-        }
-        else if (selection >= 2001 && selection <= 2010)
-        {
-            int slot = selection - 2000;
-            char text[200];
-           
-            sprintf(text, "Saving into slot %d...\nThis may take a while", slot);
-            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_CYAN, std::vector<SMenuItem>());
-            bool result = impl3dsSaveStateSlot(slot);
-            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-
-            if (result)
-            {
-                sprintf(text, "Slot %d save completed.", slot);
-                result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_GREEN, makeOptionsForOk());
-                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-            }
-            else
-            {
-                sprintf(text, "Oops. Unable to save slot %d!", slot);
-                result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, makeOptionsForOk());
-                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-            }
-
-            // TODO: Select 'resume' option again?
-        }
-        else if (selection >= 3001 && selection <= 3010)
-        {
-            int slot = selection - 3000;
-            char text[200];
-
-            bool result = impl3dsLoadStateSlot(slot);
-            if (result)
-            {
-                GPU3DS.emulatorState = EMUSTATE_EMULATE;
-                consoleClear();
-                break;
-            }
-            else
-            {
-                sprintf(text, "Oops. Unable to load slot %d!", slot);
-                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestates", text, DIALOGCOLOR_RED, makeOptionsForOk());
-                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-            }
-        }
-        else if (selection == 4001)
-        {
-            menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Now taking a screenshot...\nThis may take a while.", DIALOGCOLOR_CYAN, std::vector<SMenuItem>());
-
-            char ext[256];
-            const char *path = NULL;
-
-            // Loop through and look for an non-existing
-            // file name.
-            //
-            int i = 1;
-            while (i <= 999)
-            {
-                snprintf(ext, 255, ".b%03d.bmp", i);
-                path = S9xGetFilename(ext);
-                if (!IsFileExists(path))
-                    break;
-                path = NULL;
-                i++;
-            }
-
-            bool success = false;
-            if (path)
-            {
-                success = menu3dsTakeScreenshot(path);
-            }
-            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-
-            if (success)
-            {
-                char text[600];
-                snprintf(text, 600, "Done! File saved to %s", path);
-                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", text, DIALOGCOLOR_GREEN, makeOptionsForOk());
-                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-            }
-            else 
-            {
-                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, makeOptionsForOk());
-                menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-            }
-        }
-        else if (selection == 5001)
-        {
-            int result = menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Reset Console", "Are you sure?", DIALOGCOLOR_RED, makeOptionsForNoYes());
-            menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
-
-            if (result == 1)
-            {
-                impl3dsResetConsole();
-                GPU3DS.emulatorState = EMUSTATE_EMULATE;
-                consoleClear();
-
-                break;
-            }
-            
+            selectedDirectoryEntry = nullptr;
         }
     }
 
@@ -1004,8 +957,7 @@ void menuPause()
         S9xSaveCheatTextFile (S9xGetFilename(".chx"));
     }
 
-    if (returnToEmulation)
-    {
+    if (closeMenu) {
         GPU3DS.emulatorState = EMUSTATE_EMULATE;
         consoleClear();
     }
