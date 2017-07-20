@@ -142,12 +142,12 @@ char* stristr( char* str1, const char* str2 )
 }
 
 //----------------------------------------------------------------------
-// Load all ROM file names (up to 512 ROMs)
+// Load all ROM file names
 //
 // Specify a comma separated list of extensions.
 //
 //----------------------------------------------------------------------
-void file3dsGetFiles(std::vector<DirectoryEntry>& files, char *extensions, int maxFiles)
+void file3dsGetFiles(std::vector<DirectoryEntry>& files, char *extensions)
 {
     files.clear();
 

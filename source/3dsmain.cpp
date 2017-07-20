@@ -729,12 +729,11 @@ void emulatorLoadRom()
 
 
 //----------------------------------------------------------------------
-// Load all ROM file names (up to 1000 ROMs)
+// Load all ROM file names
 //----------------------------------------------------------------------
 void fileGetAllFiles(std::vector<DirectoryEntry>& romFileNames)
 {
-    // TODO: Lift the 1k file limitation once we no longer have hardcoded IDs for menu items.
-    file3dsGetFiles(romFileNames, "smc,sfc,fig", 1000);
+    file3dsGetFiles(romFileNames, "smc,sfc,fig");
 }
 
 
