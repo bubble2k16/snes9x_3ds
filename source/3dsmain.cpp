@@ -128,10 +128,10 @@ namespace {
 }
 
 #define MENU_MAKE_ACTION(ID, text, callback) \
-    items.emplace_back( callback, MenuItemType::Action, ID, text, ""s, 0 )
+    items.emplace_back( callback, MenuItemType::Action, ID, text, ""s, ID )
 
 #define MENU_MAKE_DIALOG_ACTION(ID, text, desc) \
-    items.emplace_back( nullptr, MenuItemType::Action, ID, text, desc, 0 )
+    items.emplace_back( nullptr, MenuItemType::Action, ID, text, desc, ID )
 
 #define MENU_MAKE_DISABLED(text) \
     items.emplace_back( nullptr, MenuItemType::Disabled, -1, text, ""s )

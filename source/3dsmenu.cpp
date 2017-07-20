@@ -202,7 +202,7 @@ void menu3dsDrawItems(
                 for (int j = 0; j < currentTab->MenuItems[i].PickerItems.size(); j++)
                 {
                     std::vector<SMenuItem>& pickerItems = currentTab->MenuItems[i].PickerItems;
-                    if (pickerItems[j].ID == currentTab->MenuItems[i].Value)
+                    if (pickerItems[j].Value == currentTab->MenuItems[i].Value)
                     {
                         selectedIndex = j;
                     }
@@ -570,7 +570,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
         {
             if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Action)
             {
-                returnResult = currentTab->MenuItems[currentTab->SelectedItemIndex].ID;
+                returnResult = currentTab->MenuItems[currentTab->SelectedItemIndex].Value;
                 currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(1);
                 break;
             }
@@ -771,7 +771,7 @@ int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, 
     for (int i = 0; i < currentTab->MenuItems.size(); i++)
     {
         if ((selectedID == -1 && menuItems[i].IsHighlightable()) || 
-            menuItems[i].ID == selectedID)
+            menuItems[i].Value == selectedID)
         {
             currentTab->SelectedItemIndex = i;
             if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + DIALOG_HEIGHT)
