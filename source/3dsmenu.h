@@ -19,8 +19,6 @@ class SMenuItem {
 public:
     MenuItemType Type;
 
-    int     ID;                 
-    
     std::string Text;
 
     std::string Description;
@@ -50,10 +48,10 @@ protected:
 public:
     SMenuItem(
         std::function<void(int)> callback,
-        MenuItemType type, int id, const std::string& text, const std::string& description, int value = 0,
+        MenuItemType type, const std::string& text, const std::string& description, int value = 0,
         int min = 0, int max = 0,
         const std::string& pickerDesc = std::string(), const std::vector<SMenuItem>& pickerItems = std::vector<SMenuItem>(), int pickerColor = 0
-    ) : ValueChangedCallback(callback), Type(type), ID(id), Text(text), Description(description), Value(value),
+    ) : ValueChangedCallback(callback), Type(type), Text(text), Description(description), Value(value),
         GaugeMinValue(min), GaugeMaxValue(max),
         PickerDescription(pickerDesc), PickerItems(pickerItems), PickerBackColor(pickerColor) {}
 

@@ -128,28 +128,28 @@ namespace {
 }
 
 #define MENU_MAKE_ACTION(ID, text, callback) \
-    items.emplace_back( callback, MenuItemType::Action, ID, text, ""s, ID )
+    items.emplace_back( callback, MenuItemType::Action, text, ""s, 0 )
 
-#define MENU_MAKE_DIALOG_ACTION(ID, text, desc) \
-    items.emplace_back( nullptr, MenuItemType::Action, ID, text, desc, ID )
+#define MENU_MAKE_DIALOG_ACTION(value, text, desc) \
+    items.emplace_back( nullptr, MenuItemType::Action, text, desc, value )
 
 #define MENU_MAKE_DISABLED(text) \
-    items.emplace_back( nullptr, MenuItemType::Disabled, -1, text, ""s )
+    items.emplace_back( nullptr, MenuItemType::Disabled, text, ""s )
 
 #define MENU_MAKE_HEADER1(text) \
-    items.emplace_back( nullptr, MenuItemType::Header1, -1, text, ""s )
+    items.emplace_back( nullptr, MenuItemType::Header1, text, ""s )
 
 #define MENU_MAKE_HEADER2(text) \
-    items.emplace_back( nullptr, MenuItemType::Header2, -1, text, ""s )
+    items.emplace_back( nullptr, MenuItemType::Header2, text, ""s )
 
 #define MENU_MAKE_CHECKBOX(ID, text, value, callback) \
-    items.emplace_back( callback, MenuItemType::Checkbox, ID, text, ""s, value )
+    items.emplace_back( callback, MenuItemType::Checkbox, text, ""s, value )
 
 #define MENU_MAKE_GAUGE(ID, text, min, max, value, callback) \
-    items.emplace_back( callback, MenuItemType::Gauge, ID, text, ""s, value, min, max )
+    items.emplace_back( callback, MenuItemType::Gauge, text, ""s, value, min, max )
 
 #define MENU_MAKE_PICKER(ID, text, pickerDescription, pickerOptions, value, backColor, callback) \
-    items.emplace_back( callback, MenuItemType::Picker, ID, text, ""s, value, 0, 0, pickerDescription, pickerOptions, backColor )
+    items.emplace_back( callback, MenuItemType::Picker, text, ""s, value, 0, 0, pickerDescription, pickerOptions, backColor )
 
 void exitEmulatorOptionSelected( int val ) {
     if ( val == 1 ) {
@@ -160,14 +160,14 @@ void exitEmulatorOptionSelected( int val ) {
 
 std::vector<SMenuItem> makeOptionsForNoYes() {
     std::vector<SMenuItem> items;
-    MENU_MAKE_ACTION(0, "No"s, nullptr);
-    MENU_MAKE_ACTION(1, "Yes"s, nullptr);
+    MENU_MAKE_DIALOG_ACTION(0, "No"s, ""s);
+    MENU_MAKE_DIALOG_ACTION(1, "Yes"s, ""s);
     return items;
 }
 
 std::vector<SMenuItem> makeOptionsForOk() {
     std::vector<SMenuItem> items;
-    MENU_MAKE_ACTION(0, "OK"s, nullptr);
+    MENU_MAKE_DIALOG_ACTION(0, "OK"s, ""s);
     return items;
 }
 
@@ -176,7 +176,7 @@ std::vector<SMenuItem> makeEmulatorMenu(std::vector<SMenuTab>& menuTab, int& cur
     MENU_MAKE_HEADER2   ("Resume"s);
     items.emplace_back([&closeMenu](int val) {
         closeMenu = true;
-    }, MenuItemType::Action, 1000, "  Resume Game"s, ""s, 0);
+    }, MenuItemType::Action, "  Resume Game"s, ""s, 0);
     MENU_MAKE_HEADER2   (""s);
 
     MENU_MAKE_HEADER2   ("Savestates"s);
@@ -202,7 +202,7 @@ std::vector<SMenuItem> makeEmulatorMenu(std::vector<SMenuTab>& menuTab, int& cur
                 menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestate failure", oss.str(), DIALOGCOLOR_RED, makeOptionsForOk());
                 menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
-        }, MenuItemType::Action, 2000 + slot, optionText.str(), ""s, 0);
+        }, MenuItemType::Action, optionText.str(), ""s, 0);
     }
     MENU_MAKE_HEADER2   (""s);
     
@@ -221,7 +221,7 @@ std::vector<SMenuItem> makeEmulatorMenu(std::vector<SMenuTab>& menuTab, int& cur
             } else {
                 closeMenu = true;
             }
-        }, MenuItemType::Action, 3000 + slot, optionText.str(), ""s, 0);
+        }, MenuItemType::Action, optionText.str(), ""s, 0);
     }
     MENU_MAKE_HEADER2   (""s);
 
@@ -268,7 +268,7 @@ std::vector<SMenuItem> makeEmulatorMenu(std::vector<SMenuTab>& menuTab, int& cur
             menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Screenshot", "Oops. Unable to take screenshot!", DIALOGCOLOR_RED, makeOptionsForOk());
             menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
         }
-    }, MenuItemType::Action, 4001, "  Take Screenshot"s, ""s, 0);
+    }, MenuItemType::Action, "  Take Screenshot"s, ""s, 0);
 
     items.emplace_back([&menuTab, &currentMenuTab, &closeMenu](int val) {
         SMenuTab dialogTab;
@@ -280,7 +280,7 @@ std::vector<SMenuItem> makeEmulatorMenu(std::vector<SMenuTab>& menuTab, int& cur
             impl3dsResetConsole();
             closeMenu = true;
         }
-    }, MenuItemType::Action, 5001, "  Reset Console"s, ""s, 0);
+    }, MenuItemType::Action, "  Reset Console"s, ""s, 0);
 
     MENU_MAKE_PICKER    (6001, "  Exit"s, "Leaving so soon?", makeOptionsForNoYes(), 0, DIALOGCOLOR_RED, exitEmulatorOptionSelected);
 
@@ -749,7 +749,6 @@ bool menuCopyCheats(std::vector<SMenuItem>& cheatMenu, bool copyMenuToSettings)
     for (int i = 0; (i+1) < cheatMenu.size() && i < MAX_CHEATS && i < Cheat.num_cheats; i++)
     {
         cheatMenu[i+1].Type = MenuItemType::Checkbox;
-        cheatMenu[i+1].ID = 20000 + i;
         cheatMenu[i+1].Text = Cheat.c[i].name;
 
         if (copyMenuToSettings)
@@ -780,7 +779,7 @@ void fillFileMenuFromFileNames(std::vector<SMenuItem>& fileMenu, const std::vect
         const DirectoryEntry& entry = romFileNames[i];
         fileMenu.emplace_back( [&entry, &selectedEntry]( int val ) {
             selectedEntry = &entry;
-        }, MenuItemType::Action, i, std::string( entry.Filename ), ""s );
+        }, MenuItemType::Action, entry.Filename, ""s );
     }
 }
 
@@ -995,14 +994,14 @@ void menuSetupCheats(std::vector<SMenuItem>& cheatMenu)
     {
         for (int i = 0; i < MAX_CHEATS && i < Cheat.num_cheats; i++)
         {
-            cheatMenu.emplace_back(nullptr, MenuItemType::Checkbox, 20000+i, std::string(Cheat.c[i].name), ""s, Cheat.c[i].enabled ? 1 : 0);
+            cheatMenu.emplace_back(nullptr, MenuItemType::Checkbox, std::string(Cheat.c[i].name), ""s, Cheat.c[i].enabled ? 1 : 0);
         }
     }
     else
     {
         for (int i = 0; i < 14; i++)
         {
-            cheatMenu.emplace_back(nullptr, MenuItemType::Disabled, -2, std::string(noCheatsText[i]), ""s);
+            cheatMenu.emplace_back(nullptr, MenuItemType::Disabled, std::string(noCheatsText[i]), ""s);
         }
     }
 }
