@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -102,52 +103,16 @@ char *file3dsGetExtension(char *filePath)
 
 
 //----------------------------------------------------------------------
-// Case-insensitive check for substring.
+// Case-insensitive string equality check.
 //----------------------------------------------------------------------
-char* stristr( char* str1, const char* str2 )
-{
-    char* p1 = str1 ;
-    const char* p2 = str2 ;
-    char* r = *p2 == 0 ? str1 : 0 ;
-
-    while( *p1 != 0 && *p2 != 0 )
-    {
-        if( tolower( *p1 ) == tolower( *p2 ) )
-        {
-            if( r == 0 )
-            {
-                r = p1 ;
-            }
-
-            p2++ ;
-        }
-        else
-        {
-            p2 = str2 ;
-            if( tolower( *p1 ) == tolower( *p2 ) )
-            {
-                r = p1 ;
-                p2++ ;
-            }
-            else
-            {
-                r = 0 ;
-            }
-        }
-
-        p1++ ;
-    }
-
-    return *p2 == 0 ? r : 0 ;
+bool CaseInsensitiveEquals(const std::string& s0, const std::string& s1) {
+    return s0.size() == s1.size() ? std::equal(s0.begin(), s0.end(), s1.begin(), [](unsigned char c0, unsigned char c1) { return std::tolower(c0) == std::tolower(c1); }) : false;
 }
 
 //----------------------------------------------------------------------
-// Load all ROM file names
-//
-// Specify a comma separated list of extensions.
-//
+// Fetch all file names with any of the given extensions
 //----------------------------------------------------------------------
-void file3dsGetFiles(std::vector<DirectoryEntry>& files, char *extensions)
+void file3dsGetFiles(std::vector<DirectoryEntry>& files, const std::vector<std::string>& extensions)
 {
     files.clear();
 
@@ -172,12 +137,11 @@ void file3dsGetFiles(std::vector<DirectoryEntry>& files, char *extensions)
             }
             if (dir->d_type == DT_REG)
             {
-                char *ext = file3dsGetExtension(dir->d_name);
-
-                if (ext[0] == '\0' || !stristr(extensions, ext))
-                    continue;
-
-                files.emplace_back(std::string(dir->d_name), FileEntryType::File);
+                std::string ext = file3dsGetExtension(dir->d_name);
+                if (std::any_of(extensions.begin(), extensions.end(), [&ext](const std::string& e) { return CaseInsensitiveEquals(e, ext); }))
+                {
+                    files.emplace_back(std::string(dir->d_name), FileEntryType::File);
+                }
             }
         }
         closedir(d);

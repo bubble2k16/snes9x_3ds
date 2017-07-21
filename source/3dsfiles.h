@@ -46,11 +46,8 @@ void file3dsGoToChildDirectory(const char* childDir);
 
 
 //----------------------------------------------------------------------
-// Load all ROM file names
-//
-// Specify a comma separated list of extensions.
-//
+// Fetch all file names with any of the given extensions
 //----------------------------------------------------------------------
-void file3dsGetFiles(std::vector<DirectoryEntry>& files, char *extensions);
+void file3dsGetFiles(std::vector<DirectoryEntry>& files, const std::vector<std::string>& extensions);
 
 #endif
