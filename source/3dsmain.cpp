@@ -154,8 +154,8 @@ namespace {
         items.emplace_back(callback, MenuItemType::Gauge, text, ""s, value, min, max);
     }
 
-    void AddMenuPicker(std::vector<SMenuItem>& items, const std::string& text, const std::string& description, const std::vector<SMenuItem>& options, int value, int backgroundColor, std::function<void(int)> callback) {
-        items.emplace_back(callback, MenuItemType::Picker, text, ""s, value, 0, 0, description, options, backgroundColor);
+    void AddMenuPicker(std::vector<SMenuItem>& items, const std::string& text, const std::string& description, const std::vector<SMenuItem>& options, int value, int backgroundColor, bool showSelectedOptionInMenu, std::function<void(int)> callback) {
+        items.emplace_back(callback, MenuItemType::Picker, text, ""s, value, showSelectedOptionInMenu ? 1 : 0, 0, description, options, backgroundColor);
     }
 }
 
@@ -289,7 +289,7 @@ std::vector<SMenuItem> makeEmulatorMenu(std::vector<SMenuTab>& menuTab, int& cur
         }
     }, MenuItemType::Action, "  Reset Console"s, ""s);
 
-    AddMenuPicker(items, "  Exit"s, "Leaving so soon?", makeOptionsForNoYes(), 0, DIALOGCOLOR_RED, exitEmulatorOptionSelected);
+    AddMenuPicker(items, "  Exit"s, "Leaving so soon?", makeOptionsForNoYes(), 0, DIALOGCOLOR_RED, false, exitEmulatorOptionSelected);
 
     return items;
 }
@@ -352,7 +352,7 @@ std::vector<SMenuItem> makeOptionsForInFramePaletteChanges() {
 
 std::vector<SMenuItem> makeEmulatorNewMenu() {
     std::vector<SMenuItem> items;
-    AddMenuPicker(items, "  Exit"s, "Leaving so soon?", makeOptionsForNoYes(), 0, DIALOGCOLOR_RED, exitEmulatorOptionSelected);
+    AddMenuPicker(items, "  Exit"s, "Leaving so soon?", makeOptionsForNoYes(), 0, DIALOGCOLOR_RED, false, exitEmulatorOptionSelected);
     return items;
 }
 
@@ -360,9 +360,9 @@ std::vector<SMenuItem> makeOptionMenu() {
     std::vector<SMenuItem> items;
 
     AddMenuHeader1(items, "GLOBAL SETTINGS"s);
-    AddMenuPicker(items, "  Screen Stretch"s, "How would you like the final screen to appear?"s, makeOptionsForStretch(), settings3DS.ScreenStretch, DIALOGCOLOR_CYAN,
+    AddMenuPicker(items, "  Screen Stretch"s, "How would you like the final screen to appear?"s, makeOptionsForStretch(), settings3DS.ScreenStretch, DIALOGCOLOR_CYAN, true,
                   []( int val ) { CheckAndUpdate( settings3DS.ScreenStretch, val, settings3DS.Changed ); });
-    AddMenuPicker(items, "  Font"s, "The font used for the user interface."s, makeOptionsForFont(), settings3DS.Font, DIALOGCOLOR_CYAN,
+    AddMenuPicker(items, "  Font"s, "The font used for the user interface."s, makeOptionsForFont(), settings3DS.Font, DIALOGCOLOR_CYAN, true,
                   []( int val ) { if ( CheckAndUpdate( settings3DS.Font, val, settings3DS.Changed ) ) { ui3dsSetFont(val); } });
     AddMenuCheckbox(items, "  Hide text in bottom screen"s, settings3DS.HideUnnecessaryBottomScrText,
                     []( int val ) { CheckAndUpdate( settings3DS.HideUnnecessaryBottomScrText, val, settings3DS.Changed ); });
@@ -374,11 +374,11 @@ std::vector<SMenuItem> makeOptionMenu() {
 
     AddMenuHeader1(items, "GAME-SPECIFIC SETTINGS"s);
     AddMenuHeader2(items, "Graphics"s);
-    AddMenuPicker(items, "  Frameskip"s, "Try changing this if the game runs slow. Skipping frames helps it run faster, but less smooth."s, makeOptionsForFrameskip(), settings3DS.MaxFrameSkips, DIALOGCOLOR_CYAN,
+    AddMenuPicker(items, "  Frameskip"s, "Try changing this if the game runs slow. Skipping frames helps it run faster, but less smooth."s, makeOptionsForFrameskip(), settings3DS.MaxFrameSkips, DIALOGCOLOR_CYAN, true,
                   []( int val ) { CheckAndUpdate( settings3DS.MaxFrameSkips, val, settings3DS.Changed ); });
-    AddMenuPicker(items, "  Framerate"s, "Some games run at 50 or 60 FPS by default. Override if required."s, makeOptionsForFrameRate(), settings3DS.ForceFrameRate, DIALOGCOLOR_CYAN,
+    AddMenuPicker(items, "  Framerate"s, "Some games run at 50 or 60 FPS by default. Override if required."s, makeOptionsForFrameRate(), settings3DS.ForceFrameRate, DIALOGCOLOR_CYAN, true,
                   []( int val ) { CheckAndUpdate( settings3DS.ForceFrameRate, val, settings3DS.Changed ); });
-    AddMenuPicker(items, "  In-Frame Palette Changes"s, "Try changing this if some colours in the game look off."s, makeOptionsForInFramePaletteChanges(), settings3DS.PaletteFix, DIALOGCOLOR_CYAN,
+    AddMenuPicker(items, "  In-Frame Palette Changes"s, "Try changing this if some colours in the game look off."s, makeOptionsForInFramePaletteChanges(), settings3DS.PaletteFix, DIALOGCOLOR_CYAN, true,
                   []( int val ) { CheckAndUpdate( settings3DS.PaletteFix, val, settings3DS.Changed ); });
     AddMenuDisabledOption(items, ""s);
 
@@ -396,7 +396,7 @@ std::vector<SMenuItem> makeOptionMenu() {
     AddMenuDisabledOption(items, ""s);
 
     AddMenuHeader2(items, "SRAM (Save Data)"s);
-    AddMenuPicker(items, "  SRAM Auto-Save Delay"s, "Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently."s, makeOptionsForAutoSaveSRAMDelay(), settings3DS.SRAMSaveInterval, DIALOGCOLOR_CYAN,
+    AddMenuPicker(items, "  SRAM Auto-Save Delay"s, "Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently."s, makeOptionsForAutoSaveSRAMDelay(), settings3DS.SRAMSaveInterval, DIALOGCOLOR_CYAN, true,
                   []( int val ) { CheckAndUpdate( settings3DS.SRAMSaveInterval, val, settings3DS.Changed ); });
     AddMenuCheckbox(items, "  Force SRAM Write on Pause"s, settings3DS.ForceSRAMWriteOnPause,
                     []( int val ) { CheckAndUpdate( settings3DS.ForceSRAMWriteOnPause, val, settings3DS.Changed ); });

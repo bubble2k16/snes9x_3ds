@@ -196,7 +196,7 @@ void menu3dsDrawItems(
 
             ui3dsDrawStringWithNoWrapping(horizontalPadding, y, 160, y + fontHeight, color, HALIGN_LEFT, currentTab->MenuItems[i].Text.c_str());
 
-            if (!currentTab->MenuItems[i].PickerItems.empty())
+            if (!currentTab->MenuItems[i].PickerItems.empty() && currentTab->MenuItems[i].GaugeMinValue)
             {
                 int selectedIndex = -1;
                 for (int j = 0; j < currentTab->MenuItems[i].PickerItems.size(); j++)

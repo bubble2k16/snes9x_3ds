@@ -32,6 +32,7 @@ public:
                                 // Type = Picker:
                                 //   Selected ID of Picker
 
+    // We currently abuse this value to determine if a picker should show its selected option in the menu or not.
     int     GaugeMinValue;
     int     GaugeMaxValue;      // Set MinValue < MaxValue to make the gauge visible.
 
