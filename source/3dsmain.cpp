@@ -811,11 +811,11 @@ void setupBootupMenu(std::vector<SMenuTab>& menuTab, std::vector<DirectoryEntry>
         fileGetAllFiles(romFileNames);
         fillFileMenuFromFileNames(fileMenu, romFileNames, selectedDirectoryEntry);
         menu3dsAddTab(menuTab, "Select ROM", fileMenu);
+        menuTab.back().SubTitle.assign(file3dsGetCurrentDir());
         if (selectPreviousFile) {
             int previousFileID = fileFindLastSelectedFile(menuTab.back().MenuItems);
             menu3dsSetSelectedItemByIndex(menuTab.back(), previousFileID);
         }
-        menuTab.back().SubTitle.assign(file3dsGetCurrentDir());
     }
 }
 
@@ -884,11 +884,11 @@ void setupPauseMenu(std::vector<SMenuTab>& menuTab, std::vector<DirectoryEntry>&
         fileGetAllFiles(romFileNames);
         fillFileMenuFromFileNames(fileMenu, romFileNames, selectedDirectoryEntry);
         menu3dsAddTab(menuTab, "Select ROM", fileMenu);
+        menuTab.back().SubTitle.assign(file3dsGetCurrentDir());
         if (selectPreviousFile) {
             int previousFileID = fileFindLastSelectedFile(menuTab.back().MenuItems);
             menu3dsSetSelectedItemByIndex(menuTab.back(), previousFileID);
         }
-        menuTab.back().SubTitle.assign(file3dsGetCurrentDir());
     }
 }
 
