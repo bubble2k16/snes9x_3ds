@@ -83,11 +83,18 @@ public:
         Title.assign(offs != title.npos ? title.substr(offs) : title);
     }
 
-    void MakeSureSelectionIsOnScreen(int maxItems) {
-        if (SelectedItemIndex < FirstItemIndex) {
-            FirstItemIndex = SelectedItemIndex;
-        } else if (SelectedItemIndex >= FirstItemIndex + maxItems) {
-            FirstItemIndex = SelectedItemIndex - maxItems + 1;
+    void MakeSureSelectionIsOnScreen(int maxItems, int spacing) {
+        int offs = spacing;
+        // the visible item count must fit at least two spacings and one item in the middle for sensible scrolling logic
+        if (offs * 2 + 1 >= maxItems) {
+            offs = ( maxItems - 1 ) / 2;
+        }
+        if (SelectedItemIndex < FirstItemIndex + offs) {
+            FirstItemIndex = SelectedItemIndex < offs ? 0 : ( SelectedItemIndex - offs );
+        } else if (SelectedItemIndex >= FirstItemIndex + maxItems - offs) {
+            int top = SelectedItemIndex - maxItems + 1;
+            int itemsBelow = static_cast<int>(MenuItems.size()) - SelectedItemIndex - 1;
+            FirstItemIndex = itemsBelow < offs ? ( top + itemsBelow ) : ( top + offs );
         }
     }
 };

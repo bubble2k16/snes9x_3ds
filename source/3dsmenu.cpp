@@ -630,7 +630,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 ) &&
                 moveCursorTimes < currentTab->MenuItems.size());
 
-            currentTab->MakeSureSelectionIsOnScreen(maxItems);
+            currentTab->MakeSureSelectionIsOnScreen(maxItems, isDialog ? 1 : 2);
             menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
 
         }
@@ -663,7 +663,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 ) &&
                 moveCursorTimes < currentTab->MenuItems.size());
 
-            currentTab->MakeSureSelectionIsOnScreen(maxItems);
+            currentTab->MakeSureSelectionIsOnScreen(maxItems, isDialog ? 1 : 2);
             menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
         }
 
@@ -691,7 +691,7 @@ void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, const std::vecto
         if (menuItems[i].IsHighlightable())
         {
             currentTab->SelectedItemIndex = i;
-            currentTab->MakeSureSelectionIsOnScreen(MENU_HEIGHT);
+            currentTab->MakeSureSelectionIsOnScreen(MENU_HEIGHT, 2);
             break;
         }
     }
@@ -706,7 +706,7 @@ void menu3dsSetSelectedItemByIndex(SMenuTab& tab, int index)
         if (!tab.SubTitle.empty()) {
             maxItems--;
         }
-        tab.MakeSureSelectionIsOnScreen(maxItems);
+        tab.MakeSureSelectionIsOnScreen(maxItems, 2);
     }
 }
 
@@ -758,7 +758,7 @@ int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, 
             menuItems[i].Value == selectedID)
         {
             currentTab->SelectedItemIndex = i;
-            currentTab->MakeSureSelectionIsOnScreen(DIALOG_HEIGHT);
+            currentTab->MakeSureSelectionIsOnScreen(DIALOG_HEIGHT, 1);
             break;
         }
     }
