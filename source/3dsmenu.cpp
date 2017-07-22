@@ -630,11 +630,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 ) &&
                 moveCursorTimes < currentTab->MenuItems.size());
 
-            if (currentTab->SelectedItemIndex < currentTab->FirstItemIndex)
-                currentTab->FirstItemIndex = currentTab->SelectedItemIndex;
-            if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
-                currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
-
+            currentTab->MakeSureSelectionIsOnScreen(maxItems);
             menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
 
         }
@@ -667,11 +663,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 ) &&
                 moveCursorTimes < currentTab->MenuItems.size());
 
-            if (currentTab->SelectedItemIndex < currentTab->FirstItemIndex)
-                currentTab->FirstItemIndex = currentTab->SelectedItemIndex;
-            if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + maxItems)
-                currentTab->FirstItemIndex = currentTab->SelectedItemIndex - maxItems + 1;
-
+            currentTab->MakeSureSelectionIsOnScreen(maxItems);
             menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
         }
 
@@ -699,8 +691,7 @@ void menu3dsAddTab(std::vector<SMenuTab>& menuTab, char *title, const std::vecto
         if (menuItems[i].IsHighlightable())
         {
             currentTab->SelectedItemIndex = i;
-            if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + MENU_HEIGHT)
-                currentTab->FirstItemIndex = currentTab->SelectedItemIndex - MENU_HEIGHT + 1;
+            currentTab->MakeSureSelectionIsOnScreen(MENU_HEIGHT);
             break;
         }
     }
@@ -715,14 +706,7 @@ void menu3dsSetSelectedItemByIndex(SMenuTab& tab, int index)
         if (!tab.SubTitle.empty()) {
             maxItems--;
         }
-
-        if (tab.SelectedItemIndex < tab.FirstItemIndex) {
-            tab.FirstItemIndex = tab.SelectedItemIndex;
-        }
-        
-        if (tab.SelectedItemIndex >= tab.FirstItemIndex + maxItems) {
-            tab.FirstItemIndex = tab.SelectedItemIndex - maxItems + 1;
-        }
+        tab.MakeSureSelectionIsOnScreen(maxItems);
     }
 }
 
@@ -774,8 +758,7 @@ int menu3dsShowDialog(SMenuTab& dialogTab, bool& isDialog, int& currentMenuTab, 
             menuItems[i].Value == selectedID)
         {
             currentTab->SelectedItemIndex = i;
-            if (currentTab->SelectedItemIndex >= currentTab->FirstItemIndex + DIALOG_HEIGHT)
-                currentTab->FirstItemIndex = currentTab->SelectedItemIndex - DIALOG_HEIGHT + 1;
+            currentTab->MakeSureSelectionIsOnScreen(DIALOG_HEIGHT);
             break;
         }
     }

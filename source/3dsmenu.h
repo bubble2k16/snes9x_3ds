@@ -82,6 +82,14 @@ public:
         size_t offs = title.find_first_not_of(' ');
         Title.assign(offs != title.npos ? title.substr(offs) : title);
     }
+
+    void MakeSureSelectionIsOnScreen(int maxItems) {
+        if (SelectedItemIndex < FirstItemIndex) {
+            FirstItemIndex = SelectedItemIndex;
+        } else if (SelectedItemIndex >= FirstItemIndex + maxItems) {
+            FirstItemIndex = SelectedItemIndex - maxItems + 1;
+        }
+    }
 };
 
 
