@@ -23,13 +23,13 @@ void    config3dsCloseFile();
 //----------------------------------------------------------------------
 // Load / Save an int32 value specific to game.
 //----------------------------------------------------------------------
-void    config3dsReadWriteInt32(char *format, int *value, int minValue = 0, int maxValue = 0xffff);
+void    config3dsReadWriteInt32(const char *format, int *value, int minValue = 0, int maxValue = 0xffff);
 
 
 //----------------------------------------------------------------------
 // Load / Save a string specific to game.
 //----------------------------------------------------------------------
-void    config3dsReadWriteString(char *writeFormat, char *readFormat, char *value);
+void    config3dsReadWriteString(const char *writeFormat, char *readFormat, char *value);
 
 #endif
 
