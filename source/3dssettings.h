@@ -1,4 +1,55 @@
+#include <array>
 
+enum class SnesButtons {
+    A      =  0,
+    B      =  1,
+    Y      =  2,
+    X      =  3,
+    L      =  4,
+    R      =  5,
+    Up     =  6,
+    Down   =  7,
+    Left   =  8,
+    Right  =  9,
+    Start  = 10,
+    Select = 11,
+    Count  = 12
+};
+
+template <int Count>
+struct ButtonMapping {
+    std::array<uint32, Count> MappingBitmasks;
+
+    bool IsHeld(uint32 held3dsButtons) const {
+        for (uint32 mapping : MappingBitmasks) {
+            if (mapping != 0 && (mapping & held3dsButtons) == mapping) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void SetSingleMapping(uint32 mapping) {
+        SetDoubleMapping(mapping, 0);
+    }
+
+    void SetDoubleMapping(uint32 mapping0, uint32 mapping1) {
+        if constexpr (Count > 0) {
+            MappingBitmasks[0] = mapping0;
+        }
+        if constexpr (Count > 1) {
+            MappingBitmasks[1] = mapping1;
+        }
+        if constexpr (Count > 2) {
+            for (size_t i = 2; i < MappingBitmasks.size(); ++i) {
+                MappingBitmasks[i] = 0;
+            }
+        }
+    }
+};
+
+typedef std::array<ButtonMapping<3>, static_cast<size_t>(SnesButtons::Count)> ButtonMappings3dsToSnes;
 
 typedef struct
 {
@@ -49,6 +100,8 @@ typedef struct
                                             // Some games (eg. Yoshi's Island) don't detect SRAM writes correctly.
                                             //   0 - Disabled
                                             //   1 - Enabled
+
+    ButtonMappings3dsToSnes ButtonMappingsSnes; // Stores which 3DS button(s) map to each SNES button.
 
     bool    Changed = false;                // Stores whether the configuration has been changed and should be written.
 } S9xSettings3DS;

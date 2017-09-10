@@ -881,21 +881,31 @@ uint32 S9xReadJoypad (int which1_0_to_4)
     if (which1_0_to_4 != 0)
         return 0;
 
-	uint32 s9xKeysHeld = input3dsGetCurrentKeysHeld();
-    uint32 snesJoyPad = 0;
+    // TODO: ideally we initialize this in a way that ensures snes9xMasks[SnesButtons::A] == SNES_A_MASK,
+    // but how do we do that at compile time?
+    static std::array<uint32, static_cast<size_t>(SnesButtons::Count)> snes9xMasks = {
+        SNES_A_MASK,
+        SNES_B_MASK,
+        SNES_Y_MASK,
+        SNES_X_MASK,
+        SNES_TL_MASK,
+        SNES_TR_MASK,
+        SNES_UP_MASK,
+        SNES_DOWN_MASK,
+        SNES_LEFT_MASK,
+        SNES_RIGHT_MASK,
+        SNES_START_MASK,
+        SNES_SELECT_MASK,
+    };
 
-    if (s9xKeysHeld & KEY_UP) snesJoyPad |= SNES_UP_MASK;
-    if (s9xKeysHeld & KEY_DOWN) snesJoyPad |= SNES_DOWN_MASK;
-    if (s9xKeysHeld & KEY_LEFT) snesJoyPad |= SNES_LEFT_MASK;
-    if (s9xKeysHeld & KEY_RIGHT) snesJoyPad |= SNES_RIGHT_MASK;
-    if (s9xKeysHeld & KEY_L) snesJoyPad |= SNES_TL_MASK;
-    if (s9xKeysHeld & KEY_R) snesJoyPad |= SNES_TR_MASK;
-    if (s9xKeysHeld & KEY_SELECT) snesJoyPad |= SNES_SELECT_MASK;
-    if (s9xKeysHeld & KEY_START) snesJoyPad |= SNES_START_MASK;
-    if (s9xKeysHeld & KEY_A) snesJoyPad |= SNES_A_MASK;
-    if (s9xKeysHeld & KEY_B) snesJoyPad |= SNES_B_MASK;
-    if (s9xKeysHeld & KEY_X) snesJoyPad |= SNES_X_MASK;
-    if (s9xKeysHeld & KEY_Y) snesJoyPad |= SNES_Y_MASK;
+    uint32 keysHeld3ds = input3dsGetCurrentKeysHeld();
+
+    uint32 snesJoyPad = 0;
+    for (size_t i = 0; i < snes9xMasks.size(); ++i) {
+        if (settings3DS.ButtonMappingsSnes[i].IsHeld(keysHeld3ds)) {
+            snesJoyPad |= snes9xMasks[i];
+        }
+    }
 
     // Handle turbo buttons.
     //

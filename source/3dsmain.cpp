@@ -60,6 +60,24 @@ char romFileName[_MAX_PATH];
 char romFileNameLastSelected[_MAX_PATH];
 
 
+void LoadDefaultSettings() {
+    settings3DS.PaletteFix = 0;
+    settings3DS.SRAMSaveInterval = 0;
+    settings3DS.ForceSRAMWriteOnPause = 0;
+
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::A     )].SetSingleMapping(KEY_A);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::B     )].SetSingleMapping(KEY_B);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Y     )].SetSingleMapping(KEY_Y);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::X     )].SetSingleMapping(KEY_X);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::L     )].SetSingleMapping(KEY_L);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::R     )].SetSingleMapping(KEY_R);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Up    )].SetDoubleMapping(KEY_DUP,    KEY_CPAD_UP);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Down  )].SetDoubleMapping(KEY_DDOWN,  KEY_CPAD_DOWN);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Left  )].SetDoubleMapping(KEY_DLEFT,  KEY_CPAD_LEFT);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Right )].SetDoubleMapping(KEY_DRIGHT, KEY_CPAD_RIGHT);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Start )].SetSingleMapping(KEY_START);
+    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Select)].SetSingleMapping(KEY_SELECT);
+}
 
 
 //----------------------------------------------------------------------
@@ -552,26 +570,30 @@ bool settingsUpdateAllSettings(bool updateGameSettings = true)
     return settingsChanged;
 }
 
+namespace {
+    void config3dsReadWriteBitmask(const char* name, uint32* bitmask) {
+        int tmp = static_cast<int>(*bitmask);
+        config3dsReadWriteInt32(name, &tmp, std::numeric_limits<int>::min(), std::numeric_limits<int>::max());
+        *bitmask = static_cast<uint32>(tmp);
+    }
+}
 
 //----------------------------------------------------------------------
 // Read/write all possible game specific settings.
 //----------------------------------------------------------------------
 bool settingsReadWriteFullListByGame(bool writeMode)
 {
+    if (!writeMode) {
+        // set default values first.
+        LoadDefaultSettings();
+    }
+
     bool success = config3dsOpenFile(S9xGetFilename(".cfg"), writeMode);
     if (!success)
         return false;
 
     config3dsReadWriteInt32("#v1\n", NULL, 0, 0);
     config3dsReadWriteInt32("# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
-
-    // set default values first.
-    if (!writeMode)
-    {
-        settings3DS.PaletteFix = 0;
-        settings3DS.SRAMSaveInterval = 0;
-        settings3DS.ForceSRAMWriteOnPause = 0;
-    }
 
     config3dsReadWriteInt32("Frameskips=%d\n", &settings3DS.MaxFrameSkips, 0, 4);
     config3dsReadWriteInt32("Framerate=%d\n", &settings3DS.ForceFrameRate, 0, 2);
@@ -585,6 +607,14 @@ bool settingsReadWriteFullListByGame(bool writeMode)
     config3dsReadWriteInt32("PalFix=%d\n", &settings3DS.PaletteFix, 0, 3);
     config3dsReadWriteInt32("SRAMInterval=%d\n", &settings3DS.SRAMSaveInterval, 0, 4);
     config3dsReadWriteInt32("ForceSRAMWrite=%d\n", &settings3DS.ForceSRAMWriteOnPause, 0, 1);
+
+    for (size_t i = 0; i < settings3DS.ButtonMappingsSnes.size(); ++i) {
+        for (size_t j = 0; j < settings3DS.ButtonMappingsSnes[i].MappingBitmasks.size(); ++j) {
+            std::ostringstream oss;
+            oss << "ButtonMapping_" << i << "_" << j << "=%d\n";
+            config3dsReadWriteBitmask(oss.str().c_str(), &settings3DS.ButtonMappingsSnes[i].MappingBitmasks[j]);
+        }
+    }
 
     // All new options should come here!
 
