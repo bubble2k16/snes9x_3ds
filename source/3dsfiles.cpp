@@ -1,8 +1,10 @@
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <ctime>
+#include <tuple>
 #include <vector>
 
 #include <unistd.h>
@@ -14,6 +16,9 @@
 #include "port.h"
 #include "3dsfiles.h"
 
+inline std::string operator "" s(const char* s, unsigned int length) {
+    return std::string(s, length);
+}
 
 static char currentDir[_MAX_PATH] = "";
 
@@ -34,6 +39,17 @@ char *file3dsGetCurrentDir(void)
     return currentDir;
 }
 
+
+//----------------------------------------------------------------------
+// Go up or down a level.
+//----------------------------------------------------------------------
+void file3dsGoUpOrDownDirectory(const DirectoryEntry& entry) {
+    if (entry.Type == FileEntryType::ParentDirectory) {
+        file3dsGoToParentDirectory();
+    } else if (entry.Type == FileEntryType::ChildDirectory) {
+        file3dsGoToChildDirectory(entry.Filename.c_str());
+    }
+}
 
 //----------------------------------------------------------------------
 // Go up to the parent directory.
@@ -59,7 +75,7 @@ void file3dsGoToParentDirectory(void)
 //----------------------------------------------------------------------
 // Go up to the child directory.
 //----------------------------------------------------------------------
-void file3dsGoToChildDirectory(char *childDir)
+void file3dsGoToChildDirectory(const char* childDir)
 {
     strncat(currentDir, childDir, _MAX_PATH);
     strncat(currentDir, "/", _MAX_PATH);
@@ -87,55 +103,18 @@ char *file3dsGetExtension(char *filePath)
 
 
 //----------------------------------------------------------------------
-// Case-insensitive check for substring.
+// Case-insensitive string equality check.
 //----------------------------------------------------------------------
-char* stristr( char* str1, const char* str2 )
-{
-    char* p1 = str1 ;
-    const char* p2 = str2 ;
-    char* r = *p2 == 0 ? str1 : 0 ;
-
-    while( *p1 != 0 && *p2 != 0 )
-    {
-        if( tolower( *p1 ) == tolower( *p2 ) )
-        {
-            if( r == 0 )
-            {
-                r = p1 ;
-            }
-
-            p2++ ;
-        }
-        else
-        {
-            p2 = str2 ;
-            if( tolower( *p1 ) == tolower( *p2 ) )
-            {
-                r = p1 ;
-                p2++ ;
-            }
-            else
-            {
-                r = 0 ;
-            }
-        }
-
-        p1++ ;
-    }
-
-    return *p2 == 0 ? r : 0 ;
+bool CaseInsensitiveEquals(const std::string& s0, const std::string& s1) {
+    return s0.size() == s1.size() ? std::equal(s0.begin(), s0.end(), s1.begin(), [](unsigned char c0, unsigned char c1) { return std::tolower(c0) == std::tolower(c1); }) : false;
 }
 
 //----------------------------------------------------------------------
-// Load all ROM file names (up to 512 ROMs)
-//
-// Specify a comma separated list of extensions.
-//
+// Fetch all file names with any of the given extensions
 //----------------------------------------------------------------------
-std::vector<std::string> file3dsGetFiles(char *extensions, int maxFiles)
+void file3dsGetFiles(std::vector<DirectoryEntry>& files, const std::vector<std::string>& extensions)
 {
-    std::vector<std::string> files;
-    char buffer[_MAX_PATH];
+    files.clear();
 
     struct dirent* dir;
     DIR* d = opendir(currentDir);
@@ -143,37 +122,32 @@ std::vector<std::string> file3dsGetFiles(char *extensions, int maxFiles)
     if (strlen(currentDir) > 1)
     {
         // Insert the parent directory.
-        snprintf(buffer, _MAX_PATH, "\x01 ..");   
-        files.push_back(buffer);
+        files.emplace_back(".. (Up to Parent Directory)"s, FileEntryType::ParentDirectory);
     }
 
     if (d)
     {
         while ((dir = readdir(d)) != NULL)
         {
-            char *dot = strrchr(dir->d_name, '.');
-
             if (dir->d_name[0] == '.')
                 continue;
             if (dir->d_type == DT_DIR)
             {
-                snprintf(buffer, _MAX_PATH, "\x01 %s", dir->d_name);
-                files.push_back(buffer);
+                files.emplace_back(std::string(dir->d_name), FileEntryType::ChildDirectory);
             }
             if (dir->d_type == DT_REG)
             {
-                char *ext = file3dsGetExtension(dir->d_name);
-
-                if (!stristr(extensions, ext))
-                    continue;
-
-                files.push_back(dir->d_name);
+                std::string ext = file3dsGetExtension(dir->d_name);
+                if (std::any_of(extensions.begin(), extensions.end(), [&ext](const std::string& e) { return CaseInsensitiveEquals(e, ext); }))
+                {
+                    files.emplace_back(std::string(dir->d_name), FileEntryType::File);
+                }
             }
         }
         closedir(d);
     }
 
-    std::sort(files.begin(), files.end());
-
-    return files;
+    std::sort( files.begin(), files.end(), [](const DirectoryEntry& a, const DirectoryEntry& b) {
+        return std::tie(a.Type, a.Filename) < std::tie(b.Type, b.Filename);
+    } );
 }

@@ -50,4 +50,5 @@ typedef struct
                                             //   0 - Disabled
                                             //   1 - Enabled
 
+    bool    Changed = false;                // Stores whether the configuration has been changed and should be written.
 } S9xSettings3DS;
