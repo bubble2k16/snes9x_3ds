@@ -64,6 +64,7 @@ void LoadDefaultSettings() {
     settings3DS.PaletteFix = 0;
     settings3DS.SRAMSaveInterval = 0;
     settings3DS.ForceSRAMWriteOnPause = 0;
+    settings3DS.ButtonHotkeyDisableFramelimit.SetSingleMapping(0);
 }
 
 
@@ -513,6 +514,13 @@ std::vector<SMenuItem> makeControlsMenu() {
         
     }
 
+    AddMenuPicker( items, "Disable Framelimit", ""s, makeOptionsForButtonMapping(), settings3DS.ButtonHotkeyDisableFramelimit.MappingBitmasks[0], DIALOGCOLOR_CYAN, true,
+        []( int val ) {
+            uint32 v = static_cast<uint32>(val);
+            CheckAndUpdate( settings3DS.ButtonHotkeyDisableFramelimit.MappingBitmasks[0], v, settings3DS.Changed );
+        }
+    );
+
     return items;
 }
 
@@ -713,6 +721,8 @@ bool settingsReadWriteFullListByGame(bool writeMode)
             config3dsReadWriteInt32(oss.str().c_str(), &settings3DS.ButtonMapping[i][j]);
         }
     }
+
+    config3dsReadWriteBitmask("ButtonMappingDisableFramelimitHold_0=%d\n", &settings3DS.ButtonHotkeyDisableFramelimit.MappingBitmasks[0]);
 
     // All new options should come here!
 
@@ -1459,10 +1469,12 @@ void emulatorLoop()
                 snesFrameTotalAccurateTicks = 0;
                 snesFramesSkipped = 0;
 
-                if (settings3DS.ForceFrameRate == EmulatedFramerate::Match3DS) {
-                    gspWaitForVBlank();
-                } else {
-                    svcSleepThread ((long)(timeDiffInMilliseconds * 1000));
+                if (!settings3DS.ButtonHotkeyDisableFramelimit.IsHeld(input3dsGetCurrentKeysHeld())) {
+                    if (settings3DS.ForceFrameRate == EmulatedFramerate::Match3DS) {
+                        gspWaitForVBlank();
+                    } else {
+                        svcSleepThread ((long)(timeDiffInMilliseconds * 1000));
+                    }
                 }
 
                 skipDrawingFrame = false;

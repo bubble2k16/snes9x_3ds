@@ -98,6 +98,8 @@ typedef struct
     int     GlobalButtonMapping[8][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};  
     int     ButtonMapping[8][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};  
 
+    ::ButtonMapping<1> ButtonHotkeyDisableFramelimit; // Stores button that can be held to disable the frame limit.
+
     bool    Changed = false;                // Stores whether the configuration has been changed and should be written.
 
     int     UseGlobalButtonMappings = 0;    // Use global button mappings for all games
