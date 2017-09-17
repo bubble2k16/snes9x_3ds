@@ -4,3 +4,4 @@ build
 *.cia
 *.elf
 *.smdh
+Thumbs.db
