@@ -99,7 +99,7 @@ void clearTopScreenWithLogo()
 	unsigned char* image;
 	unsigned width, height;
 
-    int error = lodepng_decode32_file(&image, &width, &height, "romfs:/snes9x_3ds_top.png");
+    int error = lodepng_decode32_file(&image, &width, &height, ((settings3DS.RomFsLoaded ? "romfs:"s : "."s) + "/snes9x_3ds_top.png"s).c_str());
 
     if (!error && width == 400 && height == 240)
     {
@@ -1162,7 +1162,11 @@ void emulatorInitialize()
     if (romfsInit()!=0)
     {
         printf ("Unable to initialize romfs\n");
-        exit (0);
+        settings3DS.RomFsLoaded = false;
+    }
+    else
+    {
+        settings3DS.RomFsLoaded = true;
     }
     
     printf ("Initialization complete\n");
@@ -1212,8 +1216,11 @@ void emulatorFinalize()
 #endif
     ptmSysmExit ();
 
-    printf("romfsExit:\n");
-    romfsExit();
+    if (settings3DS.RomFsLoaded)
+    {
+        printf("romfsExit:\n");
+        romfsExit();
+    }
     
 #ifndef RELEASE
     printf("hidExit:\n");
