@@ -1,5 +1,12 @@
 #include <array>
 
+enum class EmulatedFramerate {
+    UseRomRegion = 0,
+    ForceFps50 = 1,
+    ForceFps60 = 2,
+    Count = 3
+};
+
 enum class SnesButtons {
     A      =  0,
     B      =  1,
@@ -66,7 +73,7 @@ typedef struct
     int     Font = 0;                       // 0 - Tempesta, 1 - Ronda, 2 - Arial
     int     ScreenStretch = 0;              // 0 - no stretch, 1 - stretch full, 2 - aspect fit
 
-    int     ForceFrameRate = 0;             // 0 - Use ROM's Region, 1 - Force 50 fps, 2 - Force 60 fps
+    EmulatedFramerate ForceFrameRate = EmulatedFramerate::UseRomRegion;
 
     int     StretchWidth, StretchHeight;
     int     CropPixels;
