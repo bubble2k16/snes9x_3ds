@@ -4,7 +4,8 @@ enum class EmulatedFramerate {
     UseRomRegion = 0,
     ForceFps50 = 1,
     ForceFps60 = 2,
-    Count = 3
+    Match3DS = 3,
+    Count = 4
 };
 
 enum class SnesButtons {

@@ -379,6 +379,7 @@ std::vector<SMenuItem> makeOptionsForFrameRate() {
     AddMenuDialogOption(items, static_cast<int>(EmulatedFramerate::UseRomRegion), "Default based on ROM region"s, ""s);
     AddMenuDialogOption(items, static_cast<int>(EmulatedFramerate::ForceFps50),   "50 FPS"s,                      ""s);
     AddMenuDialogOption(items, static_cast<int>(EmulatedFramerate::ForceFps60),   "60 FPS"s,                      ""s);
+    AddMenuDialogOption(items, static_cast<int>(EmulatedFramerate::Match3DS),     "Match 3DS refresh rate"s,      ""s);
     return items;
 };
 
@@ -1409,7 +1410,11 @@ void emulatorLoop()
                 snesFrameTotalAccurateTicks = 0;
                 snesFramesSkipped = 0;
 
-                svcSleepThread ((long)(timeDiffInMilliseconds * 1000));
+                if (settings3DS.ForceFrameRate == EmulatedFramerate::Match3DS) {
+                    gspWaitForVBlank();
+                } else {
+                    svcSleepThread ((long)(timeDiffInMilliseconds * 1000));
+                }
 
                 skipDrawingFrame = false;
             }
