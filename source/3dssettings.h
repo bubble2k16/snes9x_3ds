@@ -1,55 +1,3 @@
-#include <array>
-
-enum class SnesButtons {
-    A      =  0,
-    B      =  1,
-    Y      =  2,
-    X      =  3,
-    L      =  4,
-    R      =  5,
-    Up     =  6,
-    Down   =  7,
-    Left   =  8,
-    Right  =  9,
-    Start  = 10,
-    Select = 11,
-    Count  = 12
-};
-
-template <int Count>
-struct ButtonMapping {
-    std::array<uint32, Count> MappingBitmasks;
-
-    bool IsHeld(uint32 held3dsButtons) const {
-        for (uint32 mapping : MappingBitmasks) {
-            if (mapping != 0 && (mapping & held3dsButtons) == mapping) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    void SetSingleMapping(uint32 mapping) {
-        SetDoubleMapping(mapping, 0);
-    }
-
-    void SetDoubleMapping(uint32 mapping0, uint32 mapping1) {
-        if constexpr (Count > 0) {
-            MappingBitmasks[0] = mapping0;
-        }
-        if constexpr (Count > 1) {
-            MappingBitmasks[1] = mapping1;
-        }
-        if constexpr (Count > 2) {
-            for (size_t i = 2; i < MappingBitmasks.size(); ++i) {
-                MappingBitmasks[i] = 0;
-            }
-        }
-    }
-};
-
-typedef std::array<ButtonMapping<3>, static_cast<size_t>(SnesButtons::Count)> ButtonMappings3dsToSnes;
 
 typedef struct
 {
@@ -101,7 +49,29 @@ typedef struct
                                             //   0 - Disabled
                                             //   1 - Enabled
 
-    ButtonMappings3dsToSnes ButtonMappingsSnes; // Stores which 3DS button(s) map to each SNES button.
+    // Using the original button mapping to map the 3DS button
+    // to the console buttons. This is for consistency with the
+    // other EMUS for 3DS.
+    //
+    int     GlobalButtonMapping[8][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};  
+    int     ButtonMapping[8][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};  
 
     bool    Changed = false;                // Stores whether the configuration has been changed and should be written.
+
+    int     UseGlobalButtonMappings = 0;    // Use global button mappings for all games
+                                            // 0 - no, 1 - yes
+
+    int     UseGlobalTurbo = 0;             // Use global button mappings for all games
+                                            // 0 - no, 1 - yes
+
+    int     UseGlobalVolume = 0;            // Use global button mappings for all games
+                                            // 0 - no, 1 - yes
+
+    int     GlobalTurbo[6] = {0, 0, 0, 0, 0, 0};  
+                                            // Turbo buttons: 0 - No turbo, 1 - Release/Press every alt frame.
+                                            // Indexes for 3DS buttons: 0 - A, 1 - B, 2 - X, 3 - Y, 4 - L, 5 - R
+
+    int     GlobalVolume = 4;               // 0: 100%, 4: 200%, 8: 400%
+
+
 } S9xSettings3DS;

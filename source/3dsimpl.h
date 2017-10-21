@@ -4,6 +4,15 @@
 #ifndef _3DSIMPL_H
 #define _3DSIMPL_H
 
+#define BTN3DS_A        0
+#define BTN3DS_B        1
+#define BTN3DS_X        2
+#define BTN3DS_Y        3
+#define BTN3DS_L        4
+#define BTN3DS_R        5
+#define BTN3DS_SELECT   6
+#define BTN3DS_START    7
+
 //---------------------------------------------------------
 // 3DS textures
 //---------------------------------------------------------

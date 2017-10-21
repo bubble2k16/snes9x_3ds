@@ -64,19 +64,6 @@ void LoadDefaultSettings() {
     settings3DS.PaletteFix = 0;
     settings3DS.SRAMSaveInterval = 0;
     settings3DS.ForceSRAMWriteOnPause = 0;
-
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::A     )].SetSingleMapping(KEY_A);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::B     )].SetSingleMapping(KEY_B);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Y     )].SetSingleMapping(KEY_Y);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::X     )].SetSingleMapping(KEY_X);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::L     )].SetSingleMapping(KEY_L);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::R     )].SetSingleMapping(KEY_R);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Up    )].SetDoubleMapping(KEY_DUP,    KEY_CPAD_UP);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Down  )].SetDoubleMapping(KEY_DDOWN,  KEY_CPAD_DOWN);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Left  )].SetDoubleMapping(KEY_DLEFT,  KEY_CPAD_LEFT);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Right )].SetDoubleMapping(KEY_DRIGHT, KEY_CPAD_RIGHT);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Start )].SetSingleMapping(KEY_START);
-    settings3DS.ButtonMappingsSnes[static_cast<size_t>(SnesButtons::Select)].SetSingleMapping(KEY_SELECT);
 }
 
 
@@ -335,15 +322,16 @@ std::vector<SMenuItem> makeOptionsForStretch() {
 
 std::vector<SMenuItem> makeOptionsForButtonMapping() {
     std::vector<SMenuItem> items;
-    AddMenuDialogOption(items, 0,                                  "Not Mapped"s);
-    AddMenuDialogOption(items, static_cast<int>(KEY_A),            "3DS A Button"s);
-    AddMenuDialogOption(items, static_cast<int>(KEY_B),            "3DS B Button"s);
-    AddMenuDialogOption(items, static_cast<int>(KEY_Y),            "3DS Y Button"s);
-    AddMenuDialogOption(items, static_cast<int>(KEY_X),            "3DS X Button"s);
-    AddMenuDialogOption(items, static_cast<int>(KEY_L),            "3DS L Button"s);
-    AddMenuDialogOption(items, static_cast<int>(KEY_R),            "3DS R Button"s);
-    AddMenuDialogOption(items, static_cast<int>(KEY_START),        "3DS Start Button"s);
-    AddMenuDialogOption(items, static_cast<int>(KEY_SELECT),       "3DS Select Button"s);
+    AddMenuDialogOption(items, 0,                      "-"s);
+    AddMenuDialogOption(items, SNES_A_MASK,            "SNES A Button"s);
+    AddMenuDialogOption(items, SNES_B_MASK,            "SNES B Button"s);
+    AddMenuDialogOption(items, SNES_X_MASK,            "SNES X Button"s);
+    AddMenuDialogOption(items, SNES_Y_MASK,            "SNES Y Button"s);
+    AddMenuDialogOption(items, SNES_TL_MASK,           "SNES L Button"s);
+    AddMenuDialogOption(items, SNES_TR_MASK,           "SNES R Button"s);
+    AddMenuDialogOption(items, SNES_SELECT_MASK,       "SNES SELECT Button"s);
+    AddMenuDialogOption(items, SNES_START_MASK,        "SNES START Button"s);
+    /*
     AddMenuDialogOption(items, static_cast<int>(KEY_DUP),          "3DS D-Pad Up"s);
     AddMenuDialogOption(items, static_cast<int>(KEY_DDOWN),        "3DS D-Pad Down"s);
     AddMenuDialogOption(items, static_cast<int>(KEY_DLEFT),        "3DS D-Pad Left"s);
@@ -352,6 +340,7 @@ std::vector<SMenuItem> makeOptionsForButtonMapping() {
     AddMenuDialogOption(items, static_cast<int>(KEY_CPAD_DOWN),    "3DS Circle Pad Down"s);
     AddMenuDialogOption(items, static_cast<int>(KEY_CPAD_LEFT),    "3DS Circle Pad Left"s);
     AddMenuDialogOption(items, static_cast<int>(KEY_CPAD_RIGHT),   "3DS Circle Pad Right"s);
+    */
     /*
     // doesn't work for some reason, see #37
     AddMenuDialogOption(items, static_cast<int>(KEY_ZL),           "New 3DS ZL Button"s);
@@ -431,64 +420,96 @@ std::vector<SMenuItem> makeOptionMenu() {
                   []( int val ) { CheckAndUpdate( settings3DS.PaletteFix, val, settings3DS.Changed ); });
     AddMenuDisabledOption(items, ""s);
 
-    AddMenuHeader2(items, "Audio"s);
-    AddMenuGauge(items, "  Volume Amplification"s, 0, 8, settings3DS.Volume,
-                 []( int val ) { CheckAndUpdate( settings3DS.Volume, val, settings3DS.Changed ); });
-    AddMenuDisabledOption(items, ""s);
-    AddMenuHeader2(items, "Turbo (Auto-Fire) Buttons"s);
-    AddMenuCheckbox(items, "  Button A"s, settings3DS.Turbo[0], []( int val ) { CheckAndUpdate( settings3DS.Turbo[0], val, settings3DS.Changed ); });
-    AddMenuCheckbox(items, "  Button B"s, settings3DS.Turbo[1], []( int val ) { CheckAndUpdate( settings3DS.Turbo[1], val, settings3DS.Changed ); });
-    AddMenuCheckbox(items, "  Button X"s, settings3DS.Turbo[2], []( int val ) { CheckAndUpdate( settings3DS.Turbo[2], val, settings3DS.Changed ); });
-    AddMenuCheckbox(items, "  Button Y"s, settings3DS.Turbo[3], []( int val ) { CheckAndUpdate( settings3DS.Turbo[3], val, settings3DS.Changed ); });
-    AddMenuCheckbox(items, "  Button L"s, settings3DS.Turbo[4], []( int val ) { CheckAndUpdate( settings3DS.Turbo[4], val, settings3DS.Changed ); });
-    AddMenuCheckbox(items, "  Button R"s, settings3DS.Turbo[5], []( int val ) { CheckAndUpdate( settings3DS.Turbo[5], val, settings3DS.Changed ); });
-    AddMenuDisabledOption(items, ""s);
-
     AddMenuHeader2(items, "SRAM (Save Data)"s);
     AddMenuPicker(items, "  SRAM Auto-Save Delay"s, "Try setting to 60 seconds or Disabled this if the game saves SRAM (Save Data) to SD card too frequently."s, makeOptionsForAutoSaveSRAMDelay(), settings3DS.SRAMSaveInterval, DIALOGCOLOR_CYAN, true,
                   []( int val ) { CheckAndUpdate( settings3DS.SRAMSaveInterval, val, settings3DS.Changed ); });
     AddMenuCheckbox(items, "  Force SRAM Write on Pause"s, settings3DS.ForceSRAMWriteOnPause,
                     []( int val ) { CheckAndUpdate( settings3DS.ForceSRAMWriteOnPause, val, settings3DS.Changed ); });
+
+    AddMenuHeader2(items, ""s);
+
+    AddMenuHeader1(items, "AUDIO"s);
+    AddMenuCheckbox(items, "  Apply volume to all games"s, settings3DS.UseGlobalVolume,
+                []( int val ) 
+                { 
+                    CheckAndUpdate( settings3DS.UseGlobalVolume, val, settings3DS.Changed ); 
+                    if (settings3DS.UseGlobalVolume)
+                        settings3DS.GlobalVolume = settings3DS.Volume; 
+                });
+    AddMenuGauge(items, "  Volume Amplification"s, 0, 8, settings3DS.Volume,
+                []( int val ) { 
+                    CheckAndUpdate( settings3DS.Volume, val, settings3DS.Changed ); 
+                    if (settings3DS.UseGlobalVolume)
+                        CheckAndUpdate( settings3DS.GlobalVolume, val, settings3DS.Changed ); 
+                });
+    AddMenuDisabledOption(items, ""s);
+
     return items;
 };
 
 std::vector<SMenuItem> makeControlsMenu() {
     std::vector<SMenuItem> items;
 
-    std::array<std::string, static_cast<size_t>( SnesButtons::Count )> snesButtonNames;
-    snesButtonNames[static_cast<int>( SnesButtons::A      )] = "A Button"s;
-    snesButtonNames[static_cast<int>( SnesButtons::B      )] = "B Button"s;
-    snesButtonNames[static_cast<int>( SnesButtons::Y      )] = "Y Button"s;
-    snesButtonNames[static_cast<int>( SnesButtons::X      )] = "X Button"s;
-    snesButtonNames[static_cast<int>( SnesButtons::L      )] = "L Button"s;
-    snesButtonNames[static_cast<int>( SnesButtons::R      )] = "R Button"s;
-    snesButtonNames[static_cast<int>( SnesButtons::Up     )] = "D-Pad Up"s;
-    snesButtonNames[static_cast<int>( SnesButtons::Down   )] = "D-Pad Down"s;
-    snesButtonNames[static_cast<int>( SnesButtons::Left   )] = "D-Pad Left"s;
-    snesButtonNames[static_cast<int>( SnesButtons::Right  )] = "D-Pad Right"s;
-    snesButtonNames[static_cast<int>( SnesButtons::Start  )] = "Start Button"s;
-    snesButtonNames[static_cast<int>( SnesButtons::Select )] = "Select Button"s;
+    char *t3dsButtonNames[8];
+    t3dsButtonNames[BTN3DS_A] = "3DS A Button";
+    t3dsButtonNames[BTN3DS_B] = "3DS B Button";
+    t3dsButtonNames[BTN3DS_X] = "3DS X Button";
+    t3dsButtonNames[BTN3DS_Y] = "3DS Y Button";
+    t3dsButtonNames[BTN3DS_L] = "3DS L Button";
+    t3dsButtonNames[BTN3DS_R] = "3DS R Button";
+    t3dsButtonNames[BTN3DS_SELECT] = "3DS SELECT Button";
+    t3dsButtonNames[BTN3DS_START] = "3DS START Button";
 
     AddMenuHeader1(items, "BUTTON CONFIGURATION"s);
-    for (size_t i = 0; i < settings3DS.ButtonMappingsSnes.size(); ++i) {
-        for (size_t j = 0; j < settings3DS.ButtonMappingsSnes[i].MappingBitmasks.size(); ++j) {
-            std::ostringstream optionName;
-            optionName << "SNES " << snesButtonNames[i] << " (";
-            switch (j) {
-                case 0: optionName << "Primary"; break;
-                case 1: optionName << "Secondary"; break;
-                case 2: optionName << "Tertiary"; break;
-                default: optionName << (j+1) << "th"; break;
-            }
-            optionName << ")";
+    AddMenuCheckbox(items, "Apply button mappings to all games"s, settings3DS.UseGlobalButtonMappings,
+                []( int val ) 
+                { 
+                    CheckAndUpdate( settings3DS.UseGlobalButtonMappings, val, settings3DS.Changed ); 
+                    if (settings3DS.UseGlobalButtonMappings)
+                        for (int i = 0; i < 8; i++)
+                            for (int j = 0; j < 4; j++)
+                                settings3DS.GlobalButtonMapping[i][j] = settings3DS.ButtonMapping[i][j];
+                });
+    AddMenuCheckbox(items, "Apply rapid fire settings to all games"s, settings3DS.UseGlobalTurbo,
+                []( int val ) 
+                { 
+                    CheckAndUpdate( settings3DS.UseGlobalTurbo, val, settings3DS.Changed ); 
+                    if (settings3DS.UseGlobalTurbo)
+                        for (int i = 0; i < 6; i++)
+                            settings3DS.GlobalTurbo[i] = settings3DS.Turbo[i];
+                });
+    
+    for (size_t i = 0; i < 8; ++i) {
+        std::ostringstream optionButtonName;
+        optionButtonName << t3dsButtonNames[i];
+        AddMenuHeader2(items, "");
+        AddMenuHeader2(items, optionButtonName.str());
 
-            AddMenuPicker( items, optionName.str(), ""s, makeOptionsForButtonMapping(), settings3DS.ButtonMappingsSnes[i].MappingBitmasks[j], DIALOGCOLOR_CYAN, true,
+        for (size_t j = 0; j < 3; ++j) {
+            std::ostringstream optionName;
+            optionName << "  Maps to";
+
+            AddMenuPicker( items, optionName.str(), ""s, makeOptionsForButtonMapping(), 
+                settings3DS.ButtonMapping[i][j], 
+                DIALOGCOLOR_CYAN, true,
                 [i, j]( int val ) {
-                    uint32 v = static_cast<uint32>(val);
-                    CheckAndUpdate( settings3DS.ButtonMappingsSnes[i].MappingBitmasks[j], v, settings3DS.Changed );
+                    CheckAndUpdate( settings3DS.ButtonMapping[i][j], val, settings3DS.Changed );
+                    if (settings3DS.UseGlobalButtonMappings)
+                        CheckAndUpdate( settings3DS.GlobalButtonMapping[i][j], val, settings3DS.Changed );
                 }
             );
         }
+
+        if (i < 6)
+            AddMenuGauge(items, "  Rapid-Fire Speed"s, 0, 10, 
+                settings3DS.Turbo[i], 
+                [i]( int val ) 
+                { 
+                    CheckAndUpdate( settings3DS.Turbo[i], val, settings3DS.Changed ); 
+                    if (settings3DS.UseGlobalTurbo)
+                        CheckAndUpdate( settings3DS.GlobalTurbo[i], val, settings3DS.Changed ); 
+                });
+        
     }
 
     return items;
@@ -670,22 +691,23 @@ bool settingsReadWriteFullListByGame(bool writeMode)
 
     config3dsReadWriteInt32("Frameskips=%d\n", &settings3DS.MaxFrameSkips, 0, 4);
     config3dsReadWriteInt32("Framerate=%d\n", &settings3DS.ForceFrameRate, 0, 2);
-    config3dsReadWriteInt32("TurboA=%d\n", &settings3DS.Turbo[0], 0, 1);
-    config3dsReadWriteInt32("TurboB=%d\n", &settings3DS.Turbo[1], 0, 1);
-    config3dsReadWriteInt32("TurboX=%d\n", &settings3DS.Turbo[2], 0, 1);
-    config3dsReadWriteInt32("TurboY=%d\n", &settings3DS.Turbo[3], 0, 1);
-    config3dsReadWriteInt32("TurboL=%d\n", &settings3DS.Turbo[4], 0, 1);
-    config3dsReadWriteInt32("TurboR=%d\n", &settings3DS.Turbo[5], 0, 1);
+    config3dsReadWriteInt32("TurboA=%d\n", &settings3DS.Turbo[0], 0, 10);
+    config3dsReadWriteInt32("TurboB=%d\n", &settings3DS.Turbo[1], 0, 10);
+    config3dsReadWriteInt32("TurboX=%d\n", &settings3DS.Turbo[2], 0, 10);
+    config3dsReadWriteInt32("TurboY=%d\n", &settings3DS.Turbo[3], 0, 10);
+    config3dsReadWriteInt32("TurboL=%d\n", &settings3DS.Turbo[4], 0, 10);
+    config3dsReadWriteInt32("TurboR=%d\n", &settings3DS.Turbo[5], 0, 10);
     config3dsReadWriteInt32("Vol=%d\n", &settings3DS.Volume, 0, 8);
     config3dsReadWriteInt32("PalFix=%d\n", &settings3DS.PaletteFix, 0, 3);
     config3dsReadWriteInt32("SRAMInterval=%d\n", &settings3DS.SRAMSaveInterval, 0, 4);
     config3dsReadWriteInt32("ForceSRAMWrite=%d\n", &settings3DS.ForceSRAMWriteOnPause, 0, 1);
 
-    for (size_t i = 0; i < settings3DS.ButtonMappingsSnes.size(); ++i) {
-        for (size_t j = 0; j < settings3DS.ButtonMappingsSnes[i].MappingBitmasks.size(); ++j) {
+    static char *buttonName[8] = {"A", "B", "X", "Y", "L", "R", "SELECT","START"};
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 3; ++j) {
             std::ostringstream oss;
-            oss << "ButtonMapping_" << i << "_" << j << "=%d\n";
-            config3dsReadWriteBitmask(oss.str().c_str(), &settings3DS.ButtonMappingsSnes[i].MappingBitmasks[j]);
+            oss << "ButtonMap" << i << "_" << j << "=%d\n";
+            config3dsReadWriteInt32(oss.str().c_str(), &settings3DS.ButtonMapping[i][j]);
         }
     }
 
@@ -717,6 +739,26 @@ bool settingsReadWriteFullListGlobal(bool writeMode)
     config3dsReadWriteString("ROM=%s\n", "ROM=%1000[^\n]s\n", romFileNameLastSelected);
 
     config3dsReadWriteInt32("AutoSavestate=%d\n", &settings3DS.AutoSavestate, 0, 1);
+    config3dsReadWriteInt32("TurboA=%d\n", &settings3DS.GlobalTurbo[0], 0, 10);
+    config3dsReadWriteInt32("TurboB=%d\n", &settings3DS.GlobalTurbo[1], 0, 10);
+    config3dsReadWriteInt32("TurboX=%d\n", &settings3DS.GlobalTurbo[2], 0, 10);
+    config3dsReadWriteInt32("TurboY=%d\n", &settings3DS.GlobalTurbo[3], 0, 10);
+    config3dsReadWriteInt32("TurboL=%d\n", &settings3DS.GlobalTurbo[4], 0, 10);
+    config3dsReadWriteInt32("TurboR=%d\n", &settings3DS.GlobalTurbo[5], 0, 10);
+    config3dsReadWriteInt32("Vol=%d\n", &settings3DS.GlobalVolume, 0, 8);
+
+    static char *buttonName[8] = {"A", "B", "X", "Y", "L", "R", "SELECT","START"};
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            std::ostringstream oss;
+            oss << "ButtonMap" << i << "_" << j << "=%d\n";
+            config3dsReadWriteInt32(oss.str().c_str(), &settings3DS.GlobalButtonMapping[i][j]);
+        }
+    }
+
+    config3dsReadWriteInt32("UseGlobalButtonMappings=%d\n", &settings3DS.UseGlobalButtonMappings, 0, 2);
+    config3dsReadWriteInt32("UseGlobalTurbo=%d\n", &settings3DS.UseGlobalTurbo, 0, 2);
+    config3dsReadWriteInt32("UseGlobalVolume=%d\n", &settings3DS.UseGlobalVolume, 0, 2);
 
     // All new options should come here!
 

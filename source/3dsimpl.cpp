@@ -874,50 +874,69 @@ void S9xSyncSpeed (void)
 {
 }
 
-uint32 prevSnesJoyPad = 0;
+uint32 prevConsoleJoyPad = 0;
+u32 prevConsoleButtonPressed[6];
+u32 buttons3dsPressed[6];
 
 uint32 S9xReadJoypad (int which1_0_to_4)
 {
     if (which1_0_to_4 != 0)
         return 0;
 
-    // TODO: ideally we initialize this in a way that ensures snes9xMasks[SnesButtons::A] == SNES_A_MASK,
-    // but how do we do that at compile time?
-    static std::array<uint32, static_cast<size_t>(SnesButtons::Count)> snes9xMasks = {
-        SNES_A_MASK,
-        SNES_B_MASK,
-        SNES_Y_MASK,
-        SNES_X_MASK,
-        SNES_TL_MASK,
-        SNES_TR_MASK,
-        SNES_UP_MASK,
-        SNES_DOWN_MASK,
-        SNES_LEFT_MASK,
-        SNES_RIGHT_MASK,
-        SNES_START_MASK,
-        SNES_SELECT_MASK,
-    };
+	u32 keysHeld3ds = input3dsGetCurrentKeysHeld();
+    u32 consoleJoyPad = 0;
 
-    uint32 keysHeld3ds = input3dsGetCurrentKeysHeld();
+    if (keysHeld3ds & KEY_UP) consoleJoyPad |= SNES_UP_MASK;
+    if (keysHeld3ds & KEY_DOWN) consoleJoyPad |= SNES_DOWN_MASK;
+    if (keysHeld3ds & KEY_LEFT) consoleJoyPad |= SNES_LEFT_MASK;
+    if (keysHeld3ds & KEY_RIGHT) consoleJoyPad |= SNES_RIGHT_MASK;
 
-    uint32 snesJoyPad = 0;
-    for (size_t i = 0; i < snes9xMasks.size(); ++i) {
-        if (settings3DS.ButtonMappingsSnes[i].IsHeld(keysHeld3ds)) {
-            snesJoyPad |= snes9xMasks[i];
-        }
-    }
+	#define SET_CONSOLE_JOYPAD(i, mask) 							\
+		buttons3dsPressed[i] = (keysHeld3ds & mask);				\
+		if (keysHeld3ds & mask) 									\
+			consoleJoyPad |= 										\
+				settings3DS.ButtonMapping[i][0] |					\
+				settings3DS.ButtonMapping[i][1] |					\
+				settings3DS.ButtonMapping[i][2] |					\
+				settings3DS.ButtonMapping[i][3];					\
 
-    // Handle turbo buttons.
+	SET_CONSOLE_JOYPAD(BTN3DS_L, KEY_L)
+	SET_CONSOLE_JOYPAD(BTN3DS_R, KEY_R)
+	SET_CONSOLE_JOYPAD(BTN3DS_A, KEY_A)
+	SET_CONSOLE_JOYPAD(BTN3DS_B, KEY_B)
+	SET_CONSOLE_JOYPAD(BTN3DS_X, KEY_X)
+	SET_CONSOLE_JOYPAD(BTN3DS_Y, KEY_Y)
+    SET_CONSOLE_JOYPAD(BTN3DS_SELECT, KEY_SELECT);
+    SET_CONSOLE_JOYPAD(BTN3DS_START, KEY_START);
+
+    // Handle turbo / rapid fire buttons.
     //
-    #define HANDLE_TURBO(i, mask) if (settings3DS.Turbo[i] && (prevSnesJoyPad & mask) && (snesJoyPad & mask)) snesJoyPad &= ~mask;
-    HANDLE_TURBO(0, SNES_A_MASK);
-    HANDLE_TURBO(1, SNES_B_MASK);
-    HANDLE_TURBO(2, SNES_X_MASK);
-    HANDLE_TURBO(3, SNES_Y_MASK);
-    HANDLE_TURBO(4, SNES_TL_MASK);
-    HANDLE_TURBO(5, SNES_TR_MASK);
+    #define HANDLE_TURBO(i) 										\
+		if (settings3DS.Turbo[i] && buttons3dsPressed[i]) { 		\
+			if (!prevConsoleButtonPressed[i]) 						\
+			{ 														\
+				prevConsoleButtonPressed[i] = 11 - settings3DS.Turbo[i]; \
+			} 														\
+			else 													\
+			{ 														\
+				prevConsoleButtonPressed[i]--; 						\
+				consoleJoyPad &= ~(									\
+				settings3DS.ButtonMapping[i][0] |					\
+				settings3DS.ButtonMapping[i][1] |					\
+				settings3DS.ButtonMapping[i][2] |					\
+				settings3DS.ButtonMapping[i][3]						\
+				); \
+			} \
+		} \
 
-    prevSnesJoyPad = snesJoyPad;
+    HANDLE_TURBO(BTN3DS_L);
+    HANDLE_TURBO(BTN3DS_R);
+    HANDLE_TURBO(BTN3DS_A);
+    HANDLE_TURBO(BTN3DS_B);
+    HANDLE_TURBO(BTN3DS_X);
+    HANDLE_TURBO(BTN3DS_Y);
 
-    return snesJoyPad;
+    prevConsoleJoyPad = consoleJoyPad;
+
+    return consoleJoyPad;
 }
