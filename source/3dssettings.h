@@ -112,4 +112,6 @@ typedef struct
     ButtonMappings3dsToSnes ButtonMappingsSnes; // Stores which 3DS button(s) map to each SNES button.
 
     bool    Changed = false;                // Stores whether the configuration has been changed and should be written.
+
+    bool    RomFsLoaded = false;            // Stores whether we successfully opened the RomFS.
 } S9xSettings3DS;
