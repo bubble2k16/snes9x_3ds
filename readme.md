@@ -14,7 +14,7 @@ To use:
 
 ### Homebrew Launcher:
 
-1. Copy Snes9x_3ds.3dsx, Snes9x_3ds.smdh and snes9x_3ds_top.png into the /3ds/snes9x_3ds on your SD card.
+1. Copy Snes9x_3ds.3dsx, Snes9x_3ds.smdh into the /3ds/snes9x_3ds on your SD card.
 2. Place your SNES ROMs inside any folder.
 3. Go to your Homebrew Launcher (either via Cubic Ninja, Soundhax or other entry points) and launch the snes9x_3ds emulator.
 
@@ -22,8 +22,7 @@ To use:
 
 1. Use your favorite CIA installer to install snes9x_3ds.cia into your CFW. You can also use FBI to download from TitleDB.
 2. Place your SNES ROMs inside any folder.
-3. Copy snes9x_3ds_top.png to ROOT of your SD card.
-4. Exit your CIA installer and go to your CFW's home screen to launch the app.
+3. Exit your CIA installer and go to your CFW's home screen to launch the app.
 
 ### When in-game,
 

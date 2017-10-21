@@ -86,7 +86,7 @@ void clearTopScreenWithLogo()
 	unsigned char* image;
 	unsigned width, height;
 
-    int error = lodepng_decode32_file(&image, &width, &height, "./snes9x_3ds_top.png");
+    int error = lodepng_decode32_file(&image, &width, &height, ((settings3DS.RomFsLoaded ? "romfs:"s : "."s) + "/snes9x_3ds_top.png"s).c_str());
 
     if (!error && width == 400 && height == 240)
     {
@@ -365,9 +365,10 @@ std::vector<SMenuItem> makeOptionsForFrameskip() {
 
 std::vector<SMenuItem> makeOptionsForFrameRate() {
     std::vector<SMenuItem> items;
-    AddMenuDialogOption(items, 0, "Default based on ROM region"s,    ""s);
-    AddMenuDialogOption(items, 1, "50 FPS"s,                  ""s);
-    AddMenuDialogOption(items, 2, "60 FPS"s,                  ""s);
+    AddMenuDialogOption(items, static_cast<int>(EmulatedFramerate::UseRomRegion), "Default based on ROM region"s, ""s);
+    AddMenuDialogOption(items, static_cast<int>(EmulatedFramerate::ForceFps50),   "50 FPS"s,                      ""s);
+    AddMenuDialogOption(items, static_cast<int>(EmulatedFramerate::ForceFps60),   "60 FPS"s,                      ""s);
+    AddMenuDialogOption(items, static_cast<int>(EmulatedFramerate::Match3DS),     "Match 3DS refresh rate"s,      ""s);
     return items;
 };
 
@@ -414,8 +415,8 @@ std::vector<SMenuItem> makeOptionMenu() {
     AddMenuHeader2(items, "Graphics"s);
     AddMenuPicker(items, "  Frameskip"s, "Try changing this if the game runs slow. Skipping frames helps it run faster, but less smooth."s, makeOptionsForFrameskip(), settings3DS.MaxFrameSkips, DIALOGCOLOR_CYAN, true,
                   []( int val ) { CheckAndUpdate( settings3DS.MaxFrameSkips, val, settings3DS.Changed ); });
-    AddMenuPicker(items, "  Framerate"s, "Some games run at 50 or 60 FPS by default. Override if required."s, makeOptionsForFrameRate(), settings3DS.ForceFrameRate, DIALOGCOLOR_CYAN, true,
-                  []( int val ) { CheckAndUpdate( settings3DS.ForceFrameRate, val, settings3DS.Changed ); });
+    AddMenuPicker(items, "  Framerate"s, "Some games run at 50 or 60 FPS by default. Override if required."s, makeOptionsForFrameRate(), static_cast<int>(settings3DS.ForceFrameRate), DIALOGCOLOR_CYAN, true,
+                  []( int val ) { CheckAndUpdate( settings3DS.ForceFrameRate, static_cast<EmulatedFramerate>(val), settings3DS.Changed ); });
     AddMenuPicker(items, "  In-Frame Palette Changes"s, "Try changing this if some colours in the game look off."s, makeOptionsForInFramePaletteChanges(), settings3DS.PaletteFix, DIALOGCOLOR_CYAN, true,
                   []( int val ) { CheckAndUpdate( settings3DS.PaletteFix, val, settings3DS.Changed ); });
     AddMenuDisabledOption(items, ""s);
@@ -598,11 +599,11 @@ bool settingsUpdateAllSettings(bool updateGameSettings = true)
         else
             settings3DS.TicksPerFrame = TICKS_PER_FRAME_NTSC;
 
-        if (settings3DS.ForceFrameRate == 1)
+        if (settings3DS.ForceFrameRate == EmulatedFramerate::ForceFps50) {
             settings3DS.TicksPerFrame = TICKS_PER_FRAME_PAL;
-
-        else if (settings3DS.ForceFrameRate == 2)
+        } else if (settings3DS.ForceFrameRate == EmulatedFramerate::ForceFps60) {
             settings3DS.TicksPerFrame = TICKS_PER_FRAME_NTSC;
+        }
 
         // update global volume
         //
@@ -690,13 +691,15 @@ bool settingsReadWriteFullListByGame(bool writeMode)
     config3dsReadWriteInt32("# Do not modify this file or risk losing your settings.\n", NULL, 0, 0);
 
     config3dsReadWriteInt32("Frameskips=%d\n", &settings3DS.MaxFrameSkips, 0, 4);
-    config3dsReadWriteInt32("Framerate=%d\n", &settings3DS.ForceFrameRate, 0, 2);
-    config3dsReadWriteInt32("TurboA=%d\n", &settings3DS.Turbo[0], 0, 10);
-    config3dsReadWriteInt32("TurboB=%d\n", &settings3DS.Turbo[1], 0, 10);
-    config3dsReadWriteInt32("TurboX=%d\n", &settings3DS.Turbo[2], 0, 10);
-    config3dsReadWriteInt32("TurboY=%d\n", &settings3DS.Turbo[3], 0, 10);
-    config3dsReadWriteInt32("TurboL=%d\n", &settings3DS.Turbo[4], 0, 10);
-    config3dsReadWriteInt32("TurboR=%d\n", &settings3DS.Turbo[5], 0, 10);
+    int tmp = static_cast<int>(settings3DS.ForceFrameRate);
+    config3dsReadWriteInt32("Framerate=%d\n", &tmp, 0, static_cast<int>(EmulatedFramerate::Count) - 1);
+    settings3DS.ForceFrameRate = static_cast<EmulatedFramerate>(tmp);
+    config3dsReadWriteInt32("TurboA=%d\n", &settings3DS.Turbo[0], 0, 1);
+    config3dsReadWriteInt32("TurboB=%d\n", &settings3DS.Turbo[1], 0, 1);
+    config3dsReadWriteInt32("TurboX=%d\n", &settings3DS.Turbo[2], 0, 1);
+    config3dsReadWriteInt32("TurboY=%d\n", &settings3DS.Turbo[3], 0, 1);
+    config3dsReadWriteInt32("TurboL=%d\n", &settings3DS.Turbo[4], 0, 1);
+    config3dsReadWriteInt32("TurboR=%d\n", &settings3DS.Turbo[5], 0, 1);
     config3dsReadWriteInt32("Vol=%d\n", &settings3DS.Volume, 0, 8);
     config3dsReadWriteInt32("PalFix=%d\n", &settings3DS.PaletteFix, 0, 3);
     config3dsReadWriteInt32("SRAMInterval=%d\n", &settings3DS.SRAMSaveInterval, 0, 4);
@@ -813,7 +816,7 @@ bool settingsLoad(bool includeGameSettings = true)
             // set in the previous game.
             //
             settings3DS.MaxFrameSkips = 1;
-            settings3DS.ForceFrameRate = 0;
+            settings3DS.ForceFrameRate = EmulatedFramerate::UseRomRegion;
             settings3DS.Volume = 4;
 
             for (int i = 0; i < 6; i++)     // and clear all turbo buttons.
@@ -1201,12 +1204,16 @@ void emulatorInitialize()
 
     ui3dsInitialize();
 
-    /*if (romfsInit()!=0)
+    if (romfsInit()!=0)
     {
         printf ("Unable to initialize romfs\n");
-        exit (0);
+        settings3DS.RomFsLoaded = false;
     }
-    */
+    else
+    {
+        settings3DS.RomFsLoaded = true;
+    }
+    
     printf ("Initialization complete\n");
 
     osSetSpeedupEnable(1);    // Performance: use the higher clock speed for new 3DS.
@@ -1254,8 +1261,11 @@ void emulatorFinalize()
 #endif
     ptmSysmExit ();
 
-    //printf("romfsExit:\n");
-    //romfsExit();
+    if (settings3DS.RomFsLoaded)
+    {
+        printf("romfsExit:\n");
+        romfsExit();
+    }
     
 #ifndef RELEASE
     printf("hidExit:\n");
@@ -1449,7 +1459,11 @@ void emulatorLoop()
                 snesFrameTotalAccurateTicks = 0;
                 snesFramesSkipped = 0;
 
-                svcSleepThread ((long)(timeDiffInMilliseconds * 1000));
+                if (settings3DS.ForceFrameRate == EmulatedFramerate::Match3DS) {
+                    gspWaitForVBlank();
+                } else {
+                    svcSleepThread ((long)(timeDiffInMilliseconds * 1000));
+                }
 
                 skipDrawingFrame = false;
             }
