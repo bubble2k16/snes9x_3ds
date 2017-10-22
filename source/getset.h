@@ -116,6 +116,9 @@ INLINE uint8 __attribute__((always_inline)) S9xGetByteNoCycles (uint32 Address)
     int block;
     uint8 *GetAddress = CPU.MemoryMap [block = (Address >> MEMMAP_SHIFT) & MEMMAP_MASK];
 
+		if ((intptr_t) GetAddress != Memory.MAP_CPU || !CPU.InDMA)
+        CPU.Cycles += Memory.MemorySpeed [block];
+
     if (GetAddress >= (uint8 *) CMemory::MAP_LAST)
 				return (*(GetAddress + (Address & 0xffff)));
 		else 
@@ -133,6 +136,9 @@ INLINE uint16 __attribute__((always_inline)) S9xGetWordNoCycles (uint32 Address)
 		{
     		int block;
     		uint8 *GetAddress = CPU.MemoryMap [block = (Address >> MEMMAP_SHIFT) & MEMMAP_MASK];
+
+				if ((intptr_t) GetAddress != Memory.MAP_CPU || !CPU.InDMA)
+  	  	    CPU.Cycles += Memory.MemorySpeed [block];
 
 				if (GetAddress >= (uint8 *) CMemory::MAP_LAST)
   			{
@@ -166,6 +172,9 @@ INLINE void __attribute__((always_inline)) S9xSetByteNoCycles (uint8 Byte, uint3
 #endif
     int block;
     uint8 *SetAddress = CPU.MemoryWriteMap [block = ((Address >> MEMMAP_SHIFT) & MEMMAP_MASK)];
+
+		if ((intptr_t) SetAddress != Memory.MAP_CPU || !CPU.InDMA)
+        CPU.Cycles += Memory.MemorySpeed [block];
 
     if (SetAddress >= (uint8 *) CMemory::MAP_LAST)
     {
@@ -204,6 +213,9 @@ INLINE void __attribute__((always_inline)) S9xSetWordNoCycles (uint16 Word, uint
     int block;
     uint8 *SetAddress = CPU.MemoryWriteMap [block = ((Address >> MEMMAP_SHIFT) & MEMMAP_MASK)];
 
+		if ((intptr_t) SetAddress != Memory.MAP_CPU || !CPU.InDMA)
+        CPU.Cycles += Memory.MemorySpeed [block];
+				
     if (SetAddress >= (uint8 *) CMemory::MAP_LAST)
     {
 #ifdef CPU_SHUTDOWN
