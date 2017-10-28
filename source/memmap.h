@@ -268,6 +268,10 @@ public:
 #if 0
 	bool8 LoadMulti (const char *,const char *,const char *);
 #endif
+
+    uint32 map_mirror (uint32 size, uint32 pos);
+    void map_hirom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 addr_e, uint32 size, uint32 offset);
+
 };
 
 START_EXTERN_C

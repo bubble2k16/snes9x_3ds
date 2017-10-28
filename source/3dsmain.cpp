@@ -436,14 +436,17 @@ std::vector<SMenuItem> makeOptionMenu() {
                     CheckAndUpdate( settings3DS.UseGlobalVolume, val, settings3DS.Changed ); 
                     if (settings3DS.UseGlobalVolume)
                         settings3DS.GlobalVolume = settings3DS.Volume; 
+                    else
+                        settings3DS.Volume = settings3DS.GlobalVolume; 
                 });
-    AddMenuGauge(items, "  Volume Amplification"s, 0, 8, settings3DS.Volume,
+    AddMenuGauge(items, "  Volume Amplification"s, 0, 8, 
+                settings3DS.UseGlobalVolume ? settings3DS.GlobalVolume : settings3DS.Volume,
                 []( int val ) { 
-                    CheckAndUpdate( settings3DS.Volume, val, settings3DS.Changed ); 
                     if (settings3DS.UseGlobalVolume)
                         CheckAndUpdate( settings3DS.GlobalVolume, val, settings3DS.Changed ); 
+                    else
+                        CheckAndUpdate( settings3DS.Volume, val, settings3DS.Changed ); 
                 });
-    AddMenuDisabledOption(items, ""s);
 
     return items;
 };
@@ -466,18 +469,22 @@ std::vector<SMenuItem> makeControlsMenu() {
                 []( int val ) 
                 { 
                     CheckAndUpdate( settings3DS.UseGlobalButtonMappings, val, settings3DS.Changed ); 
-                    if (settings3DS.UseGlobalButtonMappings)
-                        for (int i = 0; i < 8; i++)
-                            for (int j = 0; j < 4; j++)
+                    for (int i = 0; i < 8; i++)
+                        for (int j = 0; j < 4; j++)
+                            if (settings3DS.UseGlobalButtonMappings)
                                 settings3DS.GlobalButtonMapping[i][j] = settings3DS.ButtonMapping[i][j];
+                            else
+                                settings3DS.ButtonMapping[i][j] = settings3DS.GlobalButtonMapping[i][j];
                 });
     AddMenuCheckbox(items, "Apply rapid fire settings to all games"s, settings3DS.UseGlobalTurbo,
                 []( int val ) 
                 { 
                     CheckAndUpdate( settings3DS.UseGlobalTurbo, val, settings3DS.Changed ); 
-                    if (settings3DS.UseGlobalTurbo)
-                        for (int i = 0; i < 6; i++)
+                    for (int i = 0; i < 6; i++)
+                        if (settings3DS.UseGlobalTurbo)
                             settings3DS.GlobalTurbo[i] = settings3DS.Turbo[i];
+                        else
+                            settings3DS.Turbo[i] = settings3DS.GlobalTurbo[i];
                 });
     
     for (size_t i = 0; i < 8; ++i) {
@@ -494,9 +501,10 @@ std::vector<SMenuItem> makeControlsMenu() {
                 settings3DS.ButtonMapping[i][j], 
                 DIALOGCOLOR_CYAN, true,
                 [i, j]( int val ) {
-                    CheckAndUpdate( settings3DS.ButtonMapping[i][j], val, settings3DS.Changed );
                     if (settings3DS.UseGlobalButtonMappings)
                         CheckAndUpdate( settings3DS.GlobalButtonMapping[i][j], val, settings3DS.Changed );
+                    else
+                        CheckAndUpdate( settings3DS.ButtonMapping[i][j], val, settings3DS.Changed );
                 }
             );
         }
@@ -506,9 +514,10 @@ std::vector<SMenuItem> makeControlsMenu() {
                 settings3DS.Turbo[i], 
                 [i]( int val ) 
                 { 
-                    CheckAndUpdate( settings3DS.Turbo[i], val, settings3DS.Changed ); 
                     if (settings3DS.UseGlobalTurbo)
                         CheckAndUpdate( settings3DS.GlobalTurbo[i], val, settings3DS.Changed ); 
+                    else
+                        CheckAndUpdate( settings3DS.Turbo[i], val, settings3DS.Changed ); 
                 });
         
     }
@@ -611,7 +620,10 @@ bool settingsUpdateAllSettings(bool updateGameSettings = true)
             settings3DS.Volume = 0;
         if (settings3DS.Volume > 8)
             settings3DS.Volume = 8;
+
         Settings.VolumeMultiplyMul4 = (settings3DS.Volume + 4);
+        if (settings3DS.UseGlobalVolume)
+            Settings.VolumeMultiplyMul4 = (settings3DS.GlobalVolume + 4);
         //printf ("vol: %d\n", Settings.VolumeMultiplyMul4);
 
         // update in-frame palette fix
@@ -788,6 +800,32 @@ bool settingsSave(bool includeGameSettings = true)
     return true;
 }
 
+
+//----------------------------------------------------------------------
+// Set default buttons mapping
+//----------------------------------------------------------------------
+void settingsDefaultButtonMapping(int buttonMapping[8][4])
+{
+    bool allZero = true;
+
+    for (int i = 0; i < 8; i++)
+        for (int j = 0; j < 4; j++)
+            if (buttonMapping[i][j])
+                allZero = false;
+    if (allZero)
+    {
+        // Setting default button mapping:
+        buttonMapping[0][0] = SNES_A_MASK;
+        buttonMapping[1][0] = SNES_B_MASK;
+        buttonMapping[2][0] = SNES_X_MASK;
+        buttonMapping[3][0] = SNES_Y_MASK;
+        buttonMapping[4][0] = SNES_TL_MASK;
+        buttonMapping[5][0] = SNES_TR_MASK;
+        buttonMapping[6][0] = SNES_SELECT_MASK;
+        buttonMapping[7][0] = SNES_START_MASK;
+    }
+}
+
 //----------------------------------------------------------------------
 // Load settings by game.
 //----------------------------------------------------------------------
@@ -802,6 +840,12 @@ bool settingsLoad(bool includeGameSettings = true)
     if (includeGameSettings)
     {
         success = settingsReadWriteFullListByGame(false);
+
+        // Set default button configuration
+        //
+        settingsDefaultButtonMapping(settings3DS.ButtonMapping);
+        settingsDefaultButtonMapping(settings3DS.GlobalButtonMapping);
+
         if (success)
         {
             if (settingsUpdateAllSettings())
@@ -967,10 +1011,11 @@ void setupBootupMenu(std::vector<SMenuTab>& menuTab, std::vector<DirectoryEntry>
     }
 }
 
+std::vector<DirectoryEntry> romFileNames; // needs to stay in scope, is there a better way?
+
 void menuSelectFile(void)
 {
     std::vector<SMenuTab> menuTab;
-    std::vector<DirectoryEntry> romFileNames; // needs to stay in scope, is there a better way?
     const DirectoryEntry* selectedDirectoryEntry = nullptr;
     setupBootupMenu(menuTab, romFileNames, selectedDirectoryEntry, true);
 
@@ -1008,7 +1053,7 @@ void menuSelectFile(void)
 //----------------------------------------------------------------------
 // Menu when the emulator is paused in-game.
 //----------------------------------------------------------------------
-void setupPauseMenu(std::vector<SMenuTab>& menuTab, std::vector<DirectoryEntry>& romFileNames, const DirectoryEntry*& selectedDirectoryEntry, bool selectPreviousFile, int& currentMenuTab, bool& closeMenu) {
+void setupPauseMenu(std::vector<SMenuTab>& menuTab, std::vector<DirectoryEntry>& romFileNames, const DirectoryEntry*& selectedDirectoryEntry, bool selectPreviousFile, int& currentMenuTab, bool& closeMenu, bool refreshFileList) {
     menuTab.clear();
     menuTab.reserve(4);
 
@@ -1034,7 +1079,8 @@ void setupPauseMenu(std::vector<SMenuTab>& menuTab, std::vector<DirectoryEntry>&
 
     {
         std::vector<SMenuItem> fileMenu;
-        fileGetAllFiles(romFileNames);
+        if (refreshFileList)
+            fileGetAllFiles(romFileNames);
         fillFileMenuFromFileNames(fileMenu, romFileNames, selectedDirectoryEntry);
         menu3dsAddTab(menuTab, "Select ROM", fileMenu);
         menuTab.back().SubTitle.assign(file3dsGetCurrentDir());
@@ -1050,9 +1096,8 @@ void menuPause()
     int currentMenuTab = 0;
     bool closeMenu = false;
     std::vector<SMenuTab> menuTab;
-    std::vector<DirectoryEntry> romFileNames; // needs to stay in scope, is there a better way?
     const DirectoryEntry* selectedDirectoryEntry = nullptr;
-    setupPauseMenu(menuTab, romFileNames, selectedDirectoryEntry, true, currentMenuTab, closeMenu);
+    setupPauseMenu(menuTab, romFileNames, selectedDirectoryEntry, true, currentMenuTab, closeMenu, false);
 
     bool isDialog = false;
     SMenuTab dialogTab;
@@ -1099,7 +1144,7 @@ void menuPause()
                 }
             } else if (selectedDirectoryEntry->Type == FileEntryType::ParentDirectory || selectedDirectoryEntry->Type == FileEntryType::ChildDirectory) {
                 file3dsGoUpOrDownDirectory(*selectedDirectoryEntry);
-                setupPauseMenu(menuTab, romFileNames, selectedDirectoryEntry, false, currentMenuTab, closeMenu);
+                setupPauseMenu(menuTab, romFileNames, selectedDirectoryEntry, false, currentMenuTab, closeMenu, true);
             }
             selectedDirectoryEntry = nullptr;
         }

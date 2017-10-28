@@ -936,7 +936,7 @@ uint8 S9xGetSPC7110(uint16 Address)
 
 
 unsigned datarom_addr(unsigned addr) {
-  unsigned size = memory_cartrom_size() - 0x100000;
+  unsigned size = memory_cartrom_size() - ((memory_cartrom_size() > 0x500000) ? 0x200000 : 0x100000);
   while(addr >= size) addr -= size;
   return addr + 0x100000;
 }
