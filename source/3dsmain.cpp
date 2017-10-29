@@ -426,6 +426,7 @@ std::vector<SMenuItem> makeOptionMenu() {
                   []( int val ) { CheckAndUpdate( settings3DS.SRAMSaveInterval, val, settings3DS.Changed ); });
     AddMenuCheckbox(items, "  Force SRAM Write on Pause"s, settings3DS.ForceSRAMWriteOnPause,
                     []( int val ) { CheckAndUpdate( settings3DS.ForceSRAMWriteOnPause, val, settings3DS.Changed ); });
+    AddMenuDisabledOption(items, "  (some games like Yoshi's Island require this)"s);
 
     AddMenuHeader2(items, ""s);
 
@@ -810,8 +811,25 @@ void settingsDefaultButtonMapping(int buttonMapping[8][4])
 
     for (int i = 0; i < 8; i++)
         for (int j = 0; j < 4; j++)
+        {
+            // Validates all button mapping input,
+            // assign to zero, if invalid.
+            //
+            if (buttonMapping[i][j] != SNES_A_MASK &&
+                buttonMapping[i][j] != SNES_B_MASK &&
+                buttonMapping[i][j] != SNES_X_MASK &&
+                buttonMapping[i][j] != SNES_Y_MASK &&
+                buttonMapping[i][j] != SNES_TL_MASK &&
+                buttonMapping[i][j] != SNES_TR_MASK &&
+                buttonMapping[i][j] != SNES_SELECT_MASK &&
+                buttonMapping[i][j] != SNES_START_MASK &&
+                buttonMapping[i][j] != 0)
+                buttonMapping[i][j] = 0;
+
             if (buttonMapping[i][j])
                 allZero = false;
+        }
+
     if (allZero)
     {
         // Setting default button mapping:
@@ -1107,7 +1125,7 @@ void menuPause()
 
     bool loadRomBeforeExit = false;
 
-    std::vector<SMenuItem>& cheatMenu = menuTab[2].MenuItems;
+    std::vector<SMenuItem>& cheatMenu = menuTab[3].MenuItems;
     menuCopyCheats(cheatMenu, false);
 
     bool animateMenu = true;

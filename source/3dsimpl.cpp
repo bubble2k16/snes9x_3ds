@@ -875,8 +875,8 @@ void S9xSyncSpeed (void)
 }
 
 uint32 prevConsoleJoyPad = 0;
-u32 prevConsoleButtonPressed[6];
-u32 buttons3dsPressed[6];
+u32 prevConsoleButtonPressed[8];
+u32 buttons3dsPressed[8];
 
 uint32 S9xReadJoypad (int which1_0_to_4)
 {
