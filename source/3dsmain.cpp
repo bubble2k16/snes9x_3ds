@@ -739,7 +739,7 @@ bool settingsReadWriteFullListByGame(bool writeMode)
 //----------------------------------------------------------------------
 bool settingsReadWriteFullListGlobal(bool writeMode)
 {
-    bool success = config3dsOpenFile("./snes9x_3ds.cfg", writeMode);
+    bool success = config3dsOpenFile("sdmc:./snes9x_3ds.cfg", writeMode);
     if (!success)
         return false;
     
