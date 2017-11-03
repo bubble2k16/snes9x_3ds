@@ -2,9 +2,12 @@
 #include <3ds.h>
 #include "3dsimpl.h"
 #include "3dsgpu.h"
+#include "3dssettings.h"
 
 static u32 currKeysHeld = 0;
 static u32 lastKeysHeld = 0;
+
+extern S9xSettings3DS settings3DS;
 
 //int adjustableValue = 0x70;
 
@@ -60,7 +63,7 @@ u32 input3dsScanInputForEmulation()
     // -----------------------------------------------
 #endif
 
-    if (keysDown & KEY_TOUCH)
+    if (keysDown & KEY_TOUCH || settings3DS.ButtonHotkeyOpenMenu.IsHeld(keysDown))
     {
         impl3dsTouchScreenPressed();
 

@@ -1,3 +1,4 @@
+#include <array>
 
 enum class EmulatedFramerate {
     UseRomRegion = 0,
@@ -5,6 +6,39 @@ enum class EmulatedFramerate {
     ForceFps60 = 2,
     Match3DS = 3,
     Count = 4
+};
+
+template <int Count>
+struct ButtonMapping {
+    std::array<uint32, Count> MappingBitmasks;
+
+    bool IsHeld(uint32 held3dsButtons) const {
+        for (uint32 mapping : MappingBitmasks) {
+            if (mapping != 0 && (mapping & held3dsButtons) == mapping) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void SetSingleMapping(uint32 mapping) {
+        SetDoubleMapping(mapping, 0);
+    }
+
+    void SetDoubleMapping(uint32 mapping0, uint32 mapping1) {
+        if constexpr (Count > 0) {
+            MappingBitmasks[0] = mapping0;
+        }
+        if constexpr (Count > 1) {
+            MappingBitmasks[1] = mapping1;
+        }
+        if constexpr (Count > 2) {
+            for (size_t i = 2; i < MappingBitmasks.size(); ++i) {
+                MappingBitmasks[i] = 0;
+            }
+        }
+    }
 };
 
 typedef struct
@@ -63,6 +97,10 @@ typedef struct
     //
     int     GlobalButtonMapping[8][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};  
     int     ButtonMapping[8][4] = {{0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}, {0,0,0,0}};  
+
+    ::ButtonMapping<1> ButtonHotkeyOpenMenu; // Stores button that can be held to open the menu.
+
+    ::ButtonMapping<1> ButtonHotkeyDisableFramelimit; // Stores button that can be held to disable the frame limit.
 
     bool    Changed = false;                // Stores whether the configuration has been changed and should be written.
 
