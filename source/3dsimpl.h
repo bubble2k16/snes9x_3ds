@@ -10,8 +10,10 @@
 #define BTN3DS_Y        3
 #define BTN3DS_L        4
 #define BTN3DS_R        5
-#define BTN3DS_SELECT   6
-#define BTN3DS_START    7
+#define BTN3DS_ZL       6
+#define BTN3DS_ZR       7
+#define BTN3DS_SELECT   8
+#define BTN3DS_START    9
 
 //---------------------------------------------------------
 // 3DS textures

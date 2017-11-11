@@ -6,7 +6,7 @@
 #define RELEASE 
 
 // Uncomment this to allow user to break into debug mode (for the 65816 CPU)
-//
+// 
 //#define DEBUG_CPU
 
 // Uncomment this to allow user to break into debug mode (for the SPC700 APU)

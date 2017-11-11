@@ -63,7 +63,10 @@ u32 input3dsScanInputForEmulation()
     // -----------------------------------------------
 #endif
 
-    if (keysDown & KEY_TOUCH || settings3DS.ButtonHotkeyOpenMenu.IsHeld(keysDown))
+    if (keysDown & KEY_TOUCH || 
+        (!settings3DS.UseGlobalEmuControlKeys && settings3DS.ButtonHotkeyOpenMenu.IsHeld(keysDown)) ||
+        (settings3DS.UseGlobalEmuControlKeys && settings3DS.GlobalButtonHotkeyOpenMenu.IsHeld(keysDown))
+        )
     {
         impl3dsTouchScreenPressed();
 

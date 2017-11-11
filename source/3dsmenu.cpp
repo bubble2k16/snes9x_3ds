@@ -17,7 +17,7 @@
 #define MENU_HEIGHT             (14)
 #define DIALOG_HEIGHT           (5)
 
-#define SNES9X_VERSION "v1.20b"
+#define SNES9X_VERSION "v1.20"
 #define ANIMATE_TAB_STEPS 3
 
 
@@ -281,10 +281,67 @@ void menu3dsDrawMenu(std::vector<SMenuTab>& menuTab, int& currentMenuTab, int me
     //ui3dsDrawRect(0, 24, 320, 25, 0xcccccc);
     //ui3dsDrawRect(0, 25, 320, 27, 0xeeeeee);
 
-    ui3dsDrawStringWithNoWrapping(10, 223, 310, 240, 0xFFFFFF, HALIGN_LEFT,
+    ui3dsDrawStringWithNoWrapping(10, 223, 285, 240, 0xFFFFFF, HALIGN_LEFT,
         "A:Select  B:Cancel");
-    ui3dsDrawStringWithNoWrapping(10, 223, 310, 240, 0xFFFFFF, HALIGN_RIGHT,
+    ui3dsDrawStringWithNoWrapping(10, 223, 285, 240, 0xFFFFFF, HALIGN_RIGHT,
         "SNES9x for 3DS " SNES9X_VERSION);
+
+    //battery display
+    const int maxBatteryLevel = 5;
+    const int battLevelWidth = 3;
+    const int battFullLevelWidth = (maxBatteryLevel) * battLevelWidth + 1;
+    const int battBorderWidth = 1;
+    const int battY1 = 226;
+    const int battY2 = 233;
+    const int battX2 = 311;
+    const int battYHeight = battY2 - battY1;
+    const int battHeadWidth = 2;
+    const int battHeadSpacing = 1;
+
+    // battery positive end
+    ui3dsDrawRect(
+        battX2 - battFullLevelWidth - battBorderWidth - battHeadWidth, 
+        battY1 + battHeadSpacing, 
+        battX2 - battFullLevelWidth - battBorderWidth, 
+        battY2 - battHeadSpacing, 
+        0xFFFFFF, 1.0f);
+    // battery body
+    ui3dsDrawRect(
+        battX2 - battFullLevelWidth - battBorderWidth, 
+        battY1 - battBorderWidth, 
+        battX2 + battBorderWidth, 
+        battY2 + battBorderWidth, 
+        0xFFFFFF, 1.0f);
+    // battery's empty insides
+    ui3dsDrawRect(
+        battX2 - battFullLevelWidth, 
+        battY1, 
+        battX2, 
+        battY2, 
+        0x1976D2, 1.0f);
+    
+    ptmuInit();
+    
+    u8 batteryChargeState = 0;
+    u8 batteryLevel = 0;
+    if(R_SUCCEEDED(PTMU_GetBatteryChargeState(&batteryChargeState)) && batteryChargeState) {
+        ui3dsDrawRect(
+            battX2-battFullLevelWidth + 1, battY1 + 1, 
+            battX2 - 1, battY2 - 1, 0xFF9900, 1.0f);
+    } else if(R_SUCCEEDED(PTMU_GetBatteryLevel(&batteryLevel))) {
+        if (batteryLevel > 5)
+            batteryLevel = 5;
+        for (int i = 0; i < batteryLevel; i++)
+        {
+            ui3dsDrawRect(
+                battX2-battLevelWidth*(i+1), battY1 + 1, 
+                battX2-battLevelWidth*(i) - 1, battY2 - 1, 0xFFFFFF, 1.0f);
+        }
+    } else {
+        //ui3dsDrawRect(battX2, battY1, battX2, battY2, 0xFFFFFF, 1.0f);
+    }
+ 
+    ptmuExit();
 
     int line = 0;
     int maxItems = MENU_HEIGHT;
@@ -516,7 +573,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
             maxItems--;
         }
 
-        if (thisKeysHeld & KEY_UP || thisKeysHeld & KEY_DOWN)
+        if ((thisKeysHeld & KEY_UP) || (thisKeysHeld & KEY_DOWN) || (thisKeysHeld & KEY_LEFT) || (thisKeysHeld & KEY_RIGHT))
             framesDKeyHeld ++;
         else
             framesDKeyHeld = 0;
@@ -525,19 +582,21 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
             returnResult = -1;
             break;
         }
-        if ((keysDown & KEY_RIGHT) || (keysDown & KEY_R))
+        if ((keysDown & KEY_RIGHT) || (keysDown & KEY_R) || ((thisKeysHeld & KEY_RIGHT) && (framesDKeyHeld > 15) && (framesDKeyHeld % 2 == 0)))
         {
             if (!isDialog)
             {
-                if (keysDown & KEY_RIGHT &&
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Gauge)
+                if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Gauge)
                 {
-                    if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value <
-                        currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
+                    if (keysDown & KEY_RIGHT || ((thisKeysHeld & KEY_RIGHT) && (framesDKeyHeld > 15) && (framesDKeyHeld % 2 == 0)))
                     {
-                        currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(currentTab->MenuItems[currentTab->SelectedItemIndex].Value + 1);
+                        if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value <
+                            currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMaxValue)
+                        {
+                            currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(currentTab->MenuItems[currentTab->SelectedItemIndex].Value + 1);
+                        }
+                        menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
                     }
-                    menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
                 }
                 else
                 {
@@ -545,20 +604,22 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
                 }
             }
         }
-        if ((keysDown & KEY_LEFT) || (keysDown & KEY_L))
+        if ((keysDown & KEY_LEFT) || (keysDown & KEY_L)|| ((thisKeysHeld & KEY_LEFT) && (framesDKeyHeld > 15) && (framesDKeyHeld % 2 == 0)))
         {
             if (!isDialog)
             {
-                if (keysDown & KEY_LEFT &&
-                    currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Gauge)
+                if (currentTab->MenuItems[currentTab->SelectedItemIndex].Type == MenuItemType::Gauge)
                 {
-                    // Gauge adjustment
-                    if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value >
-                        currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue)
+                    if (keysDown & KEY_LEFT || ((thisKeysHeld & KEY_LEFT) && (framesDKeyHeld > 15) && (framesDKeyHeld % 2 == 0)))
                     {
-                        currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(currentTab->MenuItems[currentTab->SelectedItemIndex].Value - 1);
+                        // Gauge adjustment
+                        if (currentTab->MenuItems[currentTab->SelectedItemIndex].Value >
+                            currentTab->MenuItems[currentTab->SelectedItemIndex].GaugeMinValue)
+                        {
+                            currentTab->MenuItems[currentTab->SelectedItemIndex].SetValue(currentTab->MenuItems[currentTab->SelectedItemIndex].Value - 1);
+                        }
+                        menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
                     }
-                    menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
                 }
                 else
                 {
@@ -601,7 +662,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
 
             }
         }
-        if (keysDown & KEY_UP || ((thisKeysHeld & KEY_UP) && (framesDKeyHeld > 30) && (framesDKeyHeld % 2 == 0)))
+        if (keysDown & KEY_UP || ((thisKeysHeld & KEY_UP) && (framesDKeyHeld > 15) && (framesDKeyHeld % 2 == 0)))
         {
             int moveCursorTimes = 0;
 
@@ -634,7 +695,7 @@ int menu3dsMenuSelectItem(SMenuTab& dialogTab, bool& isDialog, int& currentMenuT
             menu3dsDrawEverything(dialogTab, isDialog, currentMenuTab, menuTab);
 
         }
-        if (keysDown & KEY_DOWN || ((thisKeysHeld & KEY_DOWN) && (framesDKeyHeld > 30) && (framesDKeyHeld % 2 == 0)))
+        if (keysDown & KEY_DOWN || ((thisKeysHeld & KEY_DOWN) && (framesDKeyHeld > 15) && (framesDKeyHeld % 2 == 0)))
         {
             int moveCursorTimes = 0;
             do

@@ -170,8 +170,13 @@ void gpu3dsCheckSlider()
         }
         else if (sliderVal < 0.3)
         {
-            gfxTopRightFramebuffers[0] = gfxOldTopRightFramebuffers[0];
-            gfxTopRightFramebuffers[1] = gfxOldTopRightFramebuffers[1];
+            u8 isNew3DS = 0;
+            APT_CheckNew3DS(&isNew3DS);
+            if (!isNew3DS)
+            {
+                gfxTopRightFramebuffers[0] = gfxOldTopRightFramebuffers[0];
+                gfxTopRightFramebuffers[1] = gfxOldTopRightFramebuffers[1];
+            }
             gpu3dsSetParallaxBarrier(false);
         }
         else if (sliderVal < 0.6)

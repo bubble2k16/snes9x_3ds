@@ -28,12 +28,15 @@ static char currentDir[_MAX_PATH] = "";
 void file3dsInitialize(void)
 {
     getcwd(currentDir, _MAX_PATH);
+#ifdef RELEASE
     if (currentDir[0] == '/')
     {
         char tempDir[_MAX_PATH];
+
         sprintf(tempDir, "sdmc:%s", currentDir);
         strcpy(currentDir, tempDir);
     }
+#endif
 }
 
 
@@ -95,7 +98,7 @@ void file3dsGoToParentDirectory(void)
 //----------------------------------------------------------------------
 void file3dsGoToChildDirectory(const char* childDir)
 {
-    strncat(currentDir, childDir, _MAX_PATH);
+    strncat(currentDir, &childDir[2], _MAX_PATH);
     strncat(currentDir, "/", _MAX_PATH);
 }
 
@@ -158,7 +161,7 @@ void file3dsGetFiles(std::vector<DirectoryEntry>& files, const std::vector<std::
                 continue;
             if (dir->d_type == DT_DIR)
             {
-                files.emplace_back(std::string(dir->d_name), FileEntryType::ChildDirectory);
+                files.emplace_back(std::string("\x01 ") + std::string(dir->d_name), FileEntryType::ChildDirectory);
             }
             if (dir->d_type == DT_REG)
             {

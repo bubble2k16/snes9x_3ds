@@ -70,7 +70,6 @@ void config3dsReadWriteInt32(const char *format, int *value, int minValue, int m
                 *value = minValue;
             if (*value > maxValue)
                 *value = maxValue;
-            //printf ("Scanned %d\n", *value);
         }
         else
         {

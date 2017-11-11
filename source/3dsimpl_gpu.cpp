@@ -1,6 +1,7 @@
 
 #include "snes9x.h"
 #include "ppu.h"
+#include "3dssettings.h"
 
 #include <3ds.h>
 #include "3dsgpu.h"
@@ -8,6 +9,7 @@
 #include "3dsimpl_gpu.h"
 
 SGPU3DSExtended GPU3DSExt;
+extern S9xSettings3DS settings3DS;
 
 void gpu3dsSetMode7UpdateFrameCountUniform();
 
