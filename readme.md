@@ -14,7 +14,7 @@ To use:
 
 ### Homebrew Launcher:
 
-1. Copy Snes9x_3ds.3dsx, Snes9x_3ds.smdh into the /3ds/snes9x_3ds on your SD card.
+1. Copy Snes9x_3ds.3dsx, Snes9x_3ds.smdh, snes9x_3ds_top.png into the /3ds/snes9x_3ds on your SD card.
 2. Place your SNES ROMs inside any folder.
 3. Go to your Homebrew Launcher (either via Cubic Ninja, Soundhax or other entry points) and launch the snes9x_3ds emulator.
 
@@ -22,7 +22,8 @@ To use:
 
 1. Use your favorite CIA installer to install snes9x_3ds.cia into your CFW. You can also use FBI to download from TitleDB.
 2. Place your SNES ROMs inside any folder.
-3. Exit your CIA installer and go to your CFW's home screen to launch the app.
+3. Copy snes9x_3ds_top.png to ROOT of your SD card.
+4. Exit your CIA installer and go to your CFW's home screen to launch the app.
 
 ### When in-game,
 
@@ -132,6 +133,18 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 -------------------------------------------------------------------------------------------------------
 
 ## Change History
+
+v1.20
+- Fixed slider problem in New 3DS (where one of the eyes always sees a black screen)
+- Added button mappings and rapid fire settings like VirtuaNES / TemperPCE 3DS (thanks to AdmiralCurtiss)
+- Added button configuration to open emulator menu and fast-forward (thanks to AdmiralCurtiss). Use with care, though. In some games, fast-forwarding can freeze/corrupt your game.
+- Added a frame rate option to v-sync with the 60Hz 3DS refresh rate (thanks AdmiralCurtiss)
+- Added an option to auto-save state when exiting and loading when starting a new game. (thanks AdmiralCurtiss)
+- Added an option to force saving of SRAM, required by Yoshi's Island. (thanks AdmiralCurtiss)
+- Show 3DS battery level in the bottom right of the menu (thanks ramzinouri)
+- Increased scrolling speed in menu when holding down the D-pad.
+- Added memory mapper support for Tengai Makyou Zero English Patch (version 1.0 released 22 Oct 2017)
+- Supports most original BS Zelda (1-4, Map 2 1-4, Ancient Stone Tablets 1-4), except for the Remix version which still boots into black screen
 
 v1.11
 - Fixed crashing bug when loading CHX cheat files.
