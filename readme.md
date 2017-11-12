@@ -144,7 +144,8 @@ v1.20
 - Show 3DS battery level in the bottom right of the menu (thanks ramzinouri)
 - Increased scrolling speed in menu when holding down the D-pad.
 - Added memory mapper support for Tengai Makyou Zero English Patch (version 1.0 released 22 Oct 2017)
-- Supports most original BS Zelda (1-4, Map 2 1-4, Ancient Stone Tablets 1-4), except for the Remix version which still boots into black screen
+- Supports most original BS Zelda (1-4, Map 2 1-4, Ancient Stone Tablets 1-4), except for the Remix version which still boots into black screen (thanks ramzinouri)
+- And other text changes (thanks FateForWindows)
 
 v1.11
 - Fixed crashing bug when loading CHX cheat files.
