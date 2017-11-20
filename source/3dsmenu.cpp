@@ -17,7 +17,7 @@
 #define MENU_HEIGHT             (14)
 #define DIALOG_HEIGHT           (5)
 
-#define SNES9X_VERSION "v1.20"
+#define SNES9X_VERSION "v1.21"
 #define ANIMATE_TAB_STEPS 3
 
 
