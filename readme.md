@@ -134,6 +134,9 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 
 ## Change History
 
+v1.21
+- Fixed the ZL/ZR button problem when installing the CIA version.
+
 v1.20
 - Fixed slider problem in New 3DS (where one of the eyes always sees a black screen)
 - Added button mappings and rapid fire settings like VirtuaNES / TemperPCE 3DS (thanks to AdmiralCurtiss)
