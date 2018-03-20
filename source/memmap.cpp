@@ -3574,8 +3574,6 @@ void CMemory::SPC7110HiROMMap ()
 	if (strncmp((char*)&Memory.ROM [0xffc0], "HU TENGAI MAKYO ZERO ", 21) == 0 && CalculatedSize > 5242880)
 	{
 		map_hirom_offset(0x40, 0x4f, 0x0000, 0xffff, CalculatedSize, 0x600000);
-		printf("Tengai Makyou English Memory Map");
-		DEBUG_WAIT_L_KEY
 	}
 
 	S9xSpc7110Init();
