@@ -41,9 +41,15 @@ extern SSND3DS snd3DS;
 // impl3dsInitializeCore function. It CANNOT be called
 // after the snd3dsInitialize function is called.
 //---------------------------------------------------------
-void snd3dsSetSampleRate(int sampleRate, int samplesPerLoop);
+void snd3dsSetSampleRate(
+    bool isStereo, 
+    int idealSampleRate, 
+    int loopsPerSecond, 
+    bool spawnMixingThread,
+    int minLoopBuffer, 
+    int maxLoopBuffer);
 
-
+    
 //---------------------------------------------------------
 // Initialize the CSND library.
 //---------------------------------------------------------

@@ -171,6 +171,7 @@
 #include "apu.h"
 #include "memmap.h"
 #include "soundux.h"
+#include "blargsnes_spc700/dsp.h"
 
 // gaussian table by libopenspc and SNEeSe
 static const int32 gauss[512] =
@@ -3457,3 +3458,45 @@ void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuff
 }
 
 
+// Copies DSP parameters to/from the BlargSNES DSP core.
+//
+void S9xCopyDSPParamters(bool copyToBlarg)
+{
+	if (copyToBlarg)
+	{
+		DspReset();
+
+		for (int i = 0; i < 128; i++)
+		{
+			if (i == 0x6c)
+				DspReplayWriteByte(IAPU.DSPCopy[i] & 0x7f, i);	// don't reset
+			else if (i == 0x4c || i == 0x5c)
+				;												// ignore KON/KOFF
+			else
+				DspReplayWriteByte(IAPU.DSPCopy[i], i);
+		}
+	}
+	else
+	{
+		S9xResetSound(true);
+		for (int j = 0; j < 0x80; j++)
+			APU.DSP [j] = 0;
+
+		for (int i = 0; i < 128; i++)
+		{
+			if (i == 0x6c)
+				S9xSetAPUDSP(IAPU.DSPCopy[i] & 0x7f, i);	// don't reset
+			else if (i == 0x4c || i == 0x5c)
+				;												// ignore KON/KOFF
+			else
+				S9xSetAPUDSP(IAPU.DSPCopy[i], i);
+		}
+
+		SoundData.noise_count = 0;
+
+		SoundData.master_volume[Settings.ReverseStereo]     = SoundData.master_volume_left;
+		SoundData.master_volume[1 ^ Settings.ReverseStereo] = SoundData.master_volume_right;
+		SoundData.echo_volume[Settings.ReverseStereo]     = SoundData.echo_volume_left;
+		SoundData.echo_volume[1 ^ Settings.ReverseStereo] = SoundData.echo_volume_right;
+	}
+}

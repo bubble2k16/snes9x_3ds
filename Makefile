@@ -84,7 +84,7 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
 #CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 #CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-CFILES		:=
+CFILES		:=  blargsnes_spc700/dsp.c
 CPPFILES	:=	3dsmain.cpp 3dsmenu.cpp 3dsopt.cpp \
 			3dsgpu.cpp 3dssound.cpp 3dsui.cpp 3dsexit.cpp \
 			3dsconfig.cpp 3dsfiles.cpp 3dsinput.cpp 3dsmatrix.cpp \
@@ -105,7 +105,7 @@ CPPFILES	:=	3dsmain.cpp 3dsmenu.cpp 3dsopt.cpp \
 			dsp1.cpp ppu.cpp ppuvsect.cpp dma.cpp snes9x.cpp data.cpp globals.cpp \
 			lodepng.cpp
 
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+SFILES		:=	blargsnes_spc700/dspMixer.s
 PICAFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.v.pica)))
 SHLISTFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.shlist)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
@@ -193,6 +193,7 @@ all: $(BUILD) cia
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
+	[ -d build/blargsnes_spc700 ] 		|| mkdir -p build/blargsnes_spc700
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 
 #---------------------------------------------------------------------------------

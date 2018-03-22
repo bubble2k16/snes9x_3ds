@@ -52,7 +52,7 @@ void impl3dsFinalize();
 // from the 2nd core before copying it to the actual
 // output buffer.
 //---------------------------------------------------------
-void impl3dsGenerateSoundSamples();
+void impl3dsGenerateSoundSamples(int numberOfSamples);
 
 
 //---------------------------------------------------------
@@ -62,7 +62,7 @@ void impl3dsGenerateSoundSamples();
 // from the 2nd core before copying it to the actual
 // output buffer.
 //---------------------------------------------------------
-void impl3dsOutputSoundSamples(short *leftSamples, short *rightSamples);
+void impl3dsOutputSoundSamples(int numberOfSamples, short *leftSamples, short *rightSamples);
 
 
 //---------------------------------------------------------

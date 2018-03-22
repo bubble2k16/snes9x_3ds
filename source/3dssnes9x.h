@@ -3,7 +3,7 @@
 // Uncomment this to convert before releasing this to remove
 // all the debugging stuff.
 //
-#define RELEASE 
+//#define RELEASE 
 
 // Uncomment this to allow user to break into debug mode (for the 65816 CPU)
 // 
@@ -30,3 +30,9 @@
             prevkey = key; \
         } \ 
     }
+
+#define CLEAR_BOTTOM_SCREEN \
+    gfxSetDoubleBuffering(GFX_BOTTOM,false); \
+    gfxSwapBuffers(); \
+    consoleInit(GFX_BOTTOM, NULL); \
+    consoleClear(); \

@@ -354,4 +354,6 @@ void S9xMixSamplesIntoTempBuffer(int sample_count);
 void S9xGenerateSilenceIntoTempBuffer(int sample_count);
 void S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(signed short *leftBuffer, signed short *rightBuffer, int sample_count);
 
+void S9xCopyDSPParamters(bool copyToBlarg);
+
 #endif

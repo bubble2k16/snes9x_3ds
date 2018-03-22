@@ -448,6 +448,8 @@ struct SSettings{
     int     HWOBJRenderingMode = 0;     // Default OBJ rendering mode.
                                         // 0 - render direct to main/sub screen by priority
                                         // 1 - render to OBJ layer, then from OBJ layer to main/sub screen
+
+    int     UseFastDSPCore = 0;
 };
 
 struct SSNESGameFixes

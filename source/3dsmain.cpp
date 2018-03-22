@@ -47,7 +47,7 @@ inline std::string operator "" s(const char* s, unsigned int length) {
 }
 
 S9xSettings3DS settings3DS;
-
+extern u16 dspPreamp;
 
 #define TICKS_PER_SEC (268123480)
 #define TICKS_PER_FRAME_NTSC (4468724)
@@ -405,6 +405,13 @@ std::vector<SMenuItem> makeOptionsForInFramePaletteChanges() {
     return items;
 };
 
+std::vector<SMenuItem> makeOptionsForDSPCore() {
+    std::vector<SMenuItem> items;
+    AddMenuDialogOption(items, 0, "BlargSNES"s,         "Faster. May sound better."s);
+    AddMenuDialogOption(items, 1, "Snes9X"s,            "Slower. May not sound as good."s);
+    return items;
+};
+
 std::vector<SMenuItem> makeEmulatorNewMenu() {
     std::vector<SMenuItem> items;
     AddMenuPicker(items, "  Exit"s, "Leaving so soon?", makeOptionsForNoYes(), 0, DIALOGCOLOR_RED, false, exitEmulatorOptionSelected);
@@ -447,6 +454,24 @@ std::vector<SMenuItem> makeOptionMenu() {
     AddMenuHeader2(items, ""s);
 
     AddMenuHeader1(items, "AUDIO"s);
+    AddMenuCheckbox(items, "  Use the same DSP core for all games"s, settings3DS.UseGlobalDSPCore,
+                []( int val ) 
+                { 
+                    CheckAndUpdate( settings3DS.UseGlobalDSPCore, val, settings3DS.Changed ); 
+                    if (settings3DS.UseGlobalDSPCore)
+                        settings3DS.GlobalDSPCore = settings3DS.DSPCore; 
+                    else
+                        settings3DS.DSPCore = settings3DS.GlobalDSPCore; 
+                });
+    
+    AddMenuPicker(items, "  DSP Core"s, "Choose a different core to improve performance"s, makeOptionsForDSPCore(), settings3DS.UseGlobalDSPCore ? settings3DS.GlobalDSPCore : settings3DS.DSPCore, DIALOGCOLOR_CYAN, true,
+                []( int val ) 
+                { 
+                    if (settings3DS.UseGlobalDSPCore)
+                        CheckAndUpdate( settings3DS.GlobalDSPCore, val, settings3DS.Changed ); 
+                    else
+                        CheckAndUpdate( settings3DS.DSPCore, val, settings3DS.Changed ); 
+                });
     AddMenuCheckbox(items, "  Apply volume to all games"s, settings3DS.UseGlobalVolume,
                 []( int val ) 
                 { 
@@ -680,8 +705,28 @@ bool settingsUpdateAllSettings(bool updateGameSettings = true)
             settings3DS.Volume = 8;
 
         Settings.VolumeMultiplyMul4 = (settings3DS.Volume + 4);
+        dspPreamp = settings3DS.Volume * 0x28 + 0x90;
         if (settings3DS.UseGlobalVolume)
+        {
             Settings.VolumeMultiplyMul4 = (settings3DS.GlobalVolume + 4);
+            dspPreamp = settings3DS.GlobalVolume * 0x28 + 0x90;
+        }
+
+        // Update the DSP Core
+        //
+        int prevUseFastDSPCore = Settings.UseFastDSPCore;
+        Settings.UseFastDSPCore = 1 - settings3DS.DSPCore;
+        if (settings3DS.UseGlobalDSPCore)
+        {
+            Settings.UseFastDSPCore = 1 - settings3DS.GlobalDSPCore;
+        }
+        if (prevUseFastDSPCore != Settings.UseFastDSPCore)
+        {
+            if (Settings.UseFastDSPCore)
+                S9xCopyDSPParamters(true);      // copy Snes9x to BlargSNES DSP core
+            else
+                S9xCopyDSPParamters(false);     // copy Snes9x to BlargSNES DSP core    
+        }
         //printf ("vol: %d\n", Settings.VolumeMultiplyMul4);
 
         // update in-frame palette fix
@@ -791,6 +836,9 @@ bool settingsReadWriteFullListByGame(bool writeMode)
     config3dsReadWriteBitmask("ButtonMappingDisableFramelimitHold_0=%d\n", &settings3DS.ButtonHotkeyDisableFramelimit.MappingBitmasks[0]);
     config3dsReadWriteBitmask("ButtonMappingOpenEmulatorMenu_0=%d\n", &settings3DS.ButtonHotkeyOpenMenu.MappingBitmasks[0]);
 
+    // v1.3 settings
+    config3dsReadWriteInt32("DSPCore=%d\n", &settings3DS.DSPCore, 0, 1);
+
     // All new options should come here!
 
     config3dsCloseFile();
@@ -846,7 +894,9 @@ bool settingsReadWriteFullListGlobal(bool writeMode)
     config3dsReadWriteBitmask("ButtonMappingDisableFramelimitHold_0=%d\n", &settings3DS.GlobalButtonHotkeyDisableFramelimit.MappingBitmasks[0]);
     config3dsReadWriteBitmask("ButtonMappingOpenEmulatorMenu_0=%d\n", &settings3DS.GlobalButtonHotkeyOpenMenu.MappingBitmasks[0]);
 
-    // All new options should come here!
+    // v1.3 settings
+    config3dsReadWriteInt32("UseGlobalDSPCore=%d\n", &settings3DS.UseGlobalDSPCore, 0, 1);
+    config3dsReadWriteInt32("DSPCore=%d\n", &settings3DS.GlobalDSPCore, 0, 1);
 
     config3dsCloseFile();
     return true;
@@ -1526,10 +1576,10 @@ void emulatorLoop()
         updateFrameCount();
 
     	input3dsScanInputForEmulation();
-        impl3dsRunOneFrame(firstFrame, skipDrawingFrame);
-
         if (GPU3DS.emulatorState != EMUSTATE_EMULATE)
             break;
+
+        impl3dsRunOneFrame(firstFrame, skipDrawingFrame);
 
         firstFrame = false; 
 
@@ -1611,6 +1661,14 @@ void emulatorLoop()
 	}
 
     snd3dsStopPlaying();
+
+    // Wait for the sound thread to leave the snd3dsMixSamples entirely
+    // to prevent a race condition between the PTMU_GetBatteryChargeState (when
+    // drawing the menu) and GSPGPU_FlushDataCache (in the sound thread).
+    //
+    // (There's probably a better way to do this, but this will do for now)
+    //
+    svcSleepThread(500000);
 }
 
 

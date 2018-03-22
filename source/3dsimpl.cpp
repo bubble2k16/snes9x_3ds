@@ -30,6 +30,9 @@
 #include "3dsimpl_tilecache.h"
 #include "3dsimpl_gpu.h"
 
+#include "blargsnes_spc700/dsp.h"
+#include "blargsnes_spc700/spc700.h"
+
 // Compiled shaders
 //
 #include "shaderfast_shbin.h"
@@ -105,8 +108,12 @@ bool impl3dsInitializeCore()
 {
 	// Initialize our CSND engine.
 	//
-	snd3dsSetSampleRate(32000, 256);
-
+	snd3dsSetSampleRate(true, 32000, 125, true, 4, 8);
+	S9xSetPlaybackRate(32000);
+	DspReset();
+	IAPU.DSPReplayIndex = 0;
+	IAPU.DSPWriteIndex = 0;
+	
 	// Initialize our tile cache engine.
 	//
     cache3dsInit();
@@ -242,6 +249,7 @@ bool impl3dsInitializeCore()
     Settings.InterpolatedSound = TRUE;
     Settings.AltSampleDecode = 0;
     Settings.SoundEnvelopeHeightReading = 1;
+	Settings.UseFastDSPCore = 1;
 
     if(!Memory.Init())
     {
@@ -254,6 +262,7 @@ bool impl3dsInitializeCore()
         printf ("Unable to initialize APU.\n");
         return false;
     }
+	SPC_RAM = IAPU.RAM;
 
     if(!S9xGraphicsInit())
     {
@@ -327,6 +336,10 @@ void impl3dsFinalize()
 }
 
 
+extern "C" void DspGenerateNoise();
+extern "C" void DSP_ReplayWrites(u32 idx);
+extern "C" void DspMixSamplesStereo(u32 samples, s16 *mixBuf);
+
 //---------------------------------------------------------
 // Mix sound samples into a temporary buffer.
 //
@@ -334,10 +347,18 @@ void impl3dsFinalize()
 // from the 2nd core before copying it to the actual
 // output buffer.
 //---------------------------------------------------------
-void impl3dsGenerateSoundSamples()
+void impl3dsGenerateSoundSamples(int numberOfSamples)
 {
-	S9xSetAPUDSPReplay ();
-	S9xMixSamplesIntoTempBuffer(256 * 2);
+	if (Settings.UseFastDSPCore)
+	{
+		//S9xSetAPUDSPClearWrites();
+	}
+	else
+	{
+		//DSP_ClearWrites();
+		S9xSetAPUDSPReplay ();
+		S9xMixSamplesIntoTempBuffer(numberOfSamples * 2);
+	}
 }
 
 
@@ -348,10 +369,19 @@ void impl3dsGenerateSoundSamples()
 // from the 2nd core before copying it to the actual
 // output buffer.
 //---------------------------------------------------------
-void impl3dsOutputSoundSamples(short *leftSamples, short *rightSamples)
+void impl3dsOutputSoundSamples(int numberOfSamples, short *leftSamples, short *rightSamples)
 {
-	S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(
-		leftSamples, rightSamples, 256 * 2);
+	if (Settings.UseFastDSPCore)
+	{
+		DSP_ReplayWrites(0);
+		DspGenerateNoise();
+		DspMixSamplesStereo(256, leftSamples);
+	}
+	else
+	{
+		S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(leftSamples, rightSamples, 256 * 2);
+	}
+			
 
 }
 
@@ -368,6 +398,8 @@ void impl3dsLoadROM(char *romFilePath)
     gpu3dsInitializeMode7Vertexes();
     gpu3dsCopyVRAMTilesIntoMode7TileVertexes(Memory.VRAM);
     cache3dsInit();	
+
+	DspReset();
 }
 
 
@@ -378,6 +410,8 @@ void impl3dsLoadROM(char *romFilePath)
 void impl3dsResetConsole()
 {
 	S9xReset();
+	DspReset();
+	
 	cache3dsInit();
 	gpu3dsInitializeMode7Vertexes();
 	gpu3dsCopyVRAMTilesIntoMode7TileVertexes(Memory.VRAM);
@@ -398,11 +432,15 @@ void impl3dsPrepareForNewFrame()
 }
 
 
+short samples[32000 * 4];
+
+
 //---------------------------------------------------------
 // Executes one frame.
 //---------------------------------------------------------
 void impl3dsRunOneFrame(bool firstFrame, bool skipDrawingFrame)
 {
+
 	Memory.ApplySpeedHackPatches();
 	gpu3dsEnableAlphaBlending();
 

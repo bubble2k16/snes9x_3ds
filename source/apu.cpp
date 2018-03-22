@@ -180,6 +180,8 @@ extern int32 env_counter_table[32];
 #include "3dssnes9x.h"
 #include "3dssound.h"
 
+#include "blargsnes_spc700/dsp.h"
+
 extern "C" {const char *S9xGetFilenameInc (const char *);}
 
 int spc_is_dumping=0;
@@ -230,7 +232,10 @@ void S9xResetAPU ()
 		APU.Flags &= ~HALTED_FLAG;
 
 	ZeroMemory(spc_dump_dsp, 0x100);
-	ZeroMemory(IAPU.RAM, 0x100);
+	
+	//ZeroMemory(IAPU.RAM, 0x100);
+	ZeroMemory(IAPU.RAM, 0x10000); 		// ??
+
 	memset(IAPU.RAM+0x20, 0xFF, 0x20);
 	memset(IAPU.RAM+0x60, 0xFF, 0x20);
 	memset(IAPU.RAM+0xA0, 0xFF, 0x20);
@@ -316,6 +321,12 @@ void S9xSetAPUDSPReplay ()
 
 		IAPU.DSPReplayIndex = (IAPU.DSPReplayIndex + 1) & (DSPWRITEBUFFERSIZE - 1);
 	}
+}
+
+
+void S9xSetAPUDSPClearWrites ()
+{
+	IAPU.DSPReplayIndex = IAPU.DSPWriteIndex;
 }
 
 
@@ -1002,9 +1013,16 @@ uint8 S9xGetAPUDSP ()
 		}
 		else
 		{
-			if (SoundData.channels [reg >> 4].state == SOUND_SILENT)
-				return (0);
-			return (int8) (SoundData.channels [reg >> 4].out_sample >> 8);
+			if (Settings.UseFastDSPCore)
+			{
+				return DSP_MEM[reg];
+			}
+			else
+			{
+				if (SoundData.channels [reg >> 4].state == SOUND_SILENT)
+					return (0);
+				return (int8) (SoundData.channels [reg >> 4].out_sample >> 8);
+			}
 		}
 
 		case APU_ENVX + 0x00:
@@ -1015,17 +1033,31 @@ uint8 S9xGetAPUDSP ()
 		case APU_ENVX + 0x50:
 		case APU_ENVX + 0x60:
 		case APU_ENVX + 0x70:
-			return (S9xGetEnvelopeHeight (reg >> 4));
+			if (Settings.UseFastDSPCore)
+			{
+				return DSP_MEM[reg];
+			}
+			else
+			{		
+				return (S9xGetEnvelopeHeight (reg >> 4));
+			}
 
 		case APU_ENDX:
 			// To fix speech in Magical Drop 2 6/11/00
 			//	APU.DSP [APU_ENDX] = 0;
 			
-			// Bug fix: The ENDX is written to the APU.DSP
-			// so we cannot return IAPU.DSPCopy. This fixes
-			// Clock Tower.
-			//
-			byte = APU.DSP[APU_ENDX];
+			if (Settings.UseFastDSPCore)
+			{
+				return DSP_MEM[reg];
+			}
+			else
+			{			
+				// Bug fix: The ENDX is written to the APU.DSP
+				// so we cannot return IAPU.DSPCopy. This fixes
+				// Clock Tower.
+				//
+				return APU.DSP[APU_ENDX];
+			}
 			break;
 
 		default:

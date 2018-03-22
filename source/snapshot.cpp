@@ -717,6 +717,8 @@ void S9xFreezeToStream (BufferedFileWriter& stream)
 #endif
 }
 
+extern u8 DSP_MEM[0x100];
+
 int S9xUnfreezeFromStream (STREAM stream)
 {
     char buffer [_MAX_PATH + 1];
@@ -926,7 +928,12 @@ int S9xUnfreezeFromStream (STREAM stream)
 		// Copy the DSP data to the copy used for reading.
 		//
 		for (int i = 0; i < 0x80; i++)
+		{
 			IAPU.DSPCopy[i] = APU.DSP[i];
+		}
+
+		S9xCopyDSPParamters(true);
+		S9xCopyDSPParamters(false);
 
 		ICPU.ShiftedPB = Registers.PB << 16;
 		ICPU.ShiftedDB = Registers.DB << 16;

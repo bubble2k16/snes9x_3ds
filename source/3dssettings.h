@@ -126,4 +126,8 @@ typedef struct
     int     GlobalVolume = 4;               // 0: 100%, 4: 200%, 8: 400%
 
     bool    RomFsLoaded = false;            // Stores whether we successfully opened the RomFS.
+
+    int     UseGlobalDSPCore;               // Whether the DSP Core should apply to all games
+    int     GlobalDSPCore;                  // Globally selected DSP Core
+    int     DSPCore;                        // Game-specific selected DSP Core
 } S9xSettings3DS;
