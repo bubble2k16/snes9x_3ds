@@ -217,6 +217,12 @@ std::vector<SMenuItem> makeEmulatorMenu(std::vector<SMenuTab>& menuTab, int& cur
                 menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestate failure", oss.str(), DIALOGCOLOR_RED, makeOptionsForOk());
                 menu3dsHideDialog(dialogTab, isDialog, currentMenuTab, menuTab);
             }
+            else
+            {
+                std::ostringstream oss;
+                oss << "Slot " << slot << " save completed.";
+                menu3dsShowDialog(dialogTab, isDialog, currentMenuTab, menuTab, "Savestate complete.", oss.str(), DIALOGCOLOR_GREEN, makeOptionsForOk());
+            }
         }, MenuItemType::Action, optionText.str(), ""s);
     }
     AddMenuHeader2(items, ""s);
@@ -407,8 +413,8 @@ std::vector<SMenuItem> makeOptionsForInFramePaletteChanges() {
 
 std::vector<SMenuItem> makeOptionsForDSPCore() {
     std::vector<SMenuItem> items;
-    AddMenuDialogOption(items, 0, "BlargSNES"s,         "Faster. May sound better."s);
-    AddMenuDialogOption(items, 1, "Snes9X"s,            "Slower. May not sound as good."s);
+    AddMenuDialogOption(items, 0, "BlargSNES"s,         "Fast - less skips."s);
+    AddMenuDialogOption(items, 1, "Snes9X"s,            "Slow - may skip."s);
     return items;
 };
 
