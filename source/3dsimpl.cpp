@@ -351,11 +351,11 @@ void impl3dsGenerateSoundSamples(int numberOfSamples)
 {
 	if (Settings.UseFastDSPCore)
 	{
-		//S9xSetAPUDSPClearWrites();
+		S9xSetAPUDSPClearWrites();
 	}
 	else
 	{
-		//DSP_ClearWrites();
+		DSP_ClearWrites();
 		S9xSetAPUDSPReplay ();
 		S9xMixSamplesIntoTempBuffer(numberOfSamples * 2);
 	}
@@ -381,10 +381,7 @@ void impl3dsOutputSoundSamples(int numberOfSamples, short *leftSamples, short *r
 	{
 		S9xApplyMasterVolumeOnTempBufferIntoLeftRightBuffers(leftSamples, rightSamples, 256 * 2);
 	}
-			
-
 }
-
 
 //---------------------------------------------------------
 // This is called when a ROM needs to be loaded and the
@@ -432,15 +429,11 @@ void impl3dsPrepareForNewFrame()
 }
 
 
-short samples[32000 * 4];
-
-
 //---------------------------------------------------------
 // Executes one frame.
 //---------------------------------------------------------
 void impl3dsRunOneFrame(bool firstFrame, bool skipDrawingFrame)
 {
-
 	Memory.ApplySpeedHackPatches();
 	gpu3dsEnableAlphaBlending();
 
