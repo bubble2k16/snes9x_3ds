@@ -932,6 +932,12 @@ clipAndMix:
 	mul r12, r8, r12
 	mov r12, r12, asr #7
 
+    @ Bug fix: Disable echo is the ECEN flag is 1
+	ldrb r5, [r9, #0x6C]
+	tst r5, #0x20
+	movne r11, #0
+	movne r12, #0
+
     @ r0 - numSamples
     @ r1 - mix buffer
     @ r2 - echo buffer
