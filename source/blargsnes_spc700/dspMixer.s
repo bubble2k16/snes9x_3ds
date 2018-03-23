@@ -769,8 +769,7 @@ processEcho:
 
 	@ addr = (ESA*100h+ram_index*4) AND FFFFh 
 
-	ldr r14, =SPC_RAM
-    ldr r14, [r14]
+	ldr r14, =SPC_ECHO_RAM
 	ldr r12, =echoBase
 	ldr r12, [r12]
 	add r12, r14, r12

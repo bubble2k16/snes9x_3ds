@@ -18,6 +18,11 @@ u16* DSP_WritingWriteBuffer;
 u16* DSP_PlayingWriteBuffer;
 */
 
+// fake SPC RAM for echo buffer. We don't want to write into the real SPC RAM,
+// since it causes some problems with games.
+//
+u8          SPC_ECHO_RAM[0x10000];      
+
 #define     DSP_WRITEBUFFER_SIZE        4096
 u16         DSP_WriteBuffer[DSP_WRITEBUFFER_SIZE];
 int         DSP_WriteBuffer_ReadPtr;
@@ -123,11 +128,14 @@ void DspGenerateNoise()
 			DSP_NoiseSamples[i] = DSP_NoiseSample << 1;
 }
 
-void DspReset() {
+void DspReset() 
+{
     // Delay for 1 sample
     echoDelay = 4;
 	echoRemain = 1;
     echoBase = 0;
+    memset(SPC_ECHO_RAM, 0, 0x10000);
+
 	int i=0,c=0;
 	
 	memset(DSP_WriteBuffer, 0, sizeof(DSP_WriteBuffer));
@@ -167,6 +175,27 @@ void DspReset() {
 			brrTab[(i << 4) + c] = 0xF800;
 	}
 
+}
+
+
+void DspFlagReset() 
+{
+    // Delay for 1 sample
+    echoDelay = 4;
+	echoRemain = 1;
+    echoBase = 0;
+    memset(SPC_ECHO_RAM, 0, 0x10000);
+
+	int i=0,c=0;
+	
+    // Disable echo emulation
+	DSP_MEM[DSP_FLAG] = 0x60;
+
+	DSP_NoiseSample = 0x4000;
+	DSP_NoiseStep = 1;
+
+	for (i = 0; i < 8; i++)
+		memset(&channels[i], 0, sizeof(DspChannel));
 }
 
 void DspSetFIRCoefficient(u32 index) {
@@ -277,8 +306,8 @@ void DspStartChannelEnvelope(u32 channel) {
 
 void DspChangeChannelEnvelopeGain(u32 channel) {
     // Don't set envelope parameters when we are releasing the note
-    if (!channels[channel].active) return;
-    if (channels[channel].envState == ENVSTATE_RELEASE) return;
+    //if (!channels[channel].active) return;
+    //if (channels[channel].envState == ENVSTATE_RELEASE) return;
 
     // If in ADSR mode, write to GAIN register has no effect
     if (DSP_MEM[(channel << 4) + DSP_ADSR1] & 0x80) return;
@@ -317,8 +346,8 @@ void DspChangeChannelEnvelopeGain(u32 channel) {
 
 void DspChangeChannelEnvelopeAdsr1(u32 channel, u8 orig) {
     // Don't set envelope parameters when we are releasing the note
-    if (!channels[channel].active) return;
-    if (channels[channel].envState == ENVSTATE_RELEASE) return;
+    //if (!channels[channel].active) return;
+    //if (channels[channel].envState == ENVSTATE_RELEASE) return;
 
 	u8 adsr1 = DSP_MEM[(channel << 4) + DSP_ADSR1];
 
@@ -347,8 +376,8 @@ void DspChangeChannelEnvelopeAdsr1(u32 channel, u8 orig) {
 
 void DspChangeChannelEnvelopeAdsr2(u32 channel) {
     // Don't set envelope parameters when we are releasing the note
-    if (!channels[channel].active) return;
-    if (channels[channel].envState == ENVSTATE_RELEASE) return;
+    //if (!channels[channel].active) return;
+    //if (channels[channel].envState == ENVSTATE_RELEASE) return;
 
 	u8 adsr2 = DSP_MEM[(channel << 4) + DSP_ADSR2];
     u8 sustainRate = adsr2 & 0x1f;
@@ -384,9 +413,15 @@ void DspKeyOnChannel(u32 i) {
     channels[i].envCount = ENVCNT_START;
     channels[i].active = true;
 	
-	/*bprintf("%d -> %04X %04X\n", 
+    /*
+	printf("\nch%d -> %04x %04x %04x %04x %04x %04x %04x %04x : %d%d%d%d\n", 
 		i, 
-		channels[i].blockPos, channels[i].sampleSpeed);*/
+		channels[i].blockPos, channels[i].sampleSpeed, 
+        channels[i].envCount, channels[i].envSpeed, 
+        channels[i].leftVolume, channels[i].rightVolume, 
+        channels[i].leftCalcVolume, channels[i].rightCalcVolume,
+        channels[i].echoEnabled, channels[i].noiseEnabled, channels[i].pmodEnabled, channels[i].pmodWrite
+         );*/
 
     DSP_MEM[DSP_ENDX] &= ~(1 << i);
 }
@@ -473,7 +508,8 @@ void DSP_ReplayWrites(u32 idx)
     {
 		u16 val = DSP_WriteBuffer[DSP_WriteBuffer_ReadPtr];
         DSP_WriteBuffer_ReadPtr = (DSP_WriteBuffer_ReadPtr + 1) % DSP_WRITEBUFFER_SIZE;
-        //printf("%2x<%2x   ", val >> 8, val & 0xFF);
+//if ((val >> 8) == 0x4c ||(val >> 8) == 0x5c)
+//printf("%2x<%2x   ", val >> 8, val & 0xFF);
 		DspReplayWriteByte(val & 0xFF, val >> 8);
     }
 }
@@ -490,7 +526,7 @@ void DspReplayWriteByte(u8 val, u8 address)
     u8 orig = DSP_MEM[address];
     DSP_MEM[address] = val;
 
-    //if (address > 0x7f) return;
+    if (address > 0x7f) return;
 
     switch (address & 0xf) {
         case DSP_VOL_L:
@@ -506,7 +542,7 @@ void DspReplayWriteByte(u8 val, u8 address)
 			DspSetChannelPitch(address >> 4);
 			break;
 		case DSP_ADSR1:
-    		DspChangeChannelEnvelopeAdsr1(address >> 4, orig);
+    		DspChangeChannelEnvelopeAdsr1(address >> 4, val);
 			break;
 		case DSP_ADSR2:
 			DspChangeChannelEnvelopeAdsr2(address >> 4);
@@ -551,9 +587,8 @@ void DspReplayWriteByte(u8 val, u8 address)
 			case (DSP_FLAG >> 4):{
 					if(val & 0x80)
 					{
-						DSP_MEM[DSP_FLAG] = 0x60;
-						DSP_NoiseSample = 0x4000;
-						DSP_NoiseStep = 1;
+                        // Bug fix: We must reset the DSP here.
+                        DspFlagReset();
 					}
 					else
 						DSP_MEM[DSP_FLAG] = val;
