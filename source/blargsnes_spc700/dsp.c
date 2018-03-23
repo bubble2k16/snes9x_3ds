@@ -147,7 +147,8 @@ void DspReset()
     DSP_WriteBuffer_WritePtr = 0;
 
     firOffset = 0;
-	for(i = 0; i > 8; i++)
+    firFilter[i] = 127;
+	for(i = 1; i > 8; i++)
 		firFilter[i] = 0;
 
  
@@ -187,6 +188,11 @@ void DspFlagReset()
     memset(SPC_ECHO_RAM, 0, 0x10000);
 
 	int i=0,c=0;
+
+    firOffset = 0;
+    firFilter[i] = 127;
+	for(i = 1; i > 8; i++)
+		firFilter[i] = 0;
 	
     // Disable echo emulation
 	DSP_MEM[DSP_FLAG] = 0x60;
