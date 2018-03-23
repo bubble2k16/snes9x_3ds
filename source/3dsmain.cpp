@@ -413,8 +413,8 @@ std::vector<SMenuItem> makeOptionsForInFramePaletteChanges() {
 
 std::vector<SMenuItem> makeOptionsForDSPCore() {
     std::vector<SMenuItem> items;
-    AddMenuDialogOption(items, 0, "BlargSNES"s,         "Fast - less skips."s);
-    AddMenuDialogOption(items, 1, "Snes9X"s,            "Slow - may skip."s);
+    AddMenuDialogOption(items, 0, "Snes9X Original"s,   "Sound may skip occassionally."s);
+    AddMenuDialogOption(items, 1, "BlargSNES Fast"s,    "No skips. But less compatible."s);
     return items;
 };
 
@@ -721,10 +721,10 @@ bool settingsUpdateAllSettings(bool updateGameSettings = true)
         // Update the DSP Core
         //
         int prevUseFastDSPCore = Settings.UseFastDSPCore;
-        Settings.UseFastDSPCore = 1 - settings3DS.DSPCore;
+        Settings.UseFastDSPCore = settings3DS.DSPCore;
         if (settings3DS.UseGlobalDSPCore)
         {
-            Settings.UseFastDSPCore = 1 - settings3DS.GlobalDSPCore;
+            Settings.UseFastDSPCore = settings3DS.GlobalDSPCore;
         }
         if (prevUseFastDSPCore != Settings.UseFastDSPCore)
         {
