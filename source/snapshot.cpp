@@ -116,6 +116,8 @@
 #include "movie.h"
 #include "bufferedfilewriter.h"
 
+#include "blargsnes_spc700/dsp.h"
+
 extern uint8 *SRAM;
 
 #ifdef ZSNES_FX
@@ -650,6 +652,18 @@ void S9xFreezeToStream (BufferedFileWriter& stream)
 		SoundData.channels [i].previous16 [0] = (int16) SoundData.channels [i].previous [0];
 		SoundData.channels [i].previous16 [1] = (int16) SoundData.channels [i].previous [1];
     }
+
+	// If the BlargSNES DSP core is used, then we will want to save the active state of
+	// its DSP channels. That way, when this save state is reloaded we can K-ON those
+	// channels.
+	//
+	if (Settings.UseFastDSPCore)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			SoundData.channels[i].state = channels[i].active ? SOUND_BLARGCORE_ACTIVE : SOUND_SILENT;
+		}
+	}
     int printed = sprintf (buffer, "%s:%04d\n", SNAPSHOT_MAGIC, SNAPSHOT_VERSION);
     stream.write(buffer, printed);
     printed = sprintf (buffer, "NAM:%06d:%s%c", strlen (Memory.ROMFilename) + 1,
@@ -932,8 +946,36 @@ int S9xUnfreezeFromStream (STREAM stream)
 			IAPU.DSPCopy[i] = APU.DSP[i];
 		}
 
-		S9xCopyDSPParamters(true);
-		S9xCopyDSPParamters(false);
+		// Determine whether our save state is meant for Snes9x DSP 
+		// by inspecting the channel's state
+		// 
+		bool saveStateForSnes9xDSPCore = true;
+		for (int ch = 0; ch < 8; ch++)
+			if (SoundData.channels[ch].state == SOUND_BLARGCORE_ACTIVE)
+			{
+				saveStateForSnes9xDSPCore = false;
+				break;
+			}
+
+		// If the save is for the original Snes9x DSP core and the user
+		// has chosen to use the Snes9X DSP core, then the
+		// SoundData.channels state loaded doesn't have to be re-initialized.
+		//
+		// In all other cases, the BlargSNES DSP or the Snes9x DSP must be 
+		// properly initialized.
+		//
+		if (saveStateForSnes9xDSPCore)
+		{
+			if (Settings.UseFastDSPCore)
+				S9xCopyDSPParamters(true);
+		}
+		else
+		{
+			if (Settings.UseFastDSPCore)
+				S9xCopyDSPParamters(true);
+			else
+				S9xCopyDSPParamters(false);
+		}
 
 		ICPU.ShiftedPB = Registers.PB << 16;
 		ICPU.ShiftedDB = Registers.DB << 16;
