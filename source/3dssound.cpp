@@ -342,14 +342,14 @@ bool snd3dsInitialize()
     Result ret = 0;
     ret = csndInit();
 
-#ifndef EMU_RELEASE
+#ifndef RELEASE
     printf ("Trying to initialize CSND, ret = %x\n", ret);
 #endif
 
 	if (!R_FAILED(ret))
     {
         snd3DS.audioType = 1;
-#ifndef EMU_RELEASE
+#ifndef RELEASE
         printf ("CSND Initialized\n");
 #endif
     }
@@ -373,7 +373,7 @@ bool snd3dsInitialize()
         return false;
     }
 
-#ifndef EMU_RELEASE
+#ifndef RELEASE
     printf ("snd3dsInit - Allocate L/R buffers\n");
 #endif
 
@@ -394,7 +394,7 @@ bool snd3dsInitialize()
         
         if (snd3dsSpawnMixingThread)
         {
-    #ifndef EMU_RELEASE
+    #ifndef RELEASE
             printf ("snd3dsInit - Mix Stack: %x\n", snd3DS.mixingThreadStack);
             printf ("snd3dsInit - Mix ThreadFunc: %x\n", &snd3dsMixingThread);
     #endif
@@ -406,13 +406,13 @@ bool snd3dsInitialize()
                 snd3dsFinalize();
                 return false;
             }
-#ifndef EMU_RELEASE
+#ifndef RELEASE
             printf ("snd3dsInit - Create Mix thread %x\n", snd3DS.mixingThreadHandle);
 #endif
         }
     }
 
-#ifndef EMU_RELEASE
+#ifndef RELEASE
     printf ("snd3DSInit complete\n");
 #endif
 
@@ -430,7 +430,7 @@ void snd3dsFinalize()
      if (snd3DS.mixingThreadHandle)
      {
          // Wait (at most 1 second) for the sound thread to finish,
-#ifndef EMU_RELEASE
+#ifndef RELEASE
          printf ("Join mixingThreadHandle\n");
 #endif
          svcWaitSynchronization(snd3DS.mixingThreadHandle, 1000 * 1000000);
