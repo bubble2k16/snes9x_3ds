@@ -473,6 +473,7 @@ void DSP_ReplayWrites(u32 idx)
     {
 		u16 val = DSP_WriteBuffer[DSP_WriteBuffer_ReadPtr];
         DSP_WriteBuffer_ReadPtr = (DSP_WriteBuffer_ReadPtr + 1) % DSP_WRITEBUFFER_SIZE;
+        //printf("%2x<%2x   ", val >> 8, val & 0xFF);
 		DspReplayWriteByte(val & 0xFF, val >> 8);
     }
 }
@@ -525,8 +526,10 @@ void DspReplayWriteByte(u8 val, u8 address)
 //                DSP_MEM[DSP_KON] = val & DSP_MEM[DSP_KOF];
 
                 if (val) {
-                    DSP_MEM[DSP_KON] = val & DSP_MEM[DSP_KOF];
-                    val &= ~DSP_MEM[DSP_KOF];
+                    // Bug: Some games never KOF before KON. So we must allow KON
+                    // to key-on the channel regardless of its KOF status.
+                    DSP_MEM[DSP_KON] = val /*& DSP_MEM[DSP_KOF]*/;
+                    //val &= ~DSP_MEM[DSP_KOF];
 					u32 i=0;
                     for (; i<8; i++)
                         if ((val>>i)&1) {
