@@ -135,7 +135,8 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 ## Change History
 
 v1.30
-- Added BlargSNES DSP Core (experimental) for performance. The original Snes9X DSP core (default) suffers from sound skipping in some games. You can choose which DSP core to use from the Options menu. 
+- Improved sound synchronization.
+- Added BlargSNES DSP Core (experimental) for performance. The original Snes9X DSP core (default) suffers from sound skipping in some games like Aladdin and Gradius 3. You can choose which DSP core to use from the Options menu. The BlargSNES DSP Core sounds similar to the Snes9x Core for most games. Sounds like Final Fantasy 3's the howling wind sound different.
 - Added support for Tengai Makyou Zero English Patch (for hopefully all future versions)
 
 v1.21
