@@ -1,6 +1,6 @@
 ## Snes9x for 3DS
 
-Snes9x for 3DS is a Super Nintendo Entertainment System  (SNES) Emulator for the 3DS and 2DS. This emulator is known for having support for most SNES games, including games that utilize the CX4 chip, the SDD-1 chip, the SuperFX chip, and the SA-1 chip. Full compatability varies between and their respective chips, but many games are able to run at full 60 fps. Having used Snes9x 1.43 as a base, this emulator is able to play games that existing 3DS SNES emulators may have trouble with. It is recommended to use the new 3DS to play games that use the SuperFX and the SA-1, as the emulation will run much faster.
+Snes9x for 3DS is a Super Nintendo Entertainment System  (SNES) Emulator for the 3DS and 2DS. This emulator is known for having support for most SNES games, including games that utilize the CX4 chip, the SDD-1 chip, the SuperFX chip, and the SA-1 chip. Full compatibility varies between and their respective chips, but many games are able to run at full 60 fps. Having used Snes9x 1.43 as a base, this emulator is able to play games that existing 3DS SNES emulators may have trouble with. For games that use the SuperFX and the SA-1 chip, it is recommended to use the “new 3DS” for emulation, because the games will run much smoother. 
 
 Download the latest from:
    https://github.com/bubble2k16/snes9x_3ds/releases
