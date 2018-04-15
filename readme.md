@@ -108,7 +108,7 @@ Try to avoid pressing the Home button or putting the 3DS to sleep. Quit the emul
 ## What's supported
 
 1. Graphic modes 0 - 7.
-2. Save states of up to 4 slots
+2. Save states of up to 5 slots
 3. Cheats - place your .CHT/.CHX (text format) with the same filename in the same folder as your ROM. For example, if your ROM name is MyGame.smc, then your cheat file should be named MyGame.CHT or MyGame.CHX
 4. Currently uses CSND for audio. So your entry point to home-brew must be able to use CSND. If you can play BlargSNES with sound, you should be able to play Snes9X_3DS with sound.
 5. Frame skipping.
