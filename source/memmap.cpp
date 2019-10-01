@@ -2425,7 +2425,7 @@ void CMemory::TalesROMMap (bool8 Interleaved)
 
 		//makes more sense to map the range here.
 		//ToP seems to use sram to skip intro???
-		if(c>=0x300)
+		if(c>=0x200)
 		{
 			Map [c + 6] = Map [c + 0x806] = (uint8 *) MAP_HIROM_SRAM;
 			Map [c + 7] = Map [c + 0x807] = (uint8 *) MAP_HIROM_SRAM;
